@@ -1,0 +1,70 @@
+### Health Check
+GET http://localhost:5000/health
+
+### Register New Salon
+POST http://localhost:5000/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "businessName": "Elegant Hair Salon",
+  "email": "owner@eleganthair.com",
+  "phone": "+254712345678",
+  "password": "SecurePass123!",
+  "firstName": "Jane",
+  "lastName": "Doe",
+  "country": "Kenya"
+}
+
+### Login
+POST http://localhost:5000/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "owner@eleganthair.com",
+  "password": "SecurePass123!",
+  "tenantSlug": "elegant-hair-salon-1730000000000"
+}
+
+### Get Bookings (requires token)
+GET http://localhost:5000/api/v1/bookings
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Create Client (requires token)
+POST http://localhost:5000/api/v1/clients
+Authorization: Bearer YOUR_TOKEN_HERE
+Content-Type: application/json
+
+{
+  "firstName": "Mary",
+  "lastName": "Wanjiku",
+  "phone": "+254722334455",
+  "email": "mary@example.com",
+  "marketingConsent": {
+    "sms": true,
+    "email": true
+  }
+}
+
+### Get Services (requires token)
+GET http://localhost:5000/api/v1/services
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Create Service (requires token - owner only)
+POST http://localhost:5000/api/v1/services
+Authorization: Bearer YOUR_TOKEN_HERE
+Content-Type: application/json
+
+{
+  "name": "Box Braids",
+  "description": "Classic box braids in various sizes",
+  "category": "braids",
+  "price": 3500,
+  "duration": 180,
+  "materialsRequired": [
+    {
+      "itemName": "Braiding Hair",
+      "estimatedQuantity": 8,
+      "unit": "packs"
+    }
+  ]
+}

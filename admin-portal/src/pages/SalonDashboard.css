@@ -1,0 +1,1742 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+.salon-dashboard {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #fafafa 0%, #ffffff 100%);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background 0.5s ease;
+}
+
+/* FREE TIER THEME - Blue */
+.salon-dashboard.tier-free {
+  background: linear-gradient(180deg, #eff6ff 0%, #ffffff 100%);
+}
+
+.salon-dashboard.tier-free .dashboard-header {
+  background: rgba(239, 246, 255, 0.8);
+  border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+}
+
+.salon-dashboard.tier-free .dashboard-header h1 {
+  background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.salon-dashboard.tier-free .role-badge {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.salon-dashboard.tier-free .stat-card:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 12px 40px rgba(59, 130, 246, 0.15);
+}
+
+.salon-dashboard.tier-free .stat-number {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* PRO TIER THEME - Purple */
+.salon-dashboard.tier-pro {
+  background: linear-gradient(180deg, #faf5ff 0%, #ffffff 100%);
+}
+
+.salon-dashboard.tier-pro .dashboard-header {
+  background: rgba(250, 245, 255, 0.8);
+  border-bottom: 1px solid rgba(168, 85, 247, 0.1);
+}
+
+.salon-dashboard.tier-pro .dashboard-header h1 {
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.salon-dashboard.tier-pro .role-badge {
+  background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+}
+
+.salon-dashboard.tier-pro .stat-card:hover {
+  border-color: #a855f7;
+  box-shadow: 0 12px 40px rgba(168, 85, 247, 0.15);
+}
+
+.salon-dashboard.tier-pro .stat-number {
+  background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* PREMIUM TIER THEME - Gold */
+.salon-dashboard.tier-premium {
+  background: linear-gradient(180deg, #fffbeb 0%, #ffffff 100%);
+}
+
+.salon-dashboard.tier-premium .dashboard-header {
+  background: rgba(255, 251, 235, 0.8);
+  border-bottom: 1px solid rgba(245, 158, 11, 0.1);
+}
+
+.salon-dashboard.tier-premium .dashboard-header h1 {
+  background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.salon-dashboard.tier-premium .role-badge {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.salon-dashboard.tier-premium .stat-card:hover {
+  border-color: #f59e0b;
+  box-shadow: 0 12px 40px rgba(245, 158, 11, 0.15);
+}
+
+.salon-dashboard.tier-premium .stat-number {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dashboard-header {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 24px 48px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dashboard-header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: #1d1d1f;
+  margin: 0;
+  background: linear-gradient(135deg, #1d1d1f 0%, #4a4a4a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.business-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: #86868b;
+  margin: 4px 0 0 0;
+  letter-spacing: -0.2px;
+}
+
+.role-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 8px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.logout-btn {
+  padding: 10px 24px;
+  background: #1d1d1f;
+  color: white;
+  border: none;
+  border-radius: 980px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: -0.2px;
+}
+
+.logout-btn:hover {
+  background: #424245;
+  transform: scale(1.02);
+}
+
+.quick-actions-bar {
+  display: flex;
+  gap: 12px;
+  padding: 24px 48px;
+  max-width: 1400px;
+  margin: 0 auto;
+  flex-wrap: wrap;
+}
+
+.quick-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: white;
+  border: 2px solid rgba(0, 0, 0, 0.08);
+  border-radius: 980px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1d1d1f;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: -0.2px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.quick-action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  border-color: #6B46C1;
+}
+
+.quick-action-btn.primary {
+  background: linear-gradient(135deg, #6B46C1 0%, #553C9A 100%);
+  color: white;
+  border-color: transparent;
+}
+
+.quick-action-btn.primary:hover {
+  box-shadow: 0 8px 24px rgba(107, 70, 193, 0.4);
+  transform: translateY(-2px) scale(1.02);
+}
+
+/* Tier-specific primary button colors */
+.salon-dashboard.tier-free .quick-action-btn.primary {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.salon-dashboard.tier-free .quick-action-btn.primary:hover {
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
+}
+
+.salon-dashboard.tier-pro .quick-action-btn.primary {
+  background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+}
+
+.salon-dashboard.tier-pro .quick-action-btn.primary:hover {
+  box-shadow: 0 8px 24px rgba(168, 85, 247, 0.4);
+}
+
+.salon-dashboard.tier-premium .quick-action-btn.primary {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.salon-dashboard.tier-premium .quick-action-btn.primary:hover {
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.4);
+}
+
+.quick-action-btn.suggest {
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+  color: white;
+  border-color: transparent;
+}
+
+.quick-action-btn.suggest:hover {
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.4);
+  transform: translateY(-2px) scale(1.02);
+}
+
+.action-icon {
+  font-size: 18px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+  padding: 24px 48px 32px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.stat-card {
+  background: white;
+  padding: 32px;
+  border-radius: 24px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.stat-card.clickable {
+  cursor: pointer;
+}
+
+.stat-card.clickable:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+  border-color: #667eea;
+}
+
+.stat-icon {
+  font-size: 48px;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.1));
+}
+
+.stat-card h3 {
+  font-size: 13px;
+  font-weight: 500;
+  color: #86868b;
+  margin: 0 0 8px 0;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.stat-number {
+  font-size: 48px;
+  font-weight: 700;
+  color: #1d1d1f;
+  margin: 0;
+  letter-spacing: -2px;
+  line-height: 1;
+}
+
+.recent-bookings {
+  padding: 0 48px 32px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.recent-bookings h2 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1d1d1f;
+  margin: 0 0 24px 0;
+  letter-spacing: -0.5px;
+}
+
+.empty-state {
+  background: white;
+  padding: 80px 40px;
+  border-radius: 24px;
+  text-align: center;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+}
+
+.empty-state p {
+  color: #86868b;
+  font-size: 17px;
+  margin: 0;
+}
+
+.bookings-table {
+  width: 100%;
+  background: white;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.bookings-table thead {
+  background: #fafafa;
+}
+
+.bookings-table th {
+  padding: 20px 24px;
+  text-align: left;
+  font-weight: 600;
+  color: #1d1d1f;
+  font-size: 13px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.bookings-table td {
+  padding: 24px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+  color: #1d1d1f;
+  font-size: 15px;
+  font-weight: 400;
+}
+
+.bookings-table tbody tr {
+  transition: background 0.2s ease;
+}
+
+.bookings-table tbody tr:hover {
+  background: #fafafa;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+  letter-spacing: 0.3px;
+}
+
+.status-badge.pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status-badge.confirmed {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.status-badge.completed {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-badge.cancelled {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.features-section {
+  padding: 24px 48px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1d1d1f;
+  margin: 0 0 20px 0;
+  letter-spacing: -0.3px;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.feature-card {
+  background: white;
+  padding: 48px 36px;
+  border-radius: 28px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: center;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+  opacity: 0;
+  transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.feature-card:hover::before {
+  opacity: 1;
+}
+
+.feature-card:hover {
+  transform: translateY(-12px) scale(1.02);
+  box-shadow: 0 24px 64px rgba(102, 126, 234, 0.25);
+  border-color: rgba(102, 126, 234, 0.2);
+}
+
+.feature-icon {
+  font-size: 64px;
+  margin-bottom: 24px;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.1));
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.feature-card:hover .feature-icon {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.feature-card h3 {
+  color: #1d1d1f;
+  margin: 0 0 12px 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  position: relative;
+  z-index: 1;
+}
+
+.feature-count {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-size: 36px;
+  font-weight: 800;
+  margin: 12px 0;
+  letter-spacing: -1px;
+  position: relative;
+  z-index: 1;
+}
+
+.feature-desc {
+  color: #86868b;
+  font-size: 15px;
+  margin: 0;
+  line-height: 1.5;
+  font-weight: 400;
+  position: relative;
+  z-index: 1;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-size: 20px;
+  color: #86868b;
+  font-weight: 500;
+  letter-spacing: -0.3px;
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Selection color */
+::selection {
+  background: rgba(102, 126, 234, 0.2);
+  color: #1d1d1f;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #fafafa;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d1d6;
+  border-radius: 6px;
+  border: 3px solid #fafafa;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a6;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .dashboard-header {
+    padding: 20px 24px;
+  }
+
+  .dashboard-header h1 {
+    font-size: 24px;
+  }
+
+  .stats-grid,
+  .recent-bookings,
+  .feature-grid {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .feature-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-card {
+    padding: 24px;
+  }
+
+  .feature-card {
+    padding: 36px 24px;
+  }
+}
+
+
+/* Locked Feature Cards */
+.feature-card.locked {
+  opacity: 0.6;
+  position: relative;
+}
+
+.feature-card.locked::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(2px);
+  border-radius: 28px;
+  pointer-events: none;
+}
+
+.feature-card.locked:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 12px 32px rgba(245, 158, 11, 0.3);
+  border-color: #F59E0B;
+}
+
+.upgrade-badge {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+  color: white;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+
+/* Subscription Tier Badge in Header */
+.subscription-tier {
+  display: inline-block;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-left: 12px;
+}
+
+.subscription-tier.trial {
+  background: linear-gradient(135deg, #86868b 0%, #6b6b70 100%);
+  color: white;
+}
+
+.subscription-tier.basic {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+}
+
+.subscription-tier.premium {
+  background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+  color: white;
+}
+
+
+/* Stylist Welcome Section */
+.stylist-welcome {
+  padding: 32px 48px;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.welcome-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20px;
+  padding: 48px;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(102, 126, 234, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Tier-specific welcome card colors */
+.salon-dashboard.tier-free .welcome-card {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  box-shadow: 0 20px 60px rgba(59, 130, 246, 0.3);
+}
+
+.salon-dashboard.tier-pro .welcome-card {
+  background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+  box-shadow: 0 20px 60px rgba(168, 85, 247, 0.3);
+}
+
+.salon-dashboard.tier-premium .welcome-card {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  box-shadow: 0 20px 60px rgba(245, 158, 11, 0.3);
+}
+
+.welcome-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  animation: pulse 4s ease-in-out infinite;
+}
+
+.welcome-card h2 {
+  font-size: 36px;
+  font-weight: 700;
+  color: white;
+  margin: 0 0 16px 0;
+  letter-spacing: -0.5px;
+  position: relative;
+  z-index: 1;
+}
+
+.welcome-card p {
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  line-height: 1.6;
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.1) rotate(180deg);
+    opacity: 0.5;
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* Upcoming Bookings Section for Stylists */
+.upcoming-bookings-section {
+  padding: 32px 48px;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.upcoming-bookings-section h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1d1d1f;
+  margin-bottom: 24px;
+  letter-spacing: -0.5px;
+}
+
+.bookings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.booking-item {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+
+.booking-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+}
+
+/* Tier-specific booking item hover colors */
+.salon-dashboard.tier-free .booking-item:hover {
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.15);
+}
+
+.salon-dashboard.tier-pro .booking-item:hover {
+  box-shadow: 0 8px 24px rgba(168, 85, 247, 0.15);
+}
+
+.salon-dashboard.tier-premium .booking-item:hover {
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.15);
+}
+
+.booking-date {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  min-width: 80px;
+  color: white;
+}
+
+/* Tier-specific booking date colors */
+.salon-dashboard.tier-free .booking-date {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.salon-dashboard.tier-pro .booking-date {
+  background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+}
+
+.salon-dashboard.tier-premium .booking-date {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.date-day {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.date-month {
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.booking-details {
+  flex: 1;
+}
+
+.booking-details h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1d1d1f;
+  margin: 0 0 8px 0;
+}
+
+.service-name {
+  font-size: 14px;
+  color: #667eea;
+  font-weight: 500;
+  margin: 0 0 4px 0;
+}
+
+/* Tier-specific service name colors */
+.salon-dashboard.tier-free .service-name {
+  color: #3b82f6;
+}
+
+.salon-dashboard.tier-pro .service-name {
+  color: #a855f7;
+}
+
+.salon-dashboard.tier-premium .service-name {
+  color: #f59e0b;
+}
+
+.booking-time {
+  font-size: 13px;
+  color: #86868b;
+  margin: 0;
+}
+
+.booking-status {
+  display: flex;
+  align-items: center;
+}
+
+
+/* Booking Actions */
+.booking-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.quick-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-btn.confirm {
+  background: #10b981;
+  color: white;
+}
+
+.action-btn.confirm:hover {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+.action-btn.remind {
+  background: #f59e0b;
+  color: white;
+}
+
+.action-btn.remind:hover {
+  background: #d97706;
+  transform: translateY(-1px);
+}
+
+.action-btn.thank {
+  background: #8b5cf6;
+  color: white;
+}
+
+.action-btn.thank:hover {
+  background: #7c3aed;
+  transform: translateY(-1px);
+}
+
+.action-btn.note {
+  background: #6b7280;
+  color: white;
+  padding: 8px 12px;
+}
+
+.action-btn.note:hover {
+  background: #4b5563;
+  transform: translateY(-1px);
+}
+
+/* Table Quick Actions */
+.table-quick-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn-small {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-btn-small.confirm {
+  background: #10b981;
+  color: white;
+}
+
+.action-btn-small.confirm:hover {
+  background: #059669;
+  transform: scale(1.1);
+}
+
+.action-btn-small.remind {
+  background: #f59e0b;
+  color: white;
+}
+
+.action-btn-small.remind:hover {
+  background: #d97706;
+  transform: scale(1.1);
+}
+
+.action-btn-small.thank {
+  background: #8b5cf6;
+  color: white;
+}
+
+.action-btn-small.thank:hover {
+  background: #7c3aed;
+  transform: scale(1.1);
+}
+
+.action-btn-small.note {
+  background: #6b7280;
+  color: white;
+}
+
+.action-btn-small.note:hover {
+  background: #4b5563;
+  transform: scale(1.1);
+}
+
+.booking-notes {
+  font-size: 13px;
+  color: #6b7280;
+  font-style: italic;
+  margin-top: 8px;
+  padding: 8px;
+  background: #f9fafb;
+  border-radius: 6px;
+}
+
+
+/* Message Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 20px;
+  padding: 32px;
+  max-width: 600px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s;
+}
+
+.modal-content h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1d1d1f;
+  margin: 0 0 8px 0;
+}
+
+.modal-subtitle {
+  font-size: 14px;
+  color: #86868b;
+  margin: 0 0 24px 0;
+}
+
+.message-textarea {
+  width: 100%;
+  padding: 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 15px;
+  font-family: inherit;
+  resize: vertical;
+  margin-bottom: 24px;
+  transition: border-color 0.2s;
+}
+
+.message-textarea:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.btn-cancel,
+.btn-send {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-cancel {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.btn-cancel:hover {
+  background: #e5e7eb;
+}
+
+.btn-send {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.btn-send:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* Tier-specific modal button colors */
+.salon-dashboard.tier-free .btn-send {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.salon-dashboard.tier-free .btn-send:hover {
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+}
+
+.salon-dashboard.tier-pro .btn-send {
+  background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+}
+
+.salon-dashboard.tier-pro .btn-send:hover {
+  box-shadow: 0 8px 20px rgba(168, 85, 247, 0.4);
+}
+
+.salon-dashboard.tier-premium .btn-send {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.salon-dashboard.tier-premium .btn-send:hover {
+  box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* Form Elements in Modal */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 8px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 15px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+/* Tier-specific form input focus colors */
+.salon-dashboard.tier-free .form-input:focus,
+.salon-dashboard.tier-free .message-textarea:focus {
+  border-color: #3b82f6;
+}
+
+.salon-dashboard.tier-pro .form-input:focus,
+.salon-dashboard.tier-pro .message-textarea:focus {
+  border-color: #a855f7;
+}
+
+.salon-dashboard.tier-premium .form-input:focus,
+.salon-dashboard.tier-premium .message-textarea:focus {
+  border-color: #f59e0b;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* Modal Error Message */
+.modal-error-message {
+  background: #fee;
+  color: #c33;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  border-left: 4px solid #c33;
+  font-size: 14px;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Header Actions */
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.profile-btn {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.profile-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+/* Tier-specific profile button colors */
+.salon-dashboard.tier-free .profile-btn {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.salon-dashboard.tier-free .profile-btn:hover {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.salon-dashboard.tier-pro .profile-btn {
+  background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+}
+
+.salon-dashboard.tier-pro .profile-btn:hover {
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+}
+
+.salon-dashboard.tier-premium .profile-btn {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.salon-dashboard.tier-premium .profile-btn:hover {
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+/* Modal Success Message */
+.modal-success-message {
+  background: #d4edda;
+  color: #155724;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  border-left: 4px solid #28a745;
+  font-size: 14px;
+  animation: slideIn 0.3s ease;
+}
+
+/* Upgrade Modal */
+.upgrade-modal {
+  max-width: 500px;
+  text-align: center;
+}
+
+.upgrade-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.upgrade-modal h2 {
+  color: #1f2937;
+  margin: 0 0 12px 0;
+  font-size: 28px;
+}
+
+.upgrade-feature {
+  font-size: 16px;
+  color: #6b7280;
+  margin: 0 0 24px 0;
+}
+
+.upgrade-feature strong {
+  color: #667eea;
+  font-weight: 700;
+}
+
+/* Tier-specific upgrade feature text colors */
+.salon-dashboard.tier-free .upgrade-feature strong {
+  color: #a855f7;
+}
+
+.salon-dashboard.tier-pro .upgrade-feature strong {
+  color: #f59e0b;
+}
+
+.upgrade-benefits {
+  background: #f9fafb;
+  padding: 20px;
+  border-radius: 12px;
+  margin: 24px 0;
+  text-align: left;
+}
+
+.upgrade-benefits h3 {
+  margin: 0 0 12px 0;
+  color: #374151;
+  font-size: 16px;
+}
+
+.upgrade-benefits ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.upgrade-benefits li {
+  padding: 8px 0;
+  color: #4b5563;
+  font-size: 14px;
+}
+
+.upgrade-pricing {
+  margin: 24px 0;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  color: white;
+}
+
+/* Tier-specific upgrade pricing colors */
+.salon-dashboard.tier-free .upgrade-pricing {
+  background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+}
+
+.salon-dashboard.tier-pro .upgrade-pricing {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.price {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+}
+
+.currency {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.amount {
+  font-size: 48px;
+  font-weight: 700;
+}
+
+.period {
+  font-size: 16px;
+  opacity: 0.9;
+}
+
+.btn-upgrade {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 14px 32px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-upgrade:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* Tier-specific upgrade button colors */
+.salon-dashboard.tier-free .btn-upgrade {
+  background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+}
+
+.salon-dashboard.tier-free .btn-upgrade:hover {
+  box-shadow: 0 8px 20px rgba(168, 85, 247, 0.4);
+}
+
+.salon-dashboard.tier-pro .btn-upgrade {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.salon-dashboard.tier-pro .btn-upgrade:hover {
+  box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+}
+
+/* Notification Toast */
+.notification-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 16px 24px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  animation: slideInUp 0.3s ease;
+  z-index: 2000;
+  max-width: 400px;
+}
+
+/* Tier-specific notification toast colors */
+.salon-dashboard.tier-free .notification-toast {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.salon-dashboard.tier-pro .notification-toast {
+  background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+}
+
+.salon-dashboard.tier-premium .notification-toast {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+/* Quick Actions Below Stats - Right Aligned to Services Card */
+.quick-actions-below-stats {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 0 48px;
+  max-width: 1400px;
+  margin: 0 auto 30px;
+}
+
+.quick-action-btn.large {
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 120px;
+}
+
+/* Tier-based color themes for feature buttons */
+.quick-action-btn {
+  position: relative;
+}
+
+/* FREE tier - Blue theme (Bookings, Clients, Services) */
+.quick-actions-bar .quick-action-btn:nth-child(1),
+.quick-actions-bar .quick-action-btn:nth-child(2),
+.quick-actions-bar .quick-action-btn:nth-child(3) {
+  border-color: #3b82f6;
+  color: #1e40af;
+}
+
+.quick-actions-bar .quick-action-btn:nth-child(1):hover,
+.quick-actions-bar .quick-action-btn:nth-child(2):hover,
+.quick-actions-bar .quick-action-btn:nth-child(3):hover {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border-color: #2563eb;
+  transform: translateY(-2px);
+}
+
+/* PRO tier - Purple theme (Communications, Staff, Stock) */
+.quick-actions-bar .quick-action-btn:nth-child(4),
+.quick-actions-bar .quick-action-btn:nth-child(5),
+.quick-actions-bar .quick-action-btn:nth-child(6) {
+  border-color: #a855f7;
+  color: #7c3aed;
+}
+
+.quick-actions-bar .quick-action-btn:nth-child(4):hover,
+.quick-actions-bar .quick-action-btn:nth-child(5):hover,
+.quick-actions-bar .quick-action-btn:nth-child(6):hover {
+  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+  border-color: #9333ea;
+  transform: translateY(-2px);
+}
+
+/* PRO tier locked state */
+.quick-actions-bar .quick-action-btn:nth-child(4).locked,
+.quick-actions-bar .quick-action-btn:nth-child(5).locked,
+.quick-actions-bar .quick-action-btn:nth-child(6).locked {
+  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+  opacity: 0.9;
+}
+
+/* PREMIUM tier - Gold theme (Marketing, Reports) */
+.quick-actions-bar .quick-action-btn:nth-child(7),
+.quick-actions-bar .quick-action-btn:nth-child(8) {
+  border-color: #f59e0b;
+  color: #d97706;
+}
+
+.quick-actions-bar .quick-action-btn:nth-child(7):hover,
+.quick-actions-bar .quick-action-btn:nth-child(8):hover {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border-color: #f59e0b;
+  transform: translateY(-2px);
+}
+
+/* PREMIUM tier locked state */
+.quick-actions-bar .quick-action-btn:nth-child(7).locked,
+.quick-actions-bar .quick-action-btn:nth-child(8).locked {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  opacity: 0.9;
+}
+
+/* Lock icon styling */
+.quick-action-btn.locked {
+  cursor: pointer;
+}
+
+.quick-action-btn.locked:hover {
+  opacity: 1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+
+/* Email/Login Change Confirmation Modal */
+.confirm-change-modal {
+  max-width: 550px;
+}
+
+.warning-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.confirm-change-modal h2 {
+  color: #dc2626;
+  margin: 0 0 12px 0;
+  font-size: 24px;
+}
+
+.warning-message {
+  font-size: 16px;
+  color: #4b5563;
+  margin: 0 0 24px 0;
+  line-height: 1.6;
+}
+
+.warning-message strong {
+  color: #dc2626;
+  font-weight: 700;
+}
+
+.change-details {
+  background: #f9fafb;
+  padding: 20px;
+  border-radius: 12px;
+  margin: 24px 0;
+  border: 2px solid #e5e7eb;
+}
+
+.change-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.change-label {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.change-value {
+  font-size: 15px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+.change-value.old {
+  background: #fee2e2;
+  color: #991b1b;
+  text-decoration: line-through;
+}
+
+.change-value.new {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.change-arrow {
+  text-align: center;
+  font-size: 24px;
+  color: #9ca3af;
+  margin: 8px 0;
+}
+
+.impact-notice {
+  background: #fffbeb;
+  border: 2px solid #fbbf24;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 24px 0;
+  text-align: left;
+}
+
+.impact-notice h3 {
+  margin: 0 0 12px 0;
+  color: #92400e;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.impact-notice ul {
+  margin: 0;
+  padding-left: 20px;
+  list-style: disc;
+}
+
+.impact-notice li {
+  color: #78350f;
+  font-size: 14px;
+  margin: 8px 0;
+  line-height: 1.5;
+}
+
+.impact-notice strong {
+  color: #92400e;
+  font-weight: 700;
+}
+
+.btn-confirm-change {
+  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-confirm-change:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(220, 38, 38, 0.4);
+}
+
+/* Tier-specific confirm button colors */
+.salon-dashboard.tier-free .btn-confirm-change {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.salon-dashboard.tier-free .btn-confirm-change:hover {
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+}
+
+.salon-dashboard.tier-pro .btn-confirm-change {
+  background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+}
+
+.salon-dashboard.tier-pro .btn-confirm-change:hover {
+  box-shadow: 0 8px 20px rgba(168, 85, 247, 0.4);
+}
+
+.salon-dashboard.tier-premium .btn-confirm-change {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+}
+
+.salon-dashboard.tier-premium .btn-confirm-change:hover {
+  box-shadow: 0 8px 20px rgba(245, 158, 11, 0.4);
+}
+
+/* Notification badge for pending items */
+.notification-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #ef4444;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 10px;
+  min-width: 18px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.quick-action-btn {
+  position: relative;
+}
+
+
+/* Stylist name in bookings table */
+.stylist-name {
+  color: #6B7280;
+  font-size: 13px;
+  font-weight: 500;
+}

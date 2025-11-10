@@ -1,0 +1,130 @@
+/* ========================================
+   HAIRVIA UX IMPROVEMENTS - GLOBAL STYLES
+   ======================================== */
+
+/* ===== TIER COLOR SYSTEM (Consistent Across App) ===== */
+:root {
+  --tier-basic: #6B7280;
+  --tier-pro: #3B82F6;
+  --tier-premium: #8B5CF6;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+}
+
+/* ===== TIER BADGES (Universal) ===== */
+.tier-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+.tier-badge.tier-basic,
+.tier-badge.tier-free {
+  background: var(--tier-basic);
+  color: white;
+}
+
+.tier-badge.tier-pro {
+  background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.tier-badge.tier-premium {
+  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+/* ===== BUTTON SIZES (Consistent) ===== */
+.add-btn,
+.new-btn,
+.create-btn {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 8px;
+}
+
+/* ===== ACCESS DENIED MODAL (Smaller, Friendlier) ===== */
+.access-denied-modal {
+  max-width: 460px;
+  padding: 28px;
+}
+
+.access-denied-modal .modal-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.access-denied-modal h2 {
+  font-size: 20px;
+  margin-bottom: 12px;
+}
+
+.access-denied-modal .modal-close-btn {
+  padding: 10px 24px;
+  font-size: 14px;
+  margin-top: 20px;
+}
+
+/* ===== SETTINGS TIER CARDS (Better Hierarchy) ===== */
+.tier-change-grid .action-card {
+  padding: 16px;
+}
+
+.tier-change-grid .action-info h4 {
+  font-size: 15px;
+  margin-bottom: 6px;
+}
+
+.tier-change-grid .action-info p {
+  font-size: 13px;
+  line-height: 1.4;
+  color: #6B7280;
+}
+
+.tier-change-grid .action-btn {
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ===== UPGRADE CARDS (Attractive) ===== */
+.upgrade-card {
+  background: linear-gradient(135deg, #F0FDF4 0%, #ECFDF5 100%);
+  border: 2px solid #86EFAC;
+  position: relative;
+  overflow: hidden;
+}
+
+.upgrade-card::before {
+  content: '⭐';
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 16px;
+  opacity: 0.6;
+}
+
+.upgrade-card:hover {
+  border-color: #4ADE80;
+  box-shadow: 0 4px 12px rgba(74, 222, 128, 0.2);
+  transform: translateY(-2px);
+  transition: all 0.2s;
+}
+
+/* ===== RESPONSIVE IMPROVEMENTS ===== */
+@media (max-width: 768px) {
+  .tier-change-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .access-denied-modal {
+    max-width: 90%;
+    padding: 20px;
+  }
+}

@@ -1,0 +1,262 @@
+/* Scanner Section */
+.scanner-prompt {
+  text-align: center;
+  padding: 40px 20px;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.scanner-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.8;
+}
+
+.scanner-prompt h3 {
+  margin: 0 0 20px 0;
+  color: #111827;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.start-scanner-btn {
+  padding: 14px 32px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.start-scanner-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+}
+
+.scanner-hint {
+  color: #6b7280;
+  font-size: 14px;
+  margin: 16px 0 0 0;
+}
+
+.scanner-error {
+  color: #dc2626;
+  font-size: 13px;
+  margin: 12px 0 0 0;
+}
+
+.scanner-container {
+  position: relative;
+  margin-bottom: 24px;
+}
+
+#barcode-scanner {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.stop-scanner-btn {
+  width: 100%;
+  margin-top: 16px;
+  padding: 12px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.stop-scanner-btn:hover {
+  background: #dc2626;
+}
+
+
+/* Paste Button */
+.paste-btn {
+  padding: 12px 16px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.paste-btn:hover {
+  background: #059669;
+  transform: translateY(-1px);
+}
+
+.scanner-app-hint {
+  text-align: center;
+  color: #6b7280;
+  font-size: 13px;
+  margin: 12px 0 0 0;
+  font-style: italic;
+}
+
+.barcode-input-group {
+  display: flex;
+  gap: 8px;
+}
+
+.barcode-input-group input {
+  flex: 1;
+}
+
+
+/* Quantity Section */
+.quantity-section {
+  margin: 20px 0;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+  border: 2px dashed #d1d5db;
+}
+
+.quantity-section label {
+  display: block;
+  margin-bottom: 8px;
+  color: #374151;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.quantity-input {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+
+.quantity-input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.quantity-hint {
+  margin: 8px 0 0 0;
+  color: #6b7280;
+  font-size: 13px;
+  font-style: italic;
+  text-align: center;
+}
+
+
+/* Multi-Scan Mode */
+.multi-scan-toggle {
+  margin: 16px 0;
+  padding: 12px;
+  background: #eff6ff;
+  border-radius: 8px;
+  border: 2px solid #3b82f6;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e40af;
+}
+
+.toggle-label input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+/* Scanned Items List */
+.scanned-items-list {
+  margin: 20px 0;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 12px;
+  border: 2px solid #10b981;
+}
+
+.scanned-items-list h4 {
+  margin: 0 0 12px 0;
+  color: #065f46;
+  font-size: 16px;
+}
+
+.items-grid {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.scanned-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+}
+
+.item-number {
+  font-weight: 700;
+  color: #6b7280;
+  font-size: 12px;
+  min-width: 30px;
+}
+
+.item-barcode {
+  flex: 1;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  color: #111827;
+}
+
+.remove-item-btn {
+  padding: 4px 8px;
+  background: #fee2e2;
+  color: #dc2626;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.remove-item-btn:hover {
+  background: #fecaca;
+}
+
+.process-batch-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.process-batch-btn:hover {
+  transform: translateY(-2px);
+}
