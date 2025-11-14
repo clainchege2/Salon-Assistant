@@ -178,6 +178,7 @@ exports.login = async (req, res) => {
         role: user.role,
         permissions: user.permissions,
         tenantId: tenant._id,
+        tenantSlug: tenant.slug,
         businessName: tenant.businessName,
         subscriptionTier: tenant.subscriptionTier
       }
@@ -255,11 +256,13 @@ exports.getMe = async (req, res) => {
       permissions: user.permissions,
       status: user.status,
       tenantId: user.tenantId,
+      tenantSlug: tenant.slug,
       businessName: tenant.businessName,
       subscriptionTier: tenant.subscriptionTier,
       tenant: {
         _id: tenant._id,
         businessName: tenant.businessName,
+        slug: tenant.slug,
         subscriptionTier: tenant.subscriptionTier,
         status: tenant.status
       }
