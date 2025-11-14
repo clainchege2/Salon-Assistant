@@ -343,19 +343,21 @@ export default function Settings() {
         >
           👤 My Profile
         </button>
-        <button
-          className={`tab-btn ${activeTab === 'business' ? 'active' : ''}`}
-          onClick={() => setActiveTab('business')}
-        >
-          🏢 Business Settings
-        </button>
         {user?.role === 'owner' && (
-          <button
-            className={`tab-btn ${activeTab === 'account' ? 'active' : ''}`}
-            onClick={() => setActiveTab('account')}
-          >
-            ⚙️ Account Management
-          </button>
+          <>
+            <button
+              className={`tab-btn ${activeTab === 'business' ? 'active' : ''}`}
+              onClick={() => setActiveTab('business')}
+            >
+              🏢 Business Settings
+            </button>
+            <button
+              className={`tab-btn ${activeTab === 'account' ? 'active' : ''}`}
+              onClick={() => setActiveTab('account')}
+            >
+              ⚙️ Account Management
+            </button>
+          </>
         )}
       </div>
 
@@ -421,7 +423,7 @@ export default function Settings() {
         )}
 
         {/* Business Tab */}
-        {activeTab === 'business' && (
+        {activeTab === 'business' && user?.role === 'owner' && (
           <>
             {/* Business Information */}
             <div className="settings-section">

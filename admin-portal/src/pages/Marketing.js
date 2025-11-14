@@ -154,7 +154,7 @@ export default function Marketing() {
       type,
       occasion,
       message: '',
-      targetType: type === 'special' ? 'occasion' : 'all',
+      targetType: occasion === 'birthday' ? 'individual' : (type === 'special' ? 'occasion' : 'all'),
       selectedClients: [],
       selectedSegment: '',
       dayOfWeek: '',

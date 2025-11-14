@@ -27,7 +27,7 @@
     "twilio": "^4.15.0"
   },
   "devDependencies": {
-    "jest": "^29.6.2",
+    "jest": "^30.2.0",
     "nodemon": "^3.0.1"
   },
   "keywords": [

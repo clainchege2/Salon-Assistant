@@ -221,9 +221,9 @@ npm run lint
 ### Testing
 ```bash
 # Login as Premium Owner
-Slug: luxury-hair-demo
 Email: owner@luxuryhair.com
 Password: Password123!
+Slug: luxury-hair-demo
 ```
 
 ---

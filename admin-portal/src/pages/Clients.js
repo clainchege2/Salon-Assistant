@@ -15,6 +15,42 @@ export default function Clients() {
   const [deleteModal, setDeleteModal] = useState({ show: false, client: null });
   const navigate = useNavigate();
 
+  // Check if user can delete clients
+  const canDeleteClients = () => {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) return false;
+    try {
+      const user = JSON.parse(userStr);
+      return user.role === 'owner' || user.permissions?.canDeleteClients === true;
+    } catch {
+      return false;
+    }
+  };
+
+  // Check if user can edit clients
+  const canEditClients = () => {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) return false;
+    try {
+      const user = JSON.parse(userStr);
+      return user.role === 'owner' || user.role === 'manager';
+    } catch {
+      return false;
+    }
+  };
+
+  // Check if user can view client stats and history
+  const canViewClientStats = () => {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) return false;
+    try {
+      const user = JSON.parse(userStr);
+      return user.role === 'owner' || user.role === 'manager';
+    } catch {
+      return false;
+    }
+  };
+
   useEffect(() => {
     fetchClients();
   }, []);
@@ -302,9 +338,13 @@ export default function Clients() {
                 <th>Client</th>
                 <th>Contact</th>
                 <th>Category</th>
-                <th>Visits</th>
-                <th>Total Spent</th>
-                <th>Last Visit</th>
+                {canViewClientStats() && (
+                  <>
+                    <th>Visits</th>
+                    <th>Total Spent</th>
+                    <th>Last Visit</th>
+                  </>
+                )}
                 <th>Actions</th>
               </tr>
             </thead>
@@ -337,14 +377,18 @@ export default function Clients() {
                       {getCategoryIcon(client.category)} {getCategoryDisplayName(client.category)}
                     </span>
                   </td>
-                  <td className="number-cell">{client.totalVisits || 0}</td>
-                  <td className="price-cell">KES {client.totalSpent || 0}</td>
-                  <td>
-                    {client.lastVisit 
-                      ? new Date(client.lastVisit).toLocaleDateString('en-KE', { month: 'short', day: 'numeric', year: 'numeric' })
-                      : '-'
-                    }
-                  </td>
+                  {canViewClientStats() && (
+                    <>
+                      <td className="number-cell">{client.totalVisits || 0}</td>
+                      <td className="price-cell">KES {client.totalSpent || 0}</td>
+                      <td>
+                        {client.lastVisit 
+                          ? new Date(client.lastVisit).toLocaleDateString('en-KE', { month: 'short', day: 'numeric', year: 'numeric' })
+                          : '-'
+                        }
+                      </td>
+                    </>
+                  )}
                   <td>
                     <div className="table-actions">
                       <button className="btn-action book" onClick={() => handleBookAppointment(client)}>
@@ -353,12 +397,16 @@ export default function Clients() {
                       <button className="btn-action view" onClick={() => handleViewClient(client)}>
                         View
                       </button>
-                      <button className="btn-action edit" onClick={() => handleEditClient(client)}>
-                        ✏️
-                      </button>
-                      <button className="btn-action delete" onClick={() => setDeleteModal({ show: true, client })}>
-                        🗑️
-                      </button>
+                      {canEditClients() && (
+                        <button className="btn-action edit" onClick={() => handleEditClient(client)}>
+                          ✏️
+                        </button>
+                      )}
+                      {canDeleteClients() && (
+                        <button className="btn-action delete" onClick={() => setDeleteModal({ show: true, client })}>
+                          🗑️
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -391,24 +439,26 @@ export default function Clients() {
                 </span>
               </div>
 
-              <div className="client-stats">
-                <div className="stat">
-                  <span className="stat-value">{client.totalVisits || 0}</span>
-                  <span className="stat-label">Visits</span>
-                </div>
-                <div className="stat">
-                  <span className="stat-value">KES {client.totalSpent || 0}</span>
-                  <span className="stat-label">Spent</span>
-                </div>
-                {client.lastVisit && (
+              {canViewClientStats() && (
+                <div className="client-stats">
                   <div className="stat">
-                    <span className="stat-value">
-                      {new Date(client.lastVisit).toLocaleDateString('en-KE', { month: 'short', day: 'numeric' })}
-                    </span>
-                    <span className="stat-label">Last Visit</span>
+                    <span className="stat-value">{client.totalVisits || 0}</span>
+                    <span className="stat-label">Visits</span>
                   </div>
-                )}
-              </div>
+                  <div className="stat">
+                    <span className="stat-value">KES {client.totalSpent || 0}</span>
+                    <span className="stat-label">Spent</span>
+                  </div>
+                  {client.lastVisit && (
+                    <div className="stat">
+                      <span className="stat-value">
+                        {new Date(client.lastVisit).toLocaleDateString('en-KE', { month: 'short', day: 'numeric' })}
+                      </span>
+                      <span className="stat-label">Last Visit</span>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {client.preferences?.hairType && (
                 <div className="client-details">
@@ -446,12 +496,16 @@ export default function Clients() {
                 <button className="btn-book" onClick={() => handleBookAppointment(client)}>
                   Book Appointment
                 </button>
-                <button className="btn-edit" onClick={() => handleEditClient(client)}>
-                  Edit
-                </button>
-                <button className="btn-delete" onClick={() => setDeleteModal({ show: true, client })}>
-                  Delete
-                </button>
+                {canEditClients() && (
+                  <button className="btn-edit" onClick={() => handleEditClient(client)}>
+                    Edit
+                  </button>
+                )}
+                {canDeleteClients() && (
+                  <button className="btn-delete" onClick={() => setDeleteModal({ show: true, client })}>
+                    Delete
+                  </button>
+                )}
               </div>
             </div>
           ))}
@@ -474,28 +528,32 @@ export default function Clients() {
                 <p><strong>Email:</strong> {viewModal.client.email || 'N/A'}</p>
                 <p><strong>Category:</strong> <span className="category-badge-small" style={getCategoryStyle(viewModal.client.category)}>{getCategoryIcon(viewModal.client.category)} {getCategoryDisplayName(viewModal.client.category)}</span></p>
               </div>
-              <div className="detail-section">
-                <h3>Statistics</h3>
-                <p><strong>Total Visits:</strong> {viewModal.client.totalVisits || 0}</p>
-                <p><strong>Total Spent:</strong> KES {viewModal.client.totalSpent || 0}</p>
-                <p><strong>Last Visit:</strong> {viewModal.client.lastVisit ? new Date(viewModal.client.lastVisit).toLocaleDateString() : 'Never'}</p>
-              </div>
-              <div className="detail-section">
-                <h3>Booking History</h3>
-                {viewModal.bookings.length === 0 ? (
-                  <p>No booking history</p>
-                ) : (
-                  <div className="booking-history-list">
-                    {viewModal.bookings.map((booking, idx) => (
-                      <div key={idx} className="history-item">
-                        <p><strong>{new Date(booking.scheduledDate).toLocaleDateString()}</strong></p>
-                        <p>{booking.services?.map(s => s.serviceName).join(', ')}</p>
-                        <p>KES {booking.totalPrice} - {booking.status}</p>
-                      </div>
-                    ))}
+              {canViewClientStats() && (
+                <>
+                  <div className="detail-section">
+                    <h3>Statistics</h3>
+                    <p><strong>Total Visits:</strong> {viewModal.client.totalVisits || 0}</p>
+                    <p><strong>Total Spent:</strong> KES {viewModal.client.totalSpent || 0}</p>
+                    <p><strong>Last Visit:</strong> {viewModal.client.lastVisit ? new Date(viewModal.client.lastVisit).toLocaleDateString() : 'Never'}</p>
                   </div>
-                )}
-              </div>
+                  <div className="detail-section">
+                    <h3>Booking History</h3>
+                    {viewModal.bookings.length === 0 ? (
+                      <p>No booking history</p>
+                    ) : (
+                      <div className="booking-history-list">
+                        {viewModal.bookings.map((booking, idx) => (
+                          <div key={idx} className="history-item">
+                            <p><strong>{new Date(booking.scheduledDate).toLocaleDateString()}</strong></p>
+                            <p>{booking.services?.map(s => s.serviceName).join(', ')}</p>
+                            <p>KES {booking.totalPrice} - {booking.status}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
             <div className="modal-footer">
               <button className="btn-secondary" onClick={() => setViewModal({ show: false, client: null, bookings: [] })}>Close</button>

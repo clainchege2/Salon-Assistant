@@ -63,13 +63,8 @@ export default function Services() {
       // Update pending suggestions state
       setPendingSuggestions(suggestions);
       
-      // Combine: pending first, then active services
-      const allServices = [
-        ...suggestions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
-        ...activeServices
-      ];
-      
-      setServices(allServices);
+      // Only show active services in the main list
+      setServices(activeServices);
     } catch (error) {
       console.error('Error fetching services:', error);
     } finally {
@@ -272,9 +267,42 @@ export default function Services() {
       </div>
 
       {/* Show notification badge if there are pending suggestions */}
+      {/* Pending Suggestions Section */}
       {canManageServices() && pendingSuggestions.length > 0 && (
-        <div className="pending-notification">
-          💡 {pendingSuggestions.length} service suggestion{pendingSuggestions.length > 1 ? 's' : ''} pending your review
+        <div className="pending-suggestions-section">
+          <h2>💡 Pending Service Suggestions ({pendingSuggestions.length})</h2>
+          <div className="suggestions-list">
+            {pendingSuggestions.map(suggestion => (
+              <div key={suggestion._id} className="suggestion-card">
+                <div className="suggestion-header">
+                  <h3>{suggestion.name}</h3>
+                  <span className="suggested-by">
+                    Suggested by {suggestion.suggestedBy?.firstName} {suggestion.suggestedBy?.lastName}
+                  </span>
+                </div>
+                <div className="suggestion-details">
+                  <p><strong>Category:</strong> {suggestion.category}</p>
+                  <p><strong>Price:</strong> KES {suggestion.price}</p>
+                  <p><strong>Duration:</strong> {suggestion.duration} mins</p>
+                  {suggestion.description && <p><strong>Description:</strong> {suggestion.description}</p>}
+                </div>
+                <div className="suggestion-actions">
+                  <button 
+                    className="btn-approve"
+                    onClick={() => handleApproveSuggestion(suggestion._id)}
+                  >
+                    ✓ Approve
+                  </button>
+                  <button 
+                    className="btn-reject"
+                    onClick={() => handleRejectSuggestion(suggestion._id)}
+                  >
+                    ✕ Reject
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

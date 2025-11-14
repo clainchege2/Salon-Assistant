@@ -22,12 +22,15 @@ export default function Reports() {
   const [segmentClients, setSegmentClients] = useState([]);
   const [showRfmResult, setShowRfmResult] = useState(false);
   const [rfmResultCount, setRfmResultCount] = useState(0);
+  const [timeRange, setTimeRange] = useState('30'); // days
+  const [categoryModal, setCategoryModal] = useState({ show: false, category: '', clients: [] });
+  const [allClients, setAllClients] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchReports();
     fetchRFMData();
-  }, []);
+  }, [timeRange]);
 
   const fetchReports = async () => {
     try {
@@ -39,8 +42,14 @@ export default function Reports() {
         axios.get('http://localhost:5000/api/v1/clients', config)
       ]);
 
-      const bookings = bookingsRes.data.data || [];
+      const allBookings = bookingsRes.data.data || [];
       const clients = clientsRes.data.data || [];
+      setAllClients(clients); // Store for category modal
+      
+      // Filter bookings by time range
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - parseInt(timeRange));
+      const bookings = allBookings.filter(b => new Date(b.scheduledDate) >= cutoffDate);
 
       const completedBookings = bookings.filter(b => b.status === 'completed');
       const totalRevenue = completedBookings.reduce((sum, b) => sum + (b.totalPrice || 0), 0);
@@ -177,13 +186,31 @@ export default function Reports() {
           ← Back
         </button>
         <h1>📊 Analytics</h1>
-        <button 
-          className="primary-btn"
-          onClick={calculateRFM}
-          disabled={calculating}
-        >
-          {calculating ? 'Calculating...' : '🔄 Calculate RFM'}
-        </button>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <select 
+            value={timeRange} 
+            onChange={(e) => setTimeRange(e.target.value)}
+            style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '14px' }}
+          >
+            <option value="7">Last 7 days</option>
+            <option value="14">Last 2 weeks</option>
+            <option value="30">Last 30 days</option>
+            <option value="60">Last 2 months</option>
+            <option value="90">Last 3 months</option>
+            <option value="180">Last 6 months</option>
+            <option value="365">Last year</option>
+            <option value="730">Last 2 years</option>
+            <option value="1825">Last 5 years</option>
+            <option value="99999">All time</option>
+          </select>
+          <button 
+            className="primary-btn"
+            onClick={calculateRFM}
+            disabled={calculating}
+          >
+            {calculating ? 'Calculating...' : '🔄 Calculate RFM'}
+          </button>
+        </div>
       </div>
 
       {/* Key Metrics */}
@@ -227,9 +254,9 @@ export default function Reports() {
 
       {/* RFM Client Segments */}
       <div className="report-section">
-        <div className="section-header">
-          <h2>📈 RFM Client Segments</h2>
-          <p className="section-subtitle">
+        <div className="section-header" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', marginBottom: '20px' }}>
+          <h2 style={{ margin: '0 0 8px 0' }}>📈 RFM Client Segments</h2>
+          <p className="section-subtitle" style={{ margin: 0, fontSize: '14px', color: '#666', fontWeight: 'normal' }}>
             Recency, Frequency, Monetary analysis of your client base
           </p>
         </div>
@@ -326,7 +353,15 @@ export default function Reports() {
         <h2>👥 Client Distribution</h2>
         <div className="categories-grid">
           {Object.entries(stats.clientCategories).map(([category, count]) => (
-            <div key={category} className="category-card">
+            <div 
+              key={category} 
+              className="category-card"
+              onClick={() => {
+                const categoryClients = allClients.filter(c => c.category === category);
+                setCategoryModal({ show: true, category, clients: categoryClients });
+              }}
+              style={{ cursor: 'pointer' }}
+            >
               <div className="category-icon">
                 {category === 'new' && '✨'}
                 {category === 'vip' && '⭐'}
@@ -431,6 +466,59 @@ export default function Reports() {
                   </table>
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Category Clients Modal */}
+      {categoryModal.show && (
+        <div className="modal-overlay" onClick={() => setCategoryModal({ show: false, category: '', clients: [] })}>
+          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+            <div className="modal-header">
+              <h3>
+                {categoryModal.category === 'new' && '✨ New Clients'}
+                {categoryModal.category === 'vip' && '⭐ VIP Clients'}
+                {categoryModal.category === 'usual' && '👤 Usual Clients'}
+                {categoryModal.category === 'longtime-no-see' && '💤 Long Time No See'}
+              </h3>
+              <button onClick={() => setCategoryModal({ show: false, category: '', clients: [] })}>×</button>
+            </div>
+            <div className="modal-body" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+              <p style={{ marginBottom: '15px', color: '#666' }}>
+                {categoryModal.clients.length} client{categoryModal.clients.length !== 1 ? 's' : ''} in this category
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {categoryModal.clients.map(client => (
+                  <div 
+                    key={client._id} 
+                    style={{ 
+                      padding: '12px', 
+                      background: '#f9fafb', 
+                      borderRadius: '8px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: '600', marginBottom: '4px' }}>
+                        {client.firstName} {client.lastName}
+                      </div>
+                      <div style={{ fontSize: '13px', color: '#666' }}>
+                        {client.phone}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right', fontSize: '13px' }}>
+                      <div style={{ color: '#10b981', fontWeight: '500' }}>
+                        {client.totalVisits || 0} visits
+                      </div>
+                      <div style={{ color: '#666' }}>
+                        Ksh {client.totalSpent || 0}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>

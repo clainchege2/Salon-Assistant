@@ -14,6 +14,8 @@ export default function SalonDashboard() {
   const [user, setUser] = useState(null);
   const [subscriptionTier, setSubscriptionTier] = useState('free');
   const [pendingSuggestionsCount, setPendingSuggestionsCount] = useState(0);
+  const [lowStockCount, setLowStockCount] = useState(0);
+  const [pendingBookingsCount, setPendingBookingsCount] = useState(0);
   const [messageModal, setMessageModal] = useState({
     show: false,
     booking: null,
@@ -141,6 +143,25 @@ export default function SalonDashboard() {
           console.error('Error fetching suggestions:', error);
         }
       }
+
+      // Fetch low stock count for inventory managers
+      if (user?.role === 'owner' || user?.permissions?.canManageInventory) {
+        try {
+          const stockRes = await axios.get('http://localhost:5000/api/v1/materials/low-stock', config);
+          setLowStockCount(stockRes.data.count || 0);
+        } catch (error) {
+          console.error('Error fetching low stock:', error);
+        }
+      }
+
+      // Count pending/upcoming bookings (today and next 7 days)
+      const today = new Date();
+      const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const upcomingBookings = bookingsRes.data.data?.filter(b => {
+        const bookingDate = new Date(b.scheduledDate);
+        return b.status === 'confirmed' && bookingDate >= today && bookingDate <= nextWeek;
+      }) || [];
+      setPendingBookingsCount(upcomingBookings.length);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -392,6 +413,9 @@ export default function SalonDashboard() {
         {/* FREE Features */}
         <button className="quick-action-btn" onClick={() => navigate('/bookings')}>
           📋 Bookings
+          {pendingBookingsCount > 0 && (
+            <span className="notification-badge">{pendingBookingsCount}</span>
+          )}
         </button>
         <button className="quick-action-btn" onClick={() => navigate('/clients')}>
           👥 Clients
@@ -426,6 +450,9 @@ export default function SalonDashboard() {
             onClick={() => navigate('/stock')}
           >
             📦 Stock
+            {lowStockCount > 0 && (
+              <span className="notification-badge">{lowStockCount}</span>
+            )}
           </button>
         )}
 
