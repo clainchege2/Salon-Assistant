@@ -187,7 +187,7 @@ export default function Reports() {
         </button>
         <div className="page-title-wrapper">
           <div className="title-with-icon">
-            <span className="title-icon">📊</span>
+            <span className="title-icon">📈</span>
             <div className="title-content">
               <h1>Analytics & Reports</h1>
               <p className="page-tagline">Insights to drive your salon's success</p>

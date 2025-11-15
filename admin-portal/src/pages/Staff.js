@@ -279,7 +279,7 @@ export default function Staff() {
         </button>
         <div className="page-title-wrapper">
           <div className="title-with-icon">
-            <span className="title-icon">👨‍💼</span>
+            <span className="title-icon">👩🏾‍🦱</span>
             <div className="title-content">
               <h1>Team Management</h1>
               <p className="page-tagline">Empower your team, elevate your salon</p>
