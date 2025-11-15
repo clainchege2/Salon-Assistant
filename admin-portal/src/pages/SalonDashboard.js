@@ -400,11 +400,25 @@ export default function SalonDashboard() {
           <p className="business-name">{user?.businessName}</p>
           <p className="role-badge">{user?.role?.toUpperCase()}</p>
         </div>
-        <div className="header-actions">
-          <button onClick={() => navigate('/settings')} className="profile-btn" title="Settings">
-            ⚙️ Settings
-          </button>
-          <button onClick={handleLogout} className="logout-btn">Logout</button>
+        <div className="header-right">
+          {user?.role === 'owner' && (
+            <div className="tier-badge-container">
+              <span className={`tier-badge-header tier-${subscriptionTier}`}>
+                {subscriptionTier.toUpperCase()}
+              </span>
+            </div>
+          )}
+          <div className="header-actions">
+            {user?.role === 'owner' && subscriptionTier !== 'premium' && (
+              <button onClick={() => navigate('/settings')} className="upgrade-btn-header" title="Upgrade">
+                ✨ Upgrade to {subscriptionTier === 'free' ? 'PRO' : 'PREMIUM'}
+              </button>
+            )}
+            <button onClick={() => navigate('/settings')} className="profile-btn" title="Settings">
+              ⚙️ Settings
+            </button>
+            <button onClick={handleLogout} className="logout-btn">Logout</button>
+          </div>
         </div>
       </header>
 
@@ -412,72 +426,120 @@ export default function SalonDashboard() {
       <div className="quick-actions-bar compact">
         {/* FREE Features */}
         <button className="quick-action-btn" onClick={() => navigate('/bookings')}>
-          📋 Bookings
+          <span className="btn-emoji">📋</span> Bookings
           {pendingBookingsCount > 0 && (
             <span className="notification-badge">{pendingBookingsCount}</span>
           )}
         </button>
         <button className="quick-action-btn" onClick={() => navigate('/clients')}>
-          👥 Clients
+          <span className="btn-emoji">💇🏾‍♀️</span> Clients
         </button>
         <button className="quick-action-btn" onClick={() => navigate('/services')}>
-          ✂️ Services
+          <span className="btn-emoji">💅🏾</span> Services
           {pendingSuggestionsCount > 0 && (
             <span className="notification-badge">{pendingSuggestionsCount}</span>
           )}
         </button>
 
-        {/* PRO Features - Only show if user has access */}
-        {hasFeatureAccess('communications') && (
+        {/* PRO Features - Show with lock icon if owner doesn't have access */}
+        {hasFeatureAccess('communications') ? (
           <button 
             className="quick-action-btn"
             onClick={() => navigate('/communications')}
           >
-            💬 Comms
+            <span className="btn-emoji">💬</span> Comms
+          </button>
+        ) : user?.role === 'owner' && subscriptionTier === 'free' && (
+          <button 
+            className="quick-action-btn locked"
+            onClick={() => showUpgradePrompt('Communications')}
+            title="Upgrade to PRO to unlock"
+          >
+            <span className="btn-emoji">💬</span> Comms
+            <span className="lock-icon">🔒</span>
           </button>
         )}
-        {hasFeatureAccess('staff') && (
+        
+        {hasFeatureAccess('staff') ? (
           <button 
             className="quick-action-btn"
             onClick={() => navigate('/staff')}
           >
-            👨‍💼 Staff
+            <span className="btn-emoji">👨🏿‍💼</span> Staff
+          </button>
+        ) : user?.role === 'owner' && subscriptionTier === 'free' && (
+          <button 
+            className="quick-action-btn locked"
+            onClick={() => showUpgradePrompt('Staff Management')}
+            title="Upgrade to PRO to unlock"
+          >
+            <span className="btn-emoji">👨🏿‍💼</span> Staff
+            <span className="lock-icon">🔒</span>
           </button>
         )}
-        {hasFeatureAccess('stock') && (
+        
+        {hasFeatureAccess('stock') ? (
           <button 
             className="quick-action-btn"
             onClick={() => navigate('/stock')}
           >
-            📦 Stock
+            <span className="btn-emoji">📦</span> Stock
             {lowStockCount > 0 && (
               <span className="notification-badge">{lowStockCount}</span>
             )}
           </button>
+        ) : user?.role === 'owner' && subscriptionTier === 'free' && (
+          <button 
+            className="quick-action-btn locked"
+            onClick={() => showUpgradePrompt('Inventory')}
+            title="Upgrade to PRO to unlock"
+          >
+            <span className="btn-emoji">📦</span> Stock
+            <span className="lock-icon">🔒</span>
+          </button>
         )}
 
-        {/* PREMIUM Features - Only show if user has access */}
-        {hasFeatureAccess('marketing') && (
+        {/* PREMIUM Features - Show with lock icon if owner doesn't have access */}
+        {hasFeatureAccess('marketing') ? (
           <button 
             className="quick-action-btn"
             onClick={() => navigate('/marketing')}
           >
-            📢 Marketing
+            <span className="btn-emoji">📢</span> Marketing
+          </button>
+        ) : user?.role === 'owner' && (subscriptionTier === 'free' || subscriptionTier === 'pro') && (
+          <button 
+            className="quick-action-btn locked premium"
+            onClick={() => showUpgradePrompt('Marketing')}
+            title="Upgrade to PREMIUM to unlock"
+          >
+            <span className="btn-emoji">📢</span> Marketing
+            <span className="lock-icon">🔒</span>
           </button>
         )}
-        {hasFeatureAccess('reports') && (
+        
+        {hasFeatureAccess('reports') ? (
           <button 
             className="quick-action-btn"
             onClick={() => navigate('/reports')}
           >
-            📊 Analytics
+            <span className="btn-emoji">📈</span> Analytics
+          </button>
+        ) : user?.role === 'owner' && (subscriptionTier === 'free' || subscriptionTier === 'pro') && (
+          <button 
+            className="quick-action-btn locked premium"
+            onClick={() => showUpgradePrompt('Reports')}
+            title="Upgrade to PREMIUM to unlock"
+          >
+            <span className="btn-emoji">📈</span> Analytics
+            <span className="lock-icon">🔒</span>
           </button>
         )}
 
         {/* Staff-specific action */}
         {(user?.role === 'staff' || user?.role === 'stylist') && (
           <button className="quick-action-btn" onClick={() => setSuggestionModal({ show: true, serviceName: '', description: '', estimatedPrice: '', estimatedDuration: '' })}>
-            💡 Suggest Service
+            <span className="btn-emoji">💡</span> Suggest Service
           </button>
         )}
       </div>
@@ -494,14 +556,14 @@ export default function SalonDashboard() {
               </div>
             </div>
             <div className="stat-card clickable" onClick={() => navigate('/clients')}>
-              <div className="stat-icon">👥</div>
+              <div className="stat-icon">💇🏾‍♀️</div>
               <div>
                 <h3>Total Clients</h3>
                 <p className="stat-number">{stats.clients}</p>
               </div>
             </div>
             <div className="stat-card clickable" onClick={() => navigate('/services')}>
-              <div className="stat-icon">✂️</div>
+              <div className="stat-icon">💅🏾</div>
               <div>
                 <h3>Services</h3>
                 <p className="stat-number">{stats.services}</p>
@@ -516,10 +578,37 @@ export default function SalonDashboard() {
               <span>New Booking</span>
             </button>
             <button className="quick-action-btn primary large" onClick={() => navigate('/add-client')}>
-              <span className="action-icon">👤</span>
+              <span className="action-icon">💇🏾‍♀️</span>
               <span>New Client</span>
             </button>
           </div>
+
+          {/* Upgrade Nudges - Strategic placement for non-premium owners */}
+          {subscriptionTier === 'free' && (
+            <div className="upgrade-nudge free-tier">
+              <div className="nudge-icon">🚀</div>
+              <div className="nudge-content">
+                <h3>Ready to grow your business?</h3>
+                <p>Upgrade to <strong>PRO</strong> and unlock SMS reminders, staff management, and inventory tracking</p>
+                <button onClick={() => navigate('/settings')} className="nudge-btn">
+                  View PRO Features →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {subscriptionTier === 'pro' && (
+            <div className="upgrade-nudge pro-tier">
+              <div className="nudge-icon">💎</div>
+              <div className="nudge-content">
+                <h3>Take it to the next level</h3>
+                <p>Upgrade to <strong>PREMIUM</strong> for advanced analytics, marketing campaigns, and priority support</p>
+                <button onClick={() => navigate('/settings')} className="nudge-btn">
+                  Discover PREMIUM →
+                </button>
+              </div>
+            </div>
+          )}
         </>
       ) : (
         <div className="stylist-welcome">
@@ -929,37 +1018,84 @@ export default function SalonDashboard() {
       {upgradeModal.show && (
         <div className="modal-overlay" onClick={() => setUpgradeModal({ show: false, feature: '', currentTier: '', nextTier: '' })}>
           <div className="modal-content upgrade-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="upgrade-icon">🔒</div>
-            <h2>Upgrade to {upgradeModal.nextTier === 'pro' ? 'Pro' : 'Premium'}</h2>
-            <p className="upgrade-feature">
-              <strong>{upgradeModal.feature}</strong> is available in the {upgradeModal.nextTier === 'pro' ? 'Pro' : 'Premium'} plan.
-            </p>
+            <div className="upgrade-modal-header">
+              <div className="upgrade-icon">{upgradeModal.nextTier === 'pro' ? '🚀' : '💎'}</div>
+              <h2>Unlock {upgradeModal.feature}</h2>
+              <p className="upgrade-subtitle">
+                Available in <span className={`tier-highlight tier-${upgradeModal.nextTier}`}>
+                  {upgradeModal.nextTier === 'pro' ? 'PRO' : 'PREMIUM'}
+                </span>
+              </p>
+            </div>
             
             <div className="upgrade-benefits">
-              <h3>✨ What you'll get:</h3>
+              <h3>✨ Everything in {upgradeModal.nextTier === 'pro' ? 'PRO' : 'PREMIUM'} includes:</h3>
               {upgradeModal.nextTier === 'pro' ? (
                 <ul>
-                  <li>📦 Stock Management</li>
-                  <li>👥 Staff Management</li>
-                  <li>💬 Communications</li>
+                  <li>
+                    <span className="benefit-icon">📦</span>
+                    <div>
+                      <strong>Stock Management</strong>
+                      <p>Track inventory and get low-stock alerts</p>
+                    </div>
+                  </li>
+                  <li>
+                    <span className="benefit-icon">👥</span>
+                    <div>
+                      <strong>Staff Management</strong>
+                      <p>Add team members with custom permissions</p>
+                    </div>
+                  </li>
+                  <li>
+                    <span className="benefit-icon">💬</span>
+                    <div>
+                      <strong>SMS Communications</strong>
+                      <p>Send automated reminders and confirmations</p>
+                    </div>
+                  </li>
                 </ul>
               ) : (
                 <ul>
-                  <li>📊 Marketing Campaigns & Analytics</li>
-                  <li>📈 Reports & Business Insights</li>
-                  <li>🎯 Advanced Analytics & Forecasting</li>
-                  <li>🤖 AI-Powered Insights</li>
-                  <li>⚡ Priority Support</li>
-                  <li>🔄 Automated Marketing</li>
+                  <li>
+                    <span className="benefit-icon">📊</span>
+                    <div>
+                      <strong>Advanced Analytics</strong>
+                      <p>Deep insights into revenue, trends, and performance</p>
+                    </div>
+                  </li>
+                  <li>
+                    <span className="benefit-icon">📢</span>
+                    <div>
+                      <strong>Marketing Campaigns</strong>
+                      <p>Automated campaigns to bring clients back</p>
+                    </div>
+                  </li>
+                  <li>
+                    <span className="benefit-icon">🎯</span>
+                    <div>
+                      <strong>Client Segmentation</strong>
+                      <p>Target the right clients with personalized offers</p>
+                    </div>
+                  </li>
+                  <li>
+                    <span className="benefit-icon">⚡</span>
+                    <div>
+                      <strong>Priority Support</strong>
+                      <p>Get help faster when you need it</p>
+                    </div>
+                  </li>
                 </ul>
               )}
             </div>
 
             <div className="upgrade-pricing">
-              <div className="price">
-                <span className="currency">KSh</span>
-                <span className="amount">{upgradeModal.nextTier === 'pro' ? '2,500' : '4,500'}</span>
-                <span className="period">/month</span>
+              <div className="price-tag">
+                <div className="price">
+                  <span className="currency">KSh</span>
+                  <span className="amount">{upgradeModal.nextTier === 'pro' ? '2,500' : '4,500'}</span>
+                  <span className="period">/month</span>
+                </div>
+                <p className="price-note">Cancel anytime • No hidden fees</p>
               </div>
             </div>
 
@@ -969,10 +1105,9 @@ export default function SalonDashboard() {
               </button>
               <button className="btn-upgrade" onClick={() => {
                 setUpgradeModal({ show: false, feature: '', currentTier: '', nextTier: '' });
-                setNotification({ show: true, message: '📞 Contact us at support@hairvia.com to upgrade your plan!' });
-                setTimeout(() => setNotification({ show: false, message: '' }), 5000);
+                navigate('/settings');
               }}>
-                🚀 Upgrade Now
+                🚀 Upgrade to {upgradeModal.nextTier === 'pro' ? 'PRO' : 'PREMIUM'}
               </button>
             </div>
           </div>

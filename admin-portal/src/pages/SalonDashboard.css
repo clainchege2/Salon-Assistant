@@ -143,6 +143,14 @@
   letter-spacing: -0.2px;
 }
 
+.header-badges {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+  margin-top: 12px;
+}
+
 .role-badge {
   display: inline-block;
   padding: 4px 12px;
@@ -151,9 +159,106 @@
   border-radius: 20px;
   font-size: 11px;
   font-weight: 600;
-  margin-top: 8px;
   letter-spacing: 0.5px;
   text-transform: uppercase;
+  margin: 0;
+}
+
+.tier-badge-header {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border: 2px solid;
+  margin: 0;
+}
+
+.tier-badge-header.tier-free {
+  background: rgba(59, 130, 246, 0.1);
+  color: #1e40af;
+  border-color: #3b82f6;
+}
+
+.tier-badge-header.tier-pro {
+  background: rgba(168, 85, 247, 0.1);
+  color: #7c3aed;
+  border-color: #a855f7;
+}
+
+.tier-badge-header.tier-premium {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  border-color: #f59e0b;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.tier-badge-container {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.upgrade-btn-header {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+  border: none;
+  border-radius: 980px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: -0.2px;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.upgrade-btn-header:hover {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+  }
+  50% {
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5);
+  }
+}
+
+.profile-btn {
+  padding: 10px 20px;
+  background: white;
+  color: #1d1d1f;
+  border: 1px solid #e5e7eb;
+  border-radius: 980px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: -0.2px;
+}
+
+.profile-btn:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
 }
 
 .logout-btn {
@@ -186,18 +291,25 @@
 .quick-action-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
+  gap: 8px;
+  padding: 10px 16px;
   background: white;
   border: 2px solid rgba(0, 0, 0, 0.08);
   border-radius: 980px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: #1d1d1f;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   letter-spacing: -0.2px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.btn-emoji {
+  font-size: 20px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
 }
 
 .quick-action-btn:hover {
@@ -1870,4 +1982,484 @@ html {
   color: #6B7280;
   font-size: 13px;
   font-weight: 500;
+}
+
+/* ============================================
+   UPGRADE NUDGES - Strategic CTAs
+   ============================================ */
+
+.upgrade-nudge {
+  margin: 32px 0;
+  padding: 24px 28px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid;
+  position: relative;
+  overflow: hidden;
+}
+
+.upgrade-nudge::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.upgrade-nudge:hover::before {
+  opacity: 1;
+}
+
+.upgrade-nudge:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+}
+
+/* Free Tier Nudge - Blue Theme */
+.upgrade-nudge.free-tier {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(37, 99, 235, 0.08) 100%);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.upgrade-nudge.free-tier::before {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(37, 99, 235, 0.12) 100%);
+}
+
+.upgrade-nudge.free-tier:hover {
+  border-color: #3b82f6;
+}
+
+/* Pro Tier Nudge - Purple Theme */
+.upgrade-nudge.pro-tier {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.05) 0%, rgba(147, 51, 234, 0.08) 100%);
+  border-color: rgba(168, 85, 247, 0.3);
+}
+
+.upgrade-nudge.pro-tier::before {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(147, 51, 234, 0.12) 100%);
+}
+
+.upgrade-nudge.pro-tier:hover {
+  border-color: #a855f7;
+}
+
+.nudge-icon {
+  font-size: 48px;
+  flex-shrink: 0;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.nudge-content {
+  flex: 1;
+}
+
+.nudge-content h3 {
+  margin: 0 0 8px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f2937;
+  letter-spacing: -0.3px;
+}
+
+.nudge-content p {
+  margin: 0 0 16px 0;
+  font-size: 15px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.nudge-content p strong {
+  color: #1f2937;
+  font-weight: 700;
+}
+
+.nudge-btn {
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: -0.2px;
+}
+
+.nudge-btn:hover {
+  background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
+  transform: translateX(4px);
+}
+
+.free-tier .nudge-btn {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+.free-tier .nudge-btn:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+}
+
+.pro-tier .nudge-btn {
+  background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+}
+
+.pro-tier .nudge-btn:hover {
+  background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%);
+}
+
+/* Responsive Nudges */
+@media (max-width: 768px) {
+  .upgrade-nudge {
+    flex-direction: column;
+    text-align: center;
+    padding: 20px;
+    gap: 16px;
+  }
+
+  .nudge-icon {
+    font-size: 40px;
+  }
+
+  .nudge-content h3 {
+    font-size: 18px;
+  }
+
+  .nudge-content p {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .upgrade-nudge {
+    padding: 16px;
+    margin: 20px 0;
+  }
+
+  .nudge-icon {
+    font-size: 36px;
+  }
+
+  .nudge-content h3 {
+    font-size: 16px;
+  }
+
+  .nudge-content p {
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+
+  .nudge-btn {
+    width: 100%;
+    padding: 12px 20px;
+  }
+}
+
+/* ============================================
+   LOCKED FEATURES - Upgrade Indicators
+   ============================================ */
+
+.quick-action-btn.locked {
+  position: relative;
+  opacity: 0.7;
+  background: linear-gradient(135deg, rgba(107, 114, 128, 0.1) 0%, rgba(156, 163, 175, 0.15) 100%);
+  border: 2px dashed rgba(107, 114, 128, 0.3);
+  cursor: pointer;
+}
+
+.quick-action-btn.locked:hover {
+  opacity: 1;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.15) 100%);
+  border-color: #3b82f6;
+  transform: translateY(-2px);
+}
+
+.quick-action-btn.locked.premium:hover {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.15) 100%);
+  border-color: #f59e0b;
+}
+
+.lock-icon {
+  font-size: 12px;
+  margin-left: 4px;
+  opacity: 0.8;
+}
+
+.quick-action-btn.locked:hover .lock-icon {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+
+/* ============================================
+   UPGRADE MODAL - Enhanced Design
+   ============================================ */
+
+.upgrade-modal {
+  max-width: 560px !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.upgrade-modal-header {
+  text-align: center;
+  padding: 40px 32px 24px;
+  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.upgrade-modal .upgrade-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.upgrade-modal h2 {
+  margin: 0 0 8px 0;
+  font-size: 28px;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -0.5px;
+}
+
+.upgrade-subtitle {
+  margin: 0;
+  font-size: 16px;
+  color: #6b7280;
+}
+
+.tier-highlight {
+  display: inline-block;
+  padding: 2px 12px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+}
+
+.tier-highlight.tier-pro {
+  background: linear-gradient(135deg, #a855f7 0%, #9333ea 100%);
+  color: white;
+}
+
+.tier-highlight.tier-premium {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: white;
+}
+
+.upgrade-benefits {
+  padding: 32px;
+}
+
+.upgrade-benefits h3 {
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #374151;
+}
+
+.upgrade-benefits ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.upgrade-benefits li {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  margin-bottom: 12px;
+  background: #f9fafb;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.upgrade-benefits li:hover {
+  background: #f3f4f6;
+  transform: translateX(4px);
+}
+
+.benefit-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.upgrade-benefits li div {
+  flex: 1;
+}
+
+.upgrade-benefits li strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.upgrade-benefits li p {
+  margin: 0;
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.upgrade-pricing {
+  padding: 24px 32px;
+  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.price-tag {
+  text-align: center;
+}
+
+.price {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.price .currency {
+  font-size: 20px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.price .amount {
+  font-size: 48px;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -1px;
+}
+
+.price .period {
+  font-size: 18px;
+  font-weight: 500;
+  color: #9ca3af;
+}
+
+.price-note {
+  margin: 0;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.upgrade-modal .modal-actions {
+  padding: 24px 32px;
+  gap: 12px;
+}
+
+.upgrade-modal .btn-upgrade {
+  flex: 2;
+  padding: 14px 28px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+}
+
+.upgrade-modal .btn-upgrade:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
+}
+
+.upgrade-modal .btn-cancel {
+  flex: 1;
+  padding: 14px 20px;
+  background: white;
+  color: #6b7280;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.upgrade-modal .btn-cancel:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  color: #374151;
+}
+
+/* Responsive Upgrade Modal */
+@media (max-width: 768px) {
+  .upgrade-modal {
+    max-width: 90% !important;
+  }
+
+  .upgrade-modal-header {
+    padding: 32px 24px 20px;
+  }
+
+  .upgrade-modal .upgrade-icon {
+    font-size: 52px;
+  }
+
+  .upgrade-modal h2 {
+    font-size: 24px;
+  }
+
+  .upgrade-benefits {
+    padding: 24px 20px;
+  }
+
+  .upgrade-benefits li {
+    padding: 12px;
+  }
+
+  .benefit-icon {
+    font-size: 24px;
+  }
+
+  .price .amount {
+    font-size: 40px;
+  }
+
+  .upgrade-modal .modal-actions {
+    flex-direction: column;
+    padding: 20px 24px;
+  }
+
+  .upgrade-modal .btn-upgrade,
+  .upgrade-modal .btn-cancel {
+    width: 100%;
+  }
 }

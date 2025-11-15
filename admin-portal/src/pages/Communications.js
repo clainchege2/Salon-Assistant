@@ -329,16 +329,6 @@ export default function Communications() {
             </div>
           </div>
         </div>
-        {isLocked && (
-          <div className="tier-badge locked">
-            🔒 PRO Feature
-          </div>
-        )}
-        {!isLocked && (
-          <div className={`tier-badge unlocked tier-${userTier}`}>
-            ✓ {userTier.toUpperCase()}
-          </div>
-        )}
       </div>
 
       {isLocked && (
