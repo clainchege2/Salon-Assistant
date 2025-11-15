@@ -1,7 +1,54 @@
+/* Import Global Responsive Styles */
+@import '../styles/Responsive.css';
+
 .reports-page {
   min-height: 100vh;
   background: #f5f7fa;
   padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Page Title Wrapper */
+.page-title-wrapper {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 0 20px;
+}
+
+.title-with-icon {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.title-icon {
+  font-size: 28px;
+  line-height: 1.2;
+}
+
+.title-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.title-content h1 {
+  color: #111827;
+  margin: 0 0 4px 0;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.page-tagline {
+  color: #6b7280;
+  font-size: 14px;
+  margin: 0;
+  font-weight: 400;
+  font-style: italic;
+  text-align: left;
 }
 
 .metrics-grid {
