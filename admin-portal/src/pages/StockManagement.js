@@ -9,6 +9,7 @@ export default function StockManagement() {
   const [materials, setMaterials] = useState([]);
   const [lowStockItems, setLowStockItems] = useState([]);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(null);
   const [showRestockForm, setShowRestockForm] = useState(null);
   const [showScanModal, setShowScanModal] = useState(false);
   const [scanMode, setScanMode] = useState('in'); // 'in' or 'out'
@@ -24,12 +25,44 @@ export default function StockManagement() {
   const scannerRef = useRef(null);
   const navigate = useNavigate();
 
+  // Check if user can manage stock limits and settings (owner/manager only)
+  const canManageStockSettings = () => {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) return false;
+    try {
+      const user = JSON.parse(userStr);
+      return user.role === 'owner' || user.permissions?.canManageInventory === true;
+    } catch {
+      return false;
+    }
+  };
+
+  // Get current user info for logging
+  const getCurrentUser = () => {
+    const userStr = localStorage.getItem('user');
+    if (!userStr) return null;
+    try {
+      return JSON.parse(userStr);
+    } catch {
+      return null;
+    }
+  };
+
   const [formData, setFormData] = useState({
     name: '',
     category: 'hair-extensions',
     unit: 'packs',
     currentStock: 0,
     minimumStock: 5,
+    costPerUnit: 0,
+    supplier: ''
+  });
+
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    category: '',
+    unit: '',
+    minimumStock: 0,
     costPerUnit: 0,
     supplier: ''
   });
@@ -68,10 +101,36 @@ export default function StockManagement() {
     e.preventDefault();
     try {
       const token = localStorage.getItem('adminToken');
-      await axios.post('http://localhost:5000/api/v1/materials', formData, {
+      const user = getCurrentUser();
+      
+      // Prepare material data
+      const materialData = {
+        name: formData.name,
+        category: formData.category,
+        unit: formData.unit,
+        currentStock: parseInt(formData.currentStock) || 0,
+        costPerUnit: parseFloat(formData.costPerUnit) || 0,
+        supplier: formData.supplier || '',
+        addedBy: {
+          userId: user?.id,
+          name: `${user?.firstName} ${user?.lastName}`,
+          role: user?.role
+        },
+        addedAt: new Date().toISOString()
+      };
+
+      // Only include minimumStock if user has permission
+      if (canManageStockSettings()) {
+        materialData.minimumStock = parseInt(formData.minimumStock) || 5;
+      }
+      
+      console.log('Sending material data:', materialData);
+      
+      await axios.post('http://localhost:5000/api/v1/materials', materialData, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
+      alert('✓ Material added successfully!');
       setShowAddForm(false);
       setFormData({
         name: '',
@@ -84,7 +143,10 @@ export default function StockManagement() {
       });
       fetchMaterials();
     } catch (error) {
-      alert('Failed to add material');
+      console.error('Add material error:', error);
+      console.error('Error response:', error.response?.data);
+      const errorMsg = error.response?.data?.message || error.message || 'Failed to add material';
+      alert(`Failed to add material: ${errorMsg}`);
     }
   };
 
@@ -112,6 +174,81 @@ export default function StockManagement() {
     }
   };
 
+  const handleEditMaterial = (material) => {
+    setEditFormData({
+      name: material.name,
+      category: material.category,
+      unit: material.unit,
+      minimumStock: material.minimumStock,
+      costPerUnit: material.costPerUnit || 0,
+      supplier: material.supplier || ''
+    });
+    setShowEditForm(material._id);
+  };
+
+  const handleUpdateMaterial = async (e) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('adminToken');
+      const user = getCurrentUser();
+      
+      // Prepare update data with user info
+      const updateData = {
+        name: editFormData.name,
+        category: editFormData.category,
+        unit: editFormData.unit,
+        costPerUnit: editFormData.costPerUnit,
+        supplier: editFormData.supplier,
+        lastModifiedBy: {
+          userId: user?.id,
+          name: `${user?.firstName} ${user?.lastName}`,
+          role: user?.role
+        },
+        lastModifiedAt: new Date().toISOString()
+      };
+
+      // Only include minimumStock if user has permission
+      if (canManageStockSettings()) {
+        updateData.minimumStock = editFormData.minimumStock;
+      }
+
+      await axios.put(
+        `http://localhost:5000/api/v1/materials/${showEditForm}`,
+        updateData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      alert('✓ Material updated successfully!');
+      setShowEditForm(null);
+      fetchMaterials();
+    } catch (error) {
+      console.error('Update error:', error);
+      alert(`Failed to update material: ${error.response?.data?.message || error.message}`);
+    }
+  };
+
+  const handleDeleteMaterial = async (materialId, materialName) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${materialName}"?\n\nThis action cannot be undone.`
+    );
+    
+    if (!confirmed) return;
+
+    try {
+      const token = localStorage.getItem('adminToken');
+      await axios.delete(
+        `http://localhost:5000/api/v1/materials/${materialId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      alert('✓ Material deleted successfully!');
+      fetchMaterials();
+    } catch (error) {
+      console.error('Delete error:', error);
+      alert(`Failed to delete material: ${error.response?.data?.message || error.message}`);
+    }
+  };
+
   const startScanner = async () => {
     console.log('🎥 Starting barcode scanner');
     setCameraError(null);
@@ -131,16 +268,20 @@ export default function StockManagement() {
         console.error('❌ Camera permission error:', permError);
         
         if (permError.name === 'NotAllowedError') {
-          setCameraError('Camera permission denied. Please click the camera icon in your address bar and allow camera access.');
+          setCameraError('🚫 Camera permission denied. Click the camera icon 📷 in your browser address bar and select "Allow". Then try again.');
           return;
         } else if (permError.name === 'NotFoundError') {
-          setCameraError('No camera found on this device.');
+          setCameraError('📷 No camera found. Please connect a webcam or use the manual input field below to type/paste barcodes.');
           return;
         } else if (permError.name === 'NotReadableError') {
-          setCameraError('Camera is in use by another application. Please close Tobii or other camera apps.');
+          setCameraError('⚠️ Camera is busy. Close other apps using the camera (Zoom, Teams, Skype, etc.) and try again.');
+          return;
+        } else if (permError.name === 'NotSupportedError') {
+          setCameraError('🔒 Camera not supported. Make sure you\'re using HTTPS or localhost. Use manual input instead.');
           return;
         } else {
-          throw permError;
+          setCameraError(`❌ Camera error: ${permError.message}. Try using manual input below.`);
+          return;
         }
       }
 
@@ -199,6 +340,42 @@ export default function StockManagement() {
       scanner.render(
         (decodedText) => {
           console.log('✅ Barcode scanned:', decodedText);
+          
+          // Visual feedback - flash green
+          const scannerElement = document.getElementById('barcode-scanner');
+          if (scannerElement) {
+            scannerElement.style.border = '4px solid #10b981';
+            scannerElement.style.boxShadow = '0 0 20px #10b981';
+            setTimeout(() => {
+              scannerElement.style.border = '';
+              scannerElement.style.boxShadow = '';
+            }, 1000);
+          }
+          
+          // Audio feedback (beep sound)
+          try {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.1);
+          } catch (e) {
+            console.log('Audio feedback not available');
+          }
+          
+          // Haptic feedback (vibration on mobile)
+          if (navigator.vibrate) {
+            navigator.vibrate(200);
+          }
+          
+          // Show success message
+          alert(`✅ Barcode captured: ${decodedText}`);
+          
           setScannedBarcode(decodedText);
           handleScanBarcode(decodedText);
           scanner.clear().catch(err => console.log('Clear error:', err));
@@ -494,12 +671,20 @@ export default function StockManagement() {
               )}
             </div>
 
-            <button 
-              onClick={() => setShowRestockForm(material._id)} 
-              className="restock-btn"
-            >
-              Restock
-            </button>
+            <div className="material-actions">
+              <button 
+                onClick={() => setShowRestockForm(material._id)} 
+                className="restock-btn"
+              >
+                Restock
+              </button>
+              <button 
+                onClick={() => handleEditMaterial(material)} 
+                className="edit-btn"
+              >
+                ✏️ Edit
+              </button>
+            </div>
 
             {showRestockForm === material._id && (
               <div className="restock-form">
@@ -570,7 +755,7 @@ export default function StockManagement() {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label>Current Stock *</label>
+                  <label>Quantity *</label>
                   <input
                     type="number"
                     value={formData.currentStock}
@@ -580,16 +765,19 @@ export default function StockManagement() {
                   />
                 </div>
 
-                <div className="form-group">
-                  <label>Minimum Stock *</label>
-                  <input
-                    type="number"
-                    value={formData.minimumStock}
-                    onChange={(e) => setFormData({ ...formData, minimumStock: e.target.value })}
-                    min="0"
-                    required
-                  />
-                </div>
+                {canManageStockSettings() && (
+                  <div className="form-group">
+                    <label>Minimum Stock Alert</label>
+                    <input
+                      type="number"
+                      value={formData.minimumStock}
+                      onChange={(e) => setFormData({ ...formData, minimumStock: e.target.value })}
+                      min="0"
+                      placeholder="Optional"
+                    />
+                    <small style={{ color: '#666', fontSize: '11px' }}>Alert when stock falls below this</small>
+                  </div>
+                )}
               </div>
 
               <div className="form-row">
@@ -622,6 +810,107 @@ export default function StockManagement() {
         </div>
       )}
 
+      {showEditForm && (
+        <div className="modal-overlay" onClick={() => setShowEditForm(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Edit Material</h2>
+            <form onSubmit={handleUpdateMaterial}>
+              <div className="form-group">
+                <label>Material Name *</label>
+                <input
+                  type="text"
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Category *</label>
+                  <select
+                    value={editFormData.category}
+                    onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value })}
+                  >
+                    <option value="hair-extensions">Hair Extensions</option>
+                    <option value="chemicals">Chemicals</option>
+                    <option value="tools">Tools</option>
+                    <option value="accessories">Accessories</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label>Unit *</label>
+                  <select
+                    value={editFormData.unit}
+                    onChange={(e) => setEditFormData({ ...editFormData, unit: e.target.value })}
+                  >
+                    <option value="pieces">Pieces</option>
+                    <option value="grams">Grams</option>
+                    <option value="ml">ML</option>
+                    <option value="bottles">Bottles</option>
+                    <option value="packs">Packs</option>
+                  </select>
+                </div>
+              </div>
+
+              {canManageStockSettings() && (
+                <div className="form-group">
+                  <label>Minimum Stock Alert</label>
+                  <input
+                    type="number"
+                    value={editFormData.minimumStock}
+                    onChange={(e) => setEditFormData({ ...editFormData, minimumStock: e.target.value })}
+                    min="0"
+                  />
+                  <small style={{ color: '#666', fontSize: '11px' }}>Alert when stock falls below this (Owner/Manager only)</small>
+                </div>
+              )}
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Cost Per Unit</label>
+                  <input
+                    type="number"
+                    value={editFormData.costPerUnit}
+                    onChange={(e) => setEditFormData({ ...editFormData, costPerUnit: e.target.value })}
+                    min="0"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Supplier</label>
+                  <input
+                    type="text"
+                    value={editFormData.supplier}
+                    onChange={(e) => setEditFormData({ ...editFormData, supplier: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="form-actions">
+                <button type="submit">Update Material</button>
+                <button type="button" onClick={() => setShowEditForm(null)}>Cancel</button>
+                {canManageStockSettings() && (
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      const material = materials.find(m => m._id === showEditForm);
+                      handleDeleteMaterial(showEditForm, material?.name);
+                    }}
+                    className="delete-btn"
+                    style={{ marginLeft: 'auto', background: '#ef4444' }}
+                  >
+                    Delete
+                  </button>
+                )}
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {showScanModal && (
         <div className="modal-overlay" onClick={closeScanModal}>
           <div className="modal-content scan-modal" onClick={(e) => e.stopPropagation()}>
@@ -641,7 +930,21 @@ export default function StockManagement() {
                   </button>
                   <p className="scanner-hint">Or enter barcode manually below</p>
                   {cameraError && (
-                    <p className="scanner-error">{cameraError}</p>
+                    <div style={{ background: '#fee2e2', border: '1px solid #ef4444', borderRadius: '8px', padding: '15px', marginTop: '15px' }}>
+                      <p className="scanner-error" style={{ color: '#dc2626', fontWeight: '600', marginBottom: '10px' }}>
+                        {cameraError}
+                      </p>
+                      <div style={{ fontSize: '13px', color: '#666', marginTop: '10px' }}>
+                        <p style={{ fontWeight: '600', marginBottom: '5px' }}>💡 Troubleshooting Tips:</p>
+                        <ul style={{ marginLeft: '20px', lineHeight: '1.6' }}>
+                          <li>Make sure you're using <strong>Chrome, Edge, or Safari</strong></li>
+                          <li>Check if camera is working in other apps</li>
+                          <li>Try refreshing the page (F5)</li>
+                          <li>Use <strong>manual input below</strong> - type or paste barcode</li>
+                          <li>Use a USB barcode scanner (works like a keyboard)</li>
+                        </ul>
+                      </div>
+                    </div>
                   )}
                 </div>
               ) : (
@@ -818,7 +1121,14 @@ export default function StockManagement() {
                       <p className="barcode-display">Barcode: <strong>{scannedBarcode}</strong></p>
                       <select 
                         value={selectedMaterial || ''} 
-                        onChange={(e) => setSelectedMaterial(e.target.value)}
+                        onChange={(e) => {
+                          if (e.target.value === 'ADD_NEW') {
+                            setShowAddForm(true);
+                            setShowScanModal(false);
+                          } else {
+                            setSelectedMaterial(e.target.value);
+                          }
+                        }}
                         className="material-select"
                       >
                         <option value="">-- Select Material --</option>
@@ -827,7 +1137,15 @@ export default function StockManagement() {
                             {mat.name} ({mat.category})
                           </option>
                         ))}
+                        <option value="ADD_NEW" style={{ background: '#f0fdf4', color: '#16a34a', fontWeight: 'bold' }}>
+                          ➕ Add New Material
+                        </option>
                       </select>
+                      {!selectedMaterial && (
+                        <p style={{ fontSize: '12px', color: '#666', marginTop: '8px' }}>
+                          💡 Don't see your material? Select "Add New Material"
+                        </p>
+                      )}
                       
                       <div className="quantity-section">
                         <label>Quantity (same barcode)</label>

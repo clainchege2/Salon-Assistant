@@ -37,6 +37,18 @@ const materialSchema = new mongoose.Schema({
   costPerUnit: Number,
   supplier: String,
   lastRestocked: Date,
+  addedBy: {
+    userId: mongoose.Schema.Types.ObjectId,
+    name: String,
+    role: String
+  },
+  addedAt: Date,
+  lastModifiedBy: {
+    userId: mongoose.Schema.Types.ObjectId,
+    name: String,
+    role: String
+  },
+  lastModifiedAt: Date,
   usageHistory: [{
     bookingId: {
       type: mongoose.Schema.Types.ObjectId,

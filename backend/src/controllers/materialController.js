@@ -80,6 +80,19 @@ exports.createMaterial = async (req, res) => {
 
 exports.updateMaterial = async (req, res) => {
   try {
+    // Check if user is trying to update minimumStock
+    if (req.body.minimumStock !== undefined) {
+      // Only owners and users with canManageInventory permission can update minimumStock
+      const canManageSettings = req.user.role === 'owner' || req.user.permissions?.canManageInventory === true;
+      
+      if (!canManageSettings) {
+        return res.status(403).json({
+          success: false,
+          message: 'Only owners and managers can update minimum stock levels'
+        });
+      }
+    }
+
     const material = await Material.findOneAndUpdate(
       { _id: req.params.id, tenantId: req.tenantId },
       req.body,
@@ -92,6 +105,8 @@ exports.updateMaterial = async (req, res) => {
         message: 'Material not found'
       });
     }
+
+    logger.info(`Material updated: ${material._id} by user ${req.user._id} (${req.user.role})`);
 
     res.json({
       success: true,

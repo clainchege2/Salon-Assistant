@@ -155,8 +155,14 @@
   color: #333;
 }
 
+.material-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
 .restock-btn {
-  width: 100%;
+  flex: 1;
   padding: 10px;
   background: #10b981;
   color: white;
@@ -170,6 +176,39 @@
 
 .restock-btn:hover {
   background: #059669;
+}
+
+.edit-btn {
+  flex: 1;
+  padding: 10px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.edit-btn:hover {
+  background: #5568d3;
+}
+
+.delete-btn {
+  padding: 10px 20px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.delete-btn:hover {
+  background: #dc2626;
 }
 
 .restock-form {

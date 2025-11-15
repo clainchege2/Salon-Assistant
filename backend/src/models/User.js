@@ -70,6 +70,11 @@ userSchema.index({ tenantId: 1, role: 1 });
 
 // Auto-set permissions based on role
 userSchema.pre('save', async function(next) {
+  // Hash password if modified
+  if (this.isModified('password')) {
+    this.password = await bcrypt.hash(this.password, 12);
+  }
+
   // Set permissions on role change OR on new user creation
   if (this.isModified('role') || this.isNew) {
     if (this.role === 'owner') {
@@ -84,21 +89,21 @@ userSchema.pre('save', async function(next) {
         canViewReports: true
       };
     } else if (this.role === 'manager' || this.role === 'stylist') {
-      this.permissions = {
-        canViewCommunications: false,
-        canViewMarketing: false,
-        canDeleteBookings: false,
-        canDeleteClients: false,
-        canManageStaff: false,
-        canManageServices: false,
-        canManageInventory: false,
-        canViewReports: false
-      };
+      // Don't override existing permissions for managers/stylists
+      // Only set defaults if permissions don't exist
+      if (!this.permissions || Object.keys(this.permissions).length === 0) {
+        this.permissions = {
+          canViewCommunications: false,
+          canViewMarketing: false,
+          canDeleteBookings: false,
+          canDeleteClients: false,
+          canManageStaff: false,
+          canManageServices: false,
+          canManageInventory: false,
+          canViewReports: false
+        };
+      }
     }
-  }
-
-  if (this.isModified('password')) {
-    this.password = await bcrypt.hash(this.password, 12);
   }
   
   next();

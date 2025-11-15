@@ -20,7 +20,7 @@ exports.protect = async (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    const user = await User.findById(decoded.id).select('+password');
+    const user = await User.findById(decoded.id);
     
     if (!user || user.status !== 'active') {
       return res.status(401).json({
@@ -109,18 +109,23 @@ exports.checkTierAndPermission = (requiredTier, permission) => {
       // Tier check passed, now check user permission
       // Owner always has access
       if (req.user.role === 'owner') {
+        logger.info(`Owner access granted for ${permission}`);
         return next();
       }
 
       // Check if user has the specific permission granted by owner
       if (req.user.permissions && req.user.permissions[permission]) {
+        logger.info(`Permission ${permission} granted for user ${req.user._id}`);
         return next();
       }
 
+      logger.warn(`Permission denied: User ${req.user._id} (${req.user.role}) lacks ${permission}`);
       return res.status(403).json({
         success: false,
         message: 'You do not have permission to access this feature. Contact your salon owner.',
-        permissionRequired: permission
+        permissionRequired: permission,
+        userRole: req.user.role,
+        userPermissions: req.user.permissions
       });
 
     } catch (error) {

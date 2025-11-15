@@ -192,6 +192,54 @@ exports.login = async (req, res) => {
   }
 };
 
+exports.fixMyPermissions = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Force update permissions based on role
+    if (user.role === 'owner') {
+      user.permissions = {
+        canViewCommunications: true,
+        canViewMarketing: true,
+        canDeleteBookings: true,
+        canDeleteClients: true,
+        canManageStaff: true,
+        canManageServices: true,
+        canManageInventory: true,
+        canViewReports: true
+      };
+      await user.save({ validateBeforeSave: false });
+      
+      logger.info(`Permissions fixed for owner: ${user._id}`);
+      
+      return res.json({
+        success: true,
+        message: 'Permissions updated successfully',
+        permissions: user.permissions
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'No changes needed',
+      permissions: user.permissions
+    });
+  } catch (error) {
+    logger.error(`Fix permissions error: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
 exports.refreshToken = async (req, res) => {
   try {
     const { refreshToken } = req.body;
