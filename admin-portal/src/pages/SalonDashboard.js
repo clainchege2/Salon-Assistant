@@ -75,10 +75,10 @@ export default function SalonDashboard() {
       const response = await axios.get('http://localhost:5000/api/v1/auth/me', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       const freshUserData = response.data.data;
       console.log('Fresh user data:', freshUserData);
-      
+
       // Update localStorage with fresh data
       localStorage.setItem('user', JSON.stringify(freshUserData));
       setUser(freshUserData);
@@ -93,12 +93,12 @@ export default function SalonDashboard() {
   const fetchTenantInfo = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      
+
       // Fetch tenant details to get subscription tier
       const response = await axios.get('http://localhost:5000/api/v1/tenants/me', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       const tier = response.data.data?.subscriptionTier || 'free';
       console.log('🎯 Tenant info:', {
         businessName: response.data.data?.businessName,
@@ -223,7 +223,7 @@ export default function SalonDashboard() {
   const performProfileUpdate = async (changes) => {
     try {
       const token = localStorage.getItem('adminToken');
-      
+
       const response = await axios.put(
         `http://localhost:5000/api/v1/admin/staff/${user.id}`,
         changes,
@@ -273,7 +273,7 @@ export default function SalonDashboard() {
 
   const handleSendMessage = async () => {
     const { booking, action, message } = messageModal;
-    
+
     const templateTypes = {
       confirm: 'confirmation',
       remind: 'reminder',
@@ -292,7 +292,7 @@ export default function SalonDashboard() {
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
       setMessageModal({ show: false, booking: null, action: null, message: '' });
       alert(`✅ Message sent to ${booking.clientId?.firstName}!`);
       fetchData();
@@ -325,7 +325,7 @@ export default function SalonDashboard() {
         { note },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
       setNoteModal({ show: false, booking: null, note: '' });
       alert(`✅ Note saved for ${booking.clientId?.firstName}!`);
     } catch (error) {
@@ -351,13 +351,13 @@ export default function SalonDashboard() {
       basic: ['bookings', 'clients', 'services', 'settings', 'communications', 'stock', 'staff'],
       premium: ['bookings', 'clients', 'services', 'settings', 'communications', 'stock', 'staff', 'marketing', 'reports']
     };
-    
+
     const hasTierAccess = tierFeatures[subscriptionTier]?.includes(feature) || false;
     if (!hasTierAccess) return false;
-    
+
     // Check user role permissions
     if (user?.role === 'owner') return true;
-    
+
     // Staff need specific permissions for admin features
     if (user?.role === 'staff' || user?.role === 'stylist') {
       if (feature === 'staff') return user?.permissions?.canManageStaff === true;
@@ -369,7 +369,7 @@ export default function SalonDashboard() {
       if (['bookings', 'clients', 'services', 'settings'].includes(feature)) return true;
       return false;
     }
-    
+
     return hasTierAccess;
   };
 
@@ -410,7 +410,7 @@ export default function SalonDashboard() {
           )}
           <div className="header-actions">
             {user?.role === 'owner' && subscriptionTier !== 'premium' && (
-              <button onClick={() => navigate('/settings')} className="upgrade-btn-header" title="Upgrade">
+              <button onClick={() => navigate('/settings?tab=account')} className="upgrade-btn-header" title="Upgrade">
                 ✨ Upgrade to {subscriptionTier === 'free' ? 'PRO' : 'PREMIUM'}
               </button>
             )}
@@ -443,14 +443,14 @@ export default function SalonDashboard() {
 
         {/* PRO Features - Show with lock icon if owner doesn't have access */}
         {hasFeatureAccess('communications') ? (
-          <button 
+          <button
             className="quick-action-btn"
             onClick={() => navigate('/communications')}
           >
             <span className="btn-emoji">💬</span> Comms
           </button>
         ) : user?.role === 'owner' && subscriptionTier === 'free' && (
-          <button 
+          <button
             className="quick-action-btn locked"
             onClick={() => showUpgradePrompt('Communications')}
             title="Upgrade to PRO to unlock"
@@ -459,16 +459,16 @@ export default function SalonDashboard() {
             <span className="lock-icon">🔒</span>
           </button>
         )}
-        
+
         {hasFeatureAccess('staff') ? (
-          <button 
+          <button
             className="quick-action-btn"
             onClick={() => navigate('/staff')}
           >
             <span className="btn-emoji">👨🏿‍💼</span> Staff
           </button>
         ) : user?.role === 'owner' && subscriptionTier === 'free' && (
-          <button 
+          <button
             className="quick-action-btn locked"
             onClick={() => showUpgradePrompt('Staff Management')}
             title="Upgrade to PRO to unlock"
@@ -477,9 +477,9 @@ export default function SalonDashboard() {
             <span className="lock-icon">🔒</span>
           </button>
         )}
-        
+
         {hasFeatureAccess('stock') ? (
-          <button 
+          <button
             className="quick-action-btn"
             onClick={() => navigate('/stock')}
           >
@@ -489,7 +489,7 @@ export default function SalonDashboard() {
             )}
           </button>
         ) : user?.role === 'owner' && subscriptionTier === 'free' && (
-          <button 
+          <button
             className="quick-action-btn locked"
             onClick={() => showUpgradePrompt('Inventory')}
             title="Upgrade to PRO to unlock"
@@ -501,14 +501,14 @@ export default function SalonDashboard() {
 
         {/* PREMIUM Features - Show with lock icon if owner doesn't have access */}
         {hasFeatureAccess('marketing') ? (
-          <button 
+          <button
             className="quick-action-btn"
             onClick={() => navigate('/marketing')}
           >
             <span className="btn-emoji">📢</span> Marketing
           </button>
         ) : user?.role === 'owner' && (subscriptionTier === 'free' || subscriptionTier === 'pro') && (
-          <button 
+          <button
             className="quick-action-btn locked premium"
             onClick={() => showUpgradePrompt('Marketing')}
             title="Upgrade to PREMIUM to unlock"
@@ -517,16 +517,16 @@ export default function SalonDashboard() {
             <span className="lock-icon">🔒</span>
           </button>
         )}
-        
+
         {hasFeatureAccess('reports') ? (
-          <button 
+          <button
             className="quick-action-btn"
             onClick={() => navigate('/reports')}
           >
             <span className="btn-emoji">📈</span> Analytics
           </button>
         ) : user?.role === 'owner' && (subscriptionTier === 'free' || subscriptionTier === 'pro') && (
-          <button 
+          <button
             className="quick-action-btn locked premium"
             onClick={() => showUpgradePrompt('Reports')}
             title="Upgrade to PREMIUM to unlock"
@@ -590,7 +590,7 @@ export default function SalonDashboard() {
               <div className="nudge-content">
                 <h3>Ready to grow your business?</h3>
                 <p>Upgrade to <strong>PRO</strong> and unlock SMS reminders, staff management, and inventory tracking</p>
-                <button onClick={() => navigate('/settings')} className="nudge-btn">
+                <button onClick={() => navigate('/settings?tab=account')} className="nudge-btn">
                   View PRO Features →
                 </button>
               </div>
@@ -603,7 +603,7 @@ export default function SalonDashboard() {
               <div className="nudge-content">
                 <h3>Take it to the next level</h3>
                 <p>Upgrade to <strong>PREMIUM</strong> for advanced analytics, marketing campaigns, and priority support</p>
-                <button onClick={() => navigate('/settings')} className="nudge-btn">
+                <button onClick={() => navigate('/settings?tab=account')} className="nudge-btn">
                   Discover PREMIUM →
                 </button>
               </div>
@@ -666,7 +666,7 @@ export default function SalonDashboard() {
                     <td>
                       <div className="table-quick-actions">
                         {booking.status === 'pending' && (
-                          <button 
+                          <button
                             className="action-btn-small confirm"
                             onClick={() => handleQuickAction(booking._id, 'confirm')}
                             title="Send confirmation"
@@ -675,7 +675,7 @@ export default function SalonDashboard() {
                           </button>
                         )}
                         {booking.status === 'confirmed' && (
-                          <button 
+                          <button
                             className="action-btn-small remind"
                             onClick={() => handleQuickAction(booking._id, 'remind')}
                             title="Send reminder"
@@ -684,7 +684,7 @@ export default function SalonDashboard() {
                           </button>
                         )}
                         {booking.status === 'completed' && (
-                          <button 
+                          <button
                             className="action-btn-small thank"
                             onClick={() => handleQuickAction(booking._id, 'thank')}
                             title="Send thank you"
@@ -692,7 +692,7 @@ export default function SalonDashboard() {
                             💜
                           </button>
                         )}
-                        <button 
+                        <button
                           className="action-btn-small note"
                           onClick={() => handleAddNote(booking)}
                           title="Add note"
@@ -715,10 +715,10 @@ export default function SalonDashboard() {
           <h2>📅 My Upcoming Appointments</h2>
           {(() => {
             // Filter to show only stylist's own bookings
-            const myBookings = bookings.filter(booking => 
+            const myBookings = bookings.filter(booking =>
               booking.staffName === `${user.firstName} ${user.lastName}`
             );
-            
+
             return myBookings.length === 0 ? (
               <div className="empty-state">
                 <p>No upcoming appointments. Check back later!</p>
@@ -747,7 +747,7 @@ export default function SalonDashboard() {
                       </div>
                       <div className="quick-actions">
                         {booking.status === 'pending' && (
-                          <button 
+                          <button
                             className="action-btn confirm"
                             onClick={() => handleQuickAction(booking._id, 'confirm')}
                             title="Send confirmation message"
@@ -756,7 +756,7 @@ export default function SalonDashboard() {
                           </button>
                         )}
                         {booking.status === 'confirmed' && (
-                          <button 
+                          <button
                             className="action-btn remind"
                             onClick={() => handleQuickAction(booking._id, 'remind')}
                             title="Send reminder message"
@@ -765,7 +765,7 @@ export default function SalonDashboard() {
                           </button>
                         )}
                         {booking.status === 'completed' && (
-                          <button 
+                          <button
                             className="action-btn thank"
                             onClick={() => handleQuickAction(booking._id, 'thank')}
                             title="Send thank you message"
@@ -773,7 +773,7 @@ export default function SalonDashboard() {
                             💜 Thank
                           </button>
                         )}
-                        <button 
+                        <button
                           className="action-btn note"
                           onClick={() => handleAddNote(booking)}
                           title="Add client note"
@@ -820,7 +820,7 @@ export default function SalonDashboard() {
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h2>📝 Add Note for {noteModal.booking?.clientId?.firstName}</h2>
             <p className="modal-subtitle">Track preferences and special requests for better service</p>
-            
+
             <div className="form-group">
               <label>Client Note</label>
               <textarea
@@ -855,7 +855,7 @@ export default function SalonDashboard() {
             {suggestionModal.error && (
               <div className="modal-error-message">{suggestionModal.error}</div>
             )}
-            
+
             <div className="form-group">
               <label>Service Name *</label>
               <input
@@ -905,8 +905,8 @@ export default function SalonDashboard() {
               <button className="btn-cancel" onClick={() => setSuggestionModal({ show: false, serviceName: '', description: '', estimatedPrice: '', estimatedDuration: '', error: '' })}>
                 Cancel
               </button>
-              <button 
-                className="btn-send" 
+              <button
+                className="btn-send"
                 onClick={async () => {
                   if (!suggestionModal.serviceName || !suggestionModal.description) {
                     setSuggestionModal({ ...suggestionModal, error: 'Please fill in service name and description' });
@@ -1027,7 +1027,7 @@ export default function SalonDashboard() {
                 </span>
               </p>
             </div>
-            
+
             <div className="upgrade-benefits">
               <h3>✨ Everything in {upgradeModal.nextTier === 'pro' ? 'PRO' : 'PREMIUM'} includes:</h3>
               {upgradeModal.nextTier === 'pro' ? (
@@ -1105,7 +1105,7 @@ export default function SalonDashboard() {
               </button>
               <button className="btn-upgrade" onClick={() => {
                 setUpgradeModal({ show: false, feature: '', currentTier: '', nextTier: '' });
-                navigate('/settings');
+                navigate('/settings?tab=account');
               }}>
                 🚀 Upgrade to {upgradeModal.nextTier === 'pro' ? 'PRO' : 'PREMIUM'}
               </button>
@@ -1123,7 +1123,7 @@ export default function SalonDashboard() {
             <p className="warning-message">
               You are about to change your <strong>{confirmChangeModal.type}</strong>, which is used for logging in.
             </p>
-            
+
             <div className="change-details">
               <div className="change-row">
                 <span className="change-label">Current {confirmChangeModal.type}:</span>
@@ -1147,14 +1147,14 @@ export default function SalonDashboard() {
             </div>
 
             <div className="modal-actions">
-              <button 
-                className="btn-cancel" 
+              <button
+                className="btn-cancel"
                 onClick={() => setConfirmChangeModal({ show: false, type: '', oldValue: '', newValue: '', pendingChanges: null })}
               >
                 Cancel - Keep Current
               </button>
-              <button 
-                className="btn-confirm-change" 
+              <button
+                className="btn-confirm-change"
                 onClick={handleConfirmChange}
               >
                 ✓ Confirm Change

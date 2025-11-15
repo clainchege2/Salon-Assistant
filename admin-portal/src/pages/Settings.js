@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import './Settings.css';
 
 export default function Settings() {
-  const [activeTab, setActiveTab] = useState('profile');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const searchParams = new URLSearchParams(location.search);
+  const tabFromUrl = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(tabFromUrl || location.state?.activeTab || 'profile');
   const [user, setUser] = useState(null);
   const [tenant, setTenant] = useState(null);
   const [profileData, setProfileData] = useState({
@@ -52,7 +56,6 @@ export default function Settings() {
     confirmText: ''
   });
   const [exportLoading, setExportLoading] = useState(false);
-  const navigate = useNavigate();
 
   useEffect(() => {
     fetchData();
