@@ -118,7 +118,15 @@ export default function Bookings() {
         <button onClick={() => navigate('/dashboard')} className="back-btn">
           ← Back
         </button>
-        <h1>📅 All Bookings</h1>
+        <div className="page-title-wrapper">
+          <div className="title-with-icon">
+            <span className="title-icon">📅</span>
+            <div className="title-content">
+              <h1>Bookings</h1>
+              <p className="page-tagline">Manage appointments and schedules</p>
+            </div>
+          </div>
+        </div>
         <button onClick={() => navigate('/add-booking')} className="add-btn">
           ➕ New Booking
         </button>

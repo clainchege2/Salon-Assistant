@@ -236,7 +236,15 @@ export default function Services() {
         <button onClick={() => navigate('/dashboard')} className="back-btn">
           ← Back
         </button>
-        <h1>✂️ Services</h1>
+        <div className="page-title-wrapper">
+          <div className="title-with-icon">
+            <span className="title-icon">✂️</span>
+            <div className="title-content">
+              <h1>Services & Pricing</h1>
+              <p className="page-tagline">Manage your salon's service offerings</p>
+            </div>
+          </div>
+        </div>
         <div className="header-actions">
           <div className="view-toggle">
             <button 

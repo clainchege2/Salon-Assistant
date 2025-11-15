@@ -320,7 +320,15 @@ export default function Communications() {
     <div className="communications-page">
       <div className="comm-header">
         <button onClick={() => navigate('/dashboard')} className="back-btn">← Back</button>
-        <h1>Communications Hub</h1>
+        <div className="page-title-wrapper">
+          <div className="title-with-icon">
+            <span className="title-icon">💬</span>
+            <div className="title-content">
+              <h1>Communications Hub</h1>
+              <p className="page-tagline">Connect with your clients effectively</p>
+            </div>
+          </div>
+        </div>
         {isLocked && (
           <div className="tier-badge locked">
             🔒 PRO Feature

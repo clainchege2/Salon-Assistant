@@ -416,7 +416,15 @@ export default function Marketing() {
         <button className="back-btn" onClick={() => navigate('/dashboard')}>
           ← Back
         </button>
-        <h1>📢 Marketing Campaigns</h1>
+        <div className="page-title-wrapper">
+          <div className="title-with-icon">
+            <span className="title-icon">📢</span>
+            <div className="title-content">
+              <h1>Marketing Hub</h1>
+              <p className="page-tagline">Grow your business with targeted campaigns</p>
+            </div>
+          </div>
+        </div>
         <div className="header-actions">
           <button
             className="secondary-btn"

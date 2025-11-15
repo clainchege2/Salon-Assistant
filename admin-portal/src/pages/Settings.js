@@ -326,7 +326,15 @@ export default function Settings() {
         <button onClick={() => navigate('/dashboard')} className="back-btn">
           ← Back to Dashboard
         </button>
-        <h1>Settings</h1>
+        <div className="page-title-wrapper">
+          <div className="title-with-icon">
+            <span className="title-icon">⚙️</span>
+            <div className="title-content">
+              <h1>Settings</h1>
+              <p className="page-tagline">Configure your salon preferences</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {message.text && (

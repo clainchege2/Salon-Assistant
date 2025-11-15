@@ -277,7 +277,15 @@ export default function Staff() {
         <button onClick={() => navigate('/dashboard')} className="back-btn">
           ← Back
         </button>
-        <h1>👨‍💼 Staff Management</h1>
+        <div className="page-title-wrapper">
+          <div className="title-with-icon">
+            <span className="title-icon">👨‍💼</span>
+            <div className="title-content">
+              <h1>Team Management</h1>
+              <p className="page-tagline">Empower your team, elevate your salon</p>
+            </div>
+          </div>
+        </div>
         <button onClick={() => setShowAddModal(true)} className="add-btn">
           ➕ Add Staff Member
         </button>

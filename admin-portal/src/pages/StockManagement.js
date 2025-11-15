@@ -599,7 +599,15 @@ export default function StockManagement() {
     <div className="stock-management">
       <div className="stock-header">
         <button onClick={() => navigate('/dashboard')} className="back-btn">← Back</button>
-        <h1>Stock Management</h1>
+        <div className="page-title-wrapper">
+          <div className="title-with-icon">
+            <span className="title-icon">📦</span>
+            <div className="title-content">
+              <h1>Stock Management</h1>
+              <p className="page-tagline">Track, manage, and optimize your salon inventory</p>
+            </div>
+          </div>
+        </div>
         <div className="header-actions">
           <button onClick={() => { setScanMode('in'); setShowScanModal(true); }} className="scan-btn scan-in">
             📦 Scan In

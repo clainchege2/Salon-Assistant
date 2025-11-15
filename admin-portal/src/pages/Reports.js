@@ -185,7 +185,15 @@ export default function Reports() {
         <button onClick={() => navigate('/dashboard')} className="back-btn">
           ← Back
         </button>
-        <h1>📊 Analytics</h1>
+        <div className="page-title-wrapper">
+          <div className="title-with-icon">
+            <span className="title-icon">📊</span>
+            <div className="title-content">
+              <h1>Analytics & Reports</h1>
+              <p className="page-tagline">Insights to drive your salon's success</p>
+            </div>
+          </div>
+        </div>
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
           <select 
             value={timeRange} 

@@ -281,7 +281,15 @@ export default function Clients() {
         <button onClick={() => navigate('/dashboard')} className="back-btn">
           ← Back
         </button>
-        <h1>👥 All Clients</h1>
+        <div className="page-title-wrapper">
+          <div className="title-with-icon">
+            <span className="title-icon">👥</span>
+            <div className="title-content">
+              <h1>Client Management</h1>
+              <p className="page-tagline">Build lasting relationships with your valued clients</p>
+            </div>
+          </div>
+        </div>
         <button onClick={() => navigate('/add-client')} className="add-btn">
           ➕ New Client
         </button>

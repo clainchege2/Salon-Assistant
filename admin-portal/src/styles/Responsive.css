@@ -114,6 +114,15 @@ body {
     width: 100%;
   }
 
+  .page-title-wrapper {
+    padding: 0 10px;
+  }
+
+  .page-tagline {
+    font-size: 13px;
+    padding-left: 20px;
+  }
+
   /* Back Button */
   .back-btn {
     padding: 8px 14px;
@@ -304,6 +313,15 @@ body {
   .page-header h1,
   .stock-header h1 {
     font-size: 20px;
+  }
+
+  .page-title-wrapper {
+    padding: 0 5px;
+  }
+
+  .page-tagline {
+    font-size: 12px;
+    padding-left: 10px;
   }
 
   /* Back Button */
