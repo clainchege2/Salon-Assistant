@@ -22,8 +22,18 @@ export default function StockManagement() {
   const [scanHistory, setScanHistory] = useState([]);
   const [multiScanMode, setMultiScanMode] = useState(false);
   const [scannedItems, setScannedItems] = useState([]);
+  const [viewMode, setViewMode] = useState(() => {
+    // Load saved view preference from localStorage
+    return localStorage.getItem('stockViewMode') || 'grid';
+  });
   const scannerRef = useRef(null);
   const navigate = useNavigate();
+
+  // Save view mode preference
+  const handleViewModeChange = (mode) => {
+    setViewMode(mode);
+    localStorage.setItem('stockViewMode', mode);
+  };
 
   // Check if user can manage stock limits and settings (owner/manager only)
   const canManageStockSettings = () => {
@@ -616,6 +626,59 @@ export default function StockManagement() {
         </div>
       )}
 
+      {/* View Controls Bar */}
+      <div className="view-controls-bar">
+        <div className="view-info">
+          <span className="material-count">{materials.length} Materials</span>
+          {lowStockItems.length > 0 && (
+            <span className="low-stock-badge">{lowStockItems.length} Low Stock</span>
+          )}
+        </div>
+        <div className="view-toggle">
+          <span className="view-label">View:</span>
+          <button 
+            onClick={() => handleViewModeChange('grid')} 
+            className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}
+            title="Grid View"
+            aria-label="Grid View"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <rect x="1" y="1" width="6" height="6" rx="1"/>
+              <rect x="9" y="1" width="6" height="6" rx="1"/>
+              <rect x="1" y="9" width="6" height="6" rx="1"/>
+              <rect x="9" y="9" width="6" height="6" rx="1"/>
+            </svg>
+            <span className="view-btn-text">Grid</span>
+          </button>
+          <button 
+            onClick={() => handleViewModeChange('list')} 
+            className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}
+            title="List View"
+            aria-label="List View"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <rect x="1" y="2" width="14" height="2" rx="1"/>
+              <rect x="1" y="7" width="14" height="2" rx="1"/>
+              <rect x="1" y="12" width="14" height="2" rx="1"/>
+            </svg>
+            <span className="view-btn-text">List</span>
+          </button>
+          <button 
+            onClick={() => handleViewModeChange('table')} 
+            className={`view-btn ${viewMode === 'table' ? 'active' : ''}`}
+            title="Table View"
+            aria-label="Table View"
+          >
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+              <rect x="1" y="1" width="14" height="3" rx="1"/>
+              <rect x="1" y="6" width="14" height="3" rx="1"/>
+              <rect x="1" y="11" width="14" height="3" rx="1"/>
+            </svg>
+            <span className="view-btn-text">Table</span>
+          </button>
+        </div>
+      </div>
+
       {materials.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon">📦</div>
@@ -640,95 +703,262 @@ export default function StockManagement() {
           </div>
         </div>
       ) : (
-        <div className="materials-grid">
-          {materials.map(material => (
-          <div key={material._id} className={`material-card ${material.currentStock <= material.minimumStock ? 'low-stock' : ''}`}>
-            <div className="material-header">
-              <h3>{material.name}</h3>
-              <span className="category-badge">{material.category}</span>
+        <>
+          {/* Grid View */}
+          {viewMode === 'grid' && (
+            <div className="materials-grid">
+              {materials.map(material => (
+                <div key={material._id} className={`material-card ${material.currentStock <= material.minimumStock ? 'low-stock' : ''}`}>
+                  <div className="material-header">
+                    <h3>{material.name}</h3>
+                    <span className="category-badge">{material.category}</span>
+                  </div>
+                  
+                  <div className="stock-info">
+                    <div className="stock-level">
+                      <span className="label">Current Stock:</span>
+                      <span className="value">{material.currentStock} {material.unit}</span>
+                    </div>
+                    <div className="stock-level">
+                      <span className="label">Minimum:</span>
+                      <span className="value">{material.minimumStock} {material.unit}</span>
+                    </div>
+                    {material.costPerUnit && (
+                      <div className="stock-level">
+                        <span className="label">Cost/Unit:</span>
+                        <span className="value">KES {material.costPerUnit}</span>
+                      </div>
+                    )}
+                    {material.supplier && (
+                      <div className="stock-level">
+                        <span className="label">Supplier:</span>
+                        <span className="value">{material.supplier}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="material-actions">
+                    <button 
+                      onClick={() => setShowRestockForm(material._id)} 
+                      className="restock-btn"
+                    >
+                      Restock
+                    </button>
+                    <button 
+                      onClick={() => handleEditMaterial(material)} 
+                      className="edit-btn"
+                    >
+                      ✏️ Edit
+                    </button>
+                  </div>
+
+                  {showRestockForm === material._id && (
+                    <div className="restock-form">
+                      <input
+                        type="number"
+                        placeholder="Quantity"
+                        id={`qty-${material._id}`}
+                        min="1"
+                      />
+                      <button onClick={() => {
+                        const qty = document.getElementById(`qty-${material._id}`).value;
+                        handleRestock(material._id, qty);
+                      }}>
+                        Add
+                      </button>
+                      <button onClick={() => setShowRestockForm(null)}>Cancel</button>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
-            
-            <div className="stock-info">
-              <div className="stock-level">
-                <span className="label">Current Stock:</span>
-                <span className="value">{material.currentStock} {material.unit}</span>
-              </div>
-              <div className="stock-level">
-                <span className="label">Minimum:</span>
-                <span className="value">{material.minimumStock} {material.unit}</span>
-              </div>
-              {material.costPerUnit && (
-                <div className="stock-level">
-                  <span className="label">Cost/Unit:</span>
-                  <span className="value">KES {material.costPerUnit}</span>
+          )}
+
+          {/* List View */}
+          {viewMode === 'list' && (
+            <div className="materials-list">
+              {materials.map(material => (
+                <div key={material._id} className={`material-list-item ${material.currentStock <= material.minimumStock ? 'low-stock' : ''}`}>
+                  <div className="list-item-main">
+                    <div className="list-item-info">
+                      <h3>{material.name}</h3>
+                      <span className="category-badge">{material.category}</span>
+                      <div className="list-item-details">
+                        <span className="detail-item">
+                          <strong>Stock:</strong> {material.currentStock} {material.unit}
+                        </span>
+                        <span className="detail-item">
+                          <strong>Min:</strong> {material.minimumStock} {material.unit}
+                        </span>
+                        {material.costPerUnit && (
+                          <span className="detail-item">
+                            <strong>Cost:</strong> KES {material.costPerUnit}
+                          </span>
+                        )}
+                        {material.supplier && (
+                          <span className="detail-item">
+                            <strong>Supplier:</strong> {material.supplier}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="list-item-actions">
+                      <button 
+                        onClick={() => setShowRestockForm(material._id)} 
+                        className="restock-btn"
+                      >
+                        Restock
+                      </button>
+                      <button 
+                        onClick={() => handleEditMaterial(material)} 
+                        className="edit-btn"
+                      >
+                        ✏️ Edit
+                      </button>
+                    </div>
+                  </div>
+                  {showRestockForm === material._id && (
+                    <div className="restock-form">
+                      <input
+                        type="number"
+                        placeholder="Quantity"
+                        id={`qty-${material._id}`}
+                        min="1"
+                      />
+                      <button onClick={() => {
+                        const qty = document.getElementById(`qty-${material._id}`).value;
+                        handleRestock(material._id, qty);
+                      }}>
+                        Add
+                      </button>
+                      <button onClick={() => setShowRestockForm(null)}>Cancel</button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Table View */}
+          {viewMode === 'table' && (
+            <div className="materials-table-container">
+              <table className="materials-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Current Stock</th>
+                    <th>Min Stock</th>
+                    <th>Cost/Unit</th>
+                    <th>Supplier</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {materials.map(material => (
+                    <tr key={material._id} className={material.currentStock <= material.minimumStock ? 'low-stock-row' : ''}>
+                      <td className="material-name">{material.name}</td>
+                      <td>
+                        <span className="category-badge">{material.category}</span>
+                      </td>
+                      <td className="stock-value">
+                        {material.currentStock} {material.unit}
+                      </td>
+                      <td className="stock-value">
+                        {material.minimumStock} {material.unit}
+                      </td>
+                      <td>
+                        {material.costPerUnit ? `KES ${material.costPerUnit}` : '-'}
+                      </td>
+                      <td>{material.supplier || '-'}</td>
+                      <td className="table-actions">
+                        <button 
+                          onClick={() => setShowRestockForm(material._id)} 
+                          className="table-btn restock-btn-small"
+                          title="Restock"
+                        >
+                          ↑
+                        </button>
+                        <button 
+                          onClick={() => handleEditMaterial(material)} 
+                          className="table-btn edit-btn-small"
+                          title="Edit"
+                        >
+                          ✏️
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              
+              {/* Restock form for table view */}
+              {showRestockForm && (
+                <div className="table-restock-modal">
+                  <div className="table-restock-content">
+                    <h4>Restock {materials.find(m => m._id === showRestockForm)?.name}</h4>
+                    <input
+                      type="number"
+                      placeholder="Quantity"
+                      id={`qty-${showRestockForm}`}
+                      min="1"
+                      autoFocus
+                    />
+                    <div className="table-restock-actions">
+                      <button onClick={() => {
+                        const qty = document.getElementById(`qty-${showRestockForm}`).value;
+                        handleRestock(showRestockForm, qty);
+                      }} className="confirm-btn-small">
+                        Add
+                      </button>
+                      <button onClick={() => setShowRestockForm(null)} className="cancel-btn-small">
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
-              {material.supplier && (
-                <div className="stock-level">
-                  <span className="label">Supplier:</span>
-                  <span className="value">{material.supplier}</span>
-                </div>
-              )}
             </div>
-
-            <div className="material-actions">
-              <button 
-                onClick={() => setShowRestockForm(material._id)} 
-                className="restock-btn"
-              >
-                Restock
-              </button>
-              <button 
-                onClick={() => handleEditMaterial(material)} 
-                className="edit-btn"
-              >
-                ✏️ Edit
-              </button>
-            </div>
-
-            {showRestockForm === material._id && (
-              <div className="restock-form">
-                <input
-                  type="number"
-                  placeholder="Quantity"
-                  id={`qty-${material._id}`}
-                  min="1"
-                />
-                <button onClick={() => {
-                  const qty = document.getElementById(`qty-${material._id}`).value;
-                  handleRestock(material._id, qty);
-                }}>
-                  Add
-                </button>
-                <button onClick={() => setShowRestockForm(null)}>Cancel</button>
-              </div>
-            )}
-          </div>
-        ))}
-        </div>
+          )}
+        </>
       )}
 
       {showAddForm && (
-        <div className="modal-overlay" onClick={() => setShowAddForm(false)}>
+        <div className="modal-overlay" onClick={() => setShowAddForm(false)} role="dialog" aria-modal="true" aria-labelledby="add-material-title">
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>Add New Material</h2>
+            <div className="modal-header">
+              <h2 id="add-material-title">Add New Material</h2>
+              <button 
+                onClick={() => setShowAddForm(false)} 
+                className="modal-close-btn"
+                aria-label="Close dialog"
+              >
+                ✕
+              </button>
+            </div>
             <form onSubmit={handleAddMaterial}>
               <div className="form-group">
-                <label>Material Name *</label>
+                <label htmlFor="material-name">Material Name *</label>
                 <input
+                  id="material-name"
                   type="text"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value.trim() })}
+                  maxLength={100}
                   required
+                  autoFocus
+                  placeholder="e.g., Brazilian Hair Extensions"
                 />
               </div>
 
               <div className="form-row">
                 <div className="form-group">
-                  <label>Category *</label>
+                  <label htmlFor="material-category">Category *</label>
                   <select
+                    id="material-category"
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    required
                   >
                     <option value="hair-extensions">Hair Extensions</option>
                     <option value="chemicals">Chemicals</option>
@@ -739,10 +969,12 @@ export default function StockManagement() {
                 </div>
 
                 <div className="form-group">
-                  <label>Unit *</label>
+                  <label htmlFor="material-unit">Unit *</label>
                   <select
+                    id="material-unit"
                     value={formData.unit}
                     onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                    required
                   >
                     <option value="pieces">Pieces</option>
                     <option value="grams">Grams</option>
@@ -755,55 +987,73 @@ export default function StockManagement() {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label>Quantity *</label>
+                  <label htmlFor="material-quantity">Quantity *</label>
                   <input
+                    id="material-quantity"
                     type="number"
                     value={formData.currentStock}
-                    onChange={(e) => setFormData({ ...formData, currentStock: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, currentStock: Math.max(0, parseInt(e.target.value) || 0) })}
                     min="0"
+                    max="999999"
+                    step="1"
                     required
+                    placeholder="0"
                   />
                 </div>
 
                 {canManageStockSettings() && (
                   <div className="form-group">
-                    <label>Minimum Stock Alert</label>
+                    <label htmlFor="material-min-stock">Minimum Stock Alert</label>
                     <input
+                      id="material-min-stock"
                       type="number"
                       value={formData.minimumStock}
-                      onChange={(e) => setFormData({ ...formData, minimumStock: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, minimumStock: Math.max(0, parseInt(e.target.value) || 0) })}
                       min="0"
-                      placeholder="Optional"
+                      max="999999"
+                      step="1"
+                      placeholder="5"
                     />
-                    <small style={{ color: '#666', fontSize: '11px' }}>Alert when stock falls below this</small>
+                    <small className="field-hint">Alert when stock falls below this</small>
                   </div>
                 )}
               </div>
 
               <div className="form-row">
                 <div className="form-group">
-                  <label>Cost Per Unit</label>
+                  <label htmlFor="material-cost">Cost Per Unit (KES)</label>
                   <input
+                    id="material-cost"
                     type="number"
                     value={formData.costPerUnit}
-                    onChange={(e) => setFormData({ ...formData, costPerUnit: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, costPerUnit: Math.max(0, parseFloat(e.target.value) || 0) })}
                     min="0"
+                    max="9999999"
+                    step="0.01"
+                    placeholder="0.00"
                   />
                 </div>
 
                 <div className="form-group">
-                  <label>Supplier</label>
+                  <label htmlFor="material-supplier">Supplier</label>
                   <input
+                    id="material-supplier"
                     type="text"
                     value={formData.supplier}
-                    onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, supplier: e.target.value.trim() })}
+                    maxLength={100}
+                    placeholder="e.g., Beauty Supplies Ltd"
                   />
                 </div>
               </div>
 
               <div className="form-actions">
-                <button type="submit">Add Material</button>
-                <button type="button" onClick={() => setShowAddForm(false)}>Cancel</button>
+                <button type="submit" className="btn-primary">
+                  Add Material
+                </button>
+                <button type="button" onClick={() => setShowAddForm(false)} className="btn-secondary">
+                  Cancel
+                </button>
               </div>
             </form>
           </div>
@@ -811,9 +1061,18 @@ export default function StockManagement() {
       )}
 
       {showEditForm && (
-        <div className="modal-overlay" onClick={() => setShowEditForm(null)}>
+        <div className="modal-overlay" onClick={() => setShowEditForm(null)} role="dialog" aria-modal="true" aria-labelledby="edit-material-title">
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h2>Edit Material</h2>
+            <div className="modal-header">
+              <h2 id="edit-material-title">Edit Material</h2>
+              <button 
+                onClick={() => setShowEditForm(null)} 
+                className="modal-close-btn"
+                aria-label="Close dialog"
+              >
+                ✕
+              </button>
+            </div>
             <form onSubmit={handleUpdateMaterial}>
               <div className="form-group">
                 <label>Material Name *</label>
@@ -890,19 +1149,26 @@ export default function StockManagement() {
               </div>
 
               <div className="form-actions">
-                <button type="submit">Update Material</button>
-                <button type="button" onClick={() => setShowEditForm(null)}>Cancel</button>
+                <button type="submit" className="btn-primary">
+                  Update Material
+                </button>
+                <button type="button" onClick={() => setShowEditForm(null)} className="btn-secondary">
+                  Cancel
+                </button>
                 {canManageStockSettings() && (
                   <button 
                     type="button" 
                     onClick={() => {
                       const material = materials.find(m => m._id === showEditForm);
-                      handleDeleteMaterial(showEditForm, material?.name);
+                      if (material) {
+                        handleDeleteMaterial(showEditForm, material.name);
+                      }
                     }}
-                    className="delete-btn"
-                    style={{ marginLeft: 'auto', background: '#ef4444' }}
+                    className="btn-danger"
+                    style={{ marginLeft: 'auto' }}
+                    aria-label={`Delete ${materials.find(m => m._id === showEditForm)?.name}`}
                   >
-                    Delete
+                    🗑️ Delete
                   </button>
                 )}
               </div>

@@ -9,11 +9,42 @@ export default function Clients() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState('list');
+  const [viewMode, setViewMode] = useState(() => {
+    return localStorage.getItem('clientsViewMode') || 'list';
+  });
   const [viewModal, setViewModal] = useState({ show: false, client: null, bookings: [] });
   const [editModal, setEditModal] = useState({ show: false, client: null });
   const [deleteModal, setDeleteModal] = useState({ show: false, client: null });
+  const [notification, setNotification] = useState({ show: false, type: '', message: '' });
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchClients();
+  }, []);
+
+  useEffect(() => {
+    filterClients();
+  }, [filter, searchTerm, clients]);
+
+  // Save view mode preference
+  const handleViewModeChange = (mode) => {
+    setViewMode(mode);
+    localStorage.setItem('clientsViewMode', mode);
+  };
+
+  // Show notification
+  const showNotification = (type, message) => {
+    setNotification({ show: true, type, message });
+    setTimeout(() => {
+      setNotification({ show: false, type: '', message: '' });
+    }, 3000);
+  };
+
+  // Mask phone number for privacy
+  const maskPhone = (phone) => {
+    if (!phone || phone.length < 4) return phone;
+    return phone.slice(0, -4).replace(/./g, '*') + phone.slice(-4);
+  };
 
   // Check if user can delete clients
   const canDeleteClients = () => {
@@ -262,8 +293,10 @@ export default function Clients() {
             type="text"
             placeholder="🔍 Search by name or phone..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => setSearchTerm(e.target.value.trim().slice(0, 100))}
             className="search-input"
+            maxLength={100}
+            aria-label="Search clients"
           />
           
           <div className="view-toggle">

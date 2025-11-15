@@ -49,7 +49,7 @@ export default function Marketing() {
     fetchCampaigns();
     fetchClients();
     fetchSegments();
-    
+
     // Check if coming from Analytics with segment selection
     if (location.state?.selectedSegment) {
       setCampaignForm(prev => ({
@@ -166,9 +166,9 @@ export default function Marketing() {
   const handleCreateCampaign = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      
+
       let targetClients = [];
-      
+
       // Determine target clients based on targetType
       if (campaignForm.targetType === 'occasion') {
         targetClients = await getSpecialOccasionClients(campaignForm.occasion);
@@ -187,11 +187,11 @@ export default function Marketing() {
         // All clients
         targetClients = allClients.filter(c => c.marketingConsent?.sms);
       }
-      
+
       // Determine status and scheduled time
       let status = 'draft';
       let scheduledFor = null;
-      
+
       if (campaignForm.sendOption === 'scheduled') {
         if (!campaignForm.scheduledDate || !campaignForm.scheduledTime) {
           showError('Missing Information', 'Please select both date and time for scheduled campaign');
@@ -199,14 +199,14 @@ export default function Marketing() {
         }
         status = 'scheduled';
         scheduledFor = new Date(`${campaignForm.scheduledDate}T${campaignForm.scheduledTime}`);
-        
+
         // Validate future date
         if (scheduledFor <= new Date()) {
           showError('Invalid Time', 'Scheduled time must be in the future');
           return;
         }
       }
-      
+
       const campaignData = {
         name: campaignForm.name,
         type: campaignForm.type,
@@ -222,13 +222,13 @@ export default function Marketing() {
         status: status,
         scheduledFor: scheduledFor
       };
-      
+
       const response = await axios.post(
         'http://localhost:5000/api/v1/marketing',
         campaignData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
       // If send now, immediately send the campaign
       if (campaignForm.sendOption === 'now') {
         await axios.post(
@@ -251,17 +251,17 @@ export default function Marketing() {
 
   const openSendModal = async (campaign) => {
     setSelectedCampaign(campaign);
-    
+
     // Initialize with campaign's current targeting
     const targetType = campaign.targetAudience?.targetType || 'all';
     let selectedClients = [];
-    
+
     // If campaign has specific clients, fetch them
     if (campaign.targetAudience?.specificClients?.length > 0) {
       const clientIds = campaign.targetAudience.specificClients;
       selectedClients = allClients.filter(c => clientIds.includes(c._id));
     }
-    
+
     setSendForm({
       sendOption: campaign.status === 'scheduled' ? 'scheduled' : 'now',
       scheduledDate: campaign.scheduledFor ? new Date(campaign.scheduledFor).toISOString().split('T')[0] : '',
@@ -279,10 +279,10 @@ export default function Marketing() {
   const handleSendCampaign = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      
+
       // Determine target clients based on targeting options
       let targetClients = [];
-      
+
       if (sendForm.targetType === 'individual') {
         targetClients = sendForm.selectedClients;
       } else if (sendForm.targetType === 'segment') {
@@ -293,7 +293,7 @@ export default function Marketing() {
         // All clients
         targetClients = allClients.filter(c => c.marketingConsent?.sms);
       }
-      
+
       // Update campaign with new targeting and message
       const updateData = {
         targetAudience: {
@@ -303,12 +303,12 @@ export default function Marketing() {
           dayOfWeek: sendForm.dayOfWeek || undefined
         }
       };
-      
+
       // If message was edited, include it in update
       if (sendForm.message !== sendForm.originalMessage) {
         updateData.message = sendForm.message;
       }
-      
+
       if (sendForm.sendOption === 'now') {
         // Update targeting first, then send
         await axios.put(
@@ -316,7 +316,7 @@ export default function Marketing() {
           updateData,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        
+
         // Send immediately
         await axios.post(
           `http://localhost:5000/api/v1/marketing/${selectedCampaign._id}/send`,
@@ -330,14 +330,14 @@ export default function Marketing() {
           showError('Missing Information', 'Please select both date and time');
           return;
         }
-        
+
         const scheduledFor = new Date(`${sendForm.scheduledDate}T${sendForm.scheduledTime}`);
-        
+
         if (scheduledFor <= new Date()) {
           showError('Invalid Time', 'Scheduled time must be in the future');
           return;
         }
-        
+
         // Update campaign with targeting and schedule
         await axios.put(
           `http://localhost:5000/api/v1/marketing/${selectedCampaign._id}`,
@@ -348,10 +348,10 @@ export default function Marketing() {
           },
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        
+
         showSuccess('Campaign Scheduled!', `Your campaign has been scheduled for ${scheduledFor.toLocaleString()}`);
       }
-      
+
       setShowSendModal(false);
       setSelectedCampaign(null);
       fetchCampaigns();
@@ -418,13 +418,13 @@ export default function Marketing() {
         </button>
         <h1>📢 Marketing Campaigns</h1>
         <div className="header-actions">
-          <button 
+          <button
             className="secondary-btn"
             onClick={() => navigate('/reports')}
           >
             📊 View Analytics
           </button>
-          <button 
+          <button
             className="primary-btn"
             onClick={() => handleQuickAction('custom')}
           >
@@ -480,7 +480,7 @@ export default function Marketing() {
                   </div>
                   <div className="campaign-actions">
                     {campaign.status === 'draft' && (
-                      <button 
+                      <button
                         className="send-btn"
                         onClick={() => openSendModal(campaign)}
                       >
@@ -488,7 +488,7 @@ export default function Marketing() {
                       </button>
                     )}
                     {campaign.status === 'scheduled' && (
-                      <button 
+                      <button
                         className="send-btn secondary"
                         onClick={() => openSendModal(campaign)}
                       >
@@ -572,8 +572,8 @@ export default function Marketing() {
 
               <div className="form-group">
                 <label>Target Audience</label>
-                <select 
-                  value={campaignForm.targetType} 
+                <select
+                  value={campaignForm.targetType}
                   onChange={(e) => setCampaignForm(prev => ({ ...prev, targetType: e.target.value, selectedClients: [] }))}
                   className="form-control"
                 >
@@ -590,8 +590,8 @@ export default function Marketing() {
               {campaignForm.targetType === 'dayOfWeek' && (
                 <div className="form-group">
                   <label>Select Day</label>
-                  <select 
-                    value={campaignForm.dayOfWeek} 
+                  <select
+                    value={campaignForm.dayOfWeek}
                     onChange={(e) => setCampaignForm(prev => ({ ...prev, dayOfWeek: e.target.value }))}
                     className="form-control"
                   >
@@ -635,8 +635,8 @@ export default function Marketing() {
                 <>
                   <div className="form-group">
                     <label>Select RFM Segment</label>
-                    <select 
-                      value={campaignForm.selectedSegment} 
+                    <select
+                      value={campaignForm.selectedSegment}
                       onChange={(e) => handleSegmentChange(e.target.value)}
                       className="form-control"
                     >
@@ -671,8 +671,8 @@ export default function Marketing() {
                     campaignForm.type === 'special' && campaignForm.occasion === 'birthday'
                       ? "Happy Birthday! 🎂 Enjoy 20% off your next visit..."
                       : campaignForm.targetType === 'dayOfWeek'
-                      ? "Monday Madness! Get 30% off all services today only..."
-                      : "Your custom message here..."
+                        ? "Monday Madness! Get 30% off all services today only..."
+                        : "Your custom message here..."
                   }
                   className="form-control"
                   rows="4"
@@ -733,13 +733,13 @@ export default function Marketing() {
               )}
 
               <div className="modal-actions">
-                <button 
+                <button
                   className="secondary-btn"
                   onClick={() => setShowCreateModal(false)}
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   className="primary-btn"
                   onClick={handleCreateCampaign}
                   disabled={!campaignForm.name.trim() || !campaignForm.message.trim()}
@@ -791,8 +791,8 @@ export default function Marketing() {
 
               <div className="form-group">
                 <label>Target Audience</label>
-                <select 
-                  value={sendForm.targetType} 
+                <select
+                  value={sendForm.targetType}
                   onChange={(e) => setSendForm(prev => ({ ...prev, targetType: e.target.value, selectedClients: [] }))}
                   className="form-control"
                 >
@@ -807,8 +807,8 @@ export default function Marketing() {
                 <>
                   <div className="form-group">
                     <label>Select RFM Segment</label>
-                    <select 
-                      value={sendForm.selectedSegment} 
+                    <select
+                      value={sendForm.selectedSegment}
                       onChange={(e) => handleSendFormSegmentChange(e.target.value)}
                       className="form-control"
                     >
@@ -855,8 +855,8 @@ export default function Marketing() {
               {sendForm.targetType === 'dayOfWeek' && (
                 <div className="form-group">
                   <label>Select Day</label>
-                  <select 
-                    value={sendForm.dayOfWeek} 
+                  <select
+                    value={sendForm.dayOfWeek}
                     onChange={(e) => setSendForm(prev => ({ ...prev, dayOfWeek: e.target.value }))}
                     className="form-control"
                   >
@@ -923,13 +923,13 @@ export default function Marketing() {
               )}
 
               <div className="modal-actions">
-                <button 
+                <button
                   className="secondary-btn"
                   onClick={() => setShowSendModal(false)}
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   className="primary-btn"
                   onClick={handleSendCampaign}
                 >
@@ -957,7 +957,7 @@ export default function Marketing() {
                 <p className="result-message">{resultModal.message}</p>
               </div>
               <div className="modal-actions">
-                <button 
+                <button
                   className="primary-btn"
                   onClick={() => setShowResultModal(false)}
                 >

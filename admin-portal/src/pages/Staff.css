@@ -1,3 +1,6 @@
+/* Import Global Responsive Styles */
+@import '../styles/Responsive.css';
+
 .staff-page {
   min-height: 100vh;
   background: #f5f7fa;
