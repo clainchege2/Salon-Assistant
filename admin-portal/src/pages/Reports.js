@@ -13,7 +13,8 @@ export default function Reports() {
     averageBookingValue: 0,
     topServices: [],
     clientCategories: {},
-    revenueByMonth: []
+    revenueByMonth: [],
+    referralSources: {}
   });
   const [rfmData, setRfmData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -79,6 +80,18 @@ export default function Reports() {
         return acc;
       }, {});
 
+      // Calculate referral source statistics
+      const referralSources = clients.reduce((acc, client) => {
+        const source = client.referralSource || 'not-specified';
+        if (!acc[source]) {
+          acc[source] = { count: 0, totalSpent: 0, totalVisits: 0 };
+        }
+        acc[source].count++;
+        acc[source].totalSpent += client.totalSpent || 0;
+        acc[source].totalVisits += client.totalVisits || 0;
+        return acc;
+      }, {});
+
       const revenueByMonth = calculateRevenueByMonth(completedBookings);
 
       setStats({
@@ -89,7 +102,8 @@ export default function Reports() {
         averageBookingValue,
         topServices,
         clientCategories,
-        revenueByMonth
+        revenueByMonth,
+        referralSources
       });
     } catch (error) {
       console.error('Error fetching reports:', error);
@@ -353,6 +367,201 @@ export default function Reports() {
               <div className="service-revenue">{formatCurrency(service.revenue)}</div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Marketing Source Analytics */}
+      <div className="report-section">
+        <h2>📊 How Clients Found Us</h2>
+        <p className="section-subtitle" style={{ marginBottom: '20px', color: '#666' }}>
+          Track which marketing channels bring in the most valuable clients
+        </p>
+        <div className="referral-sources-grid">
+          {Object.entries(stats.referralSources || {})
+            .sort((a, b) => b[1].count - a[1].count)
+            .map(([source, data]) => {
+              const sourceLabels = {
+                'social-media': { icon: '📱', label: 'Social Media', color: '#E1306C' },
+                'friend': { icon: '👥', label: 'Friend Referral', color: '#10B981' },
+                'google': { icon: '🔍', label: 'Google Search', color: '#4285F4' },
+                'walk-by': { icon: '🚶', label: 'Walk-by', color: '#F59E0B' },
+                'advertisement': { icon: '📺', label: 'Advertisement', color: '#8B5CF6' },
+                'other': { icon: '📋', label: 'Other', color: '#6B7280' },
+                'not-specified': { icon: '❓', label: 'Not Specified', color: '#9CA3AF' }
+              };
+              
+              const sourceInfo = sourceLabels[source] || sourceLabels['other'];
+              const avgSpend = data.count > 0 ? data.totalSpent / data.count : 0;
+              const avgVisits = data.count > 0 ? data.totalVisits / data.count : 0;
+              
+              return (
+                <div key={source} className="referral-source-card" style={{ borderLeft: `4px solid ${sourceInfo.color}` }}>
+                  <div className="source-header">
+                    <span className="source-icon" style={{ fontSize: '32px' }}>{sourceInfo.icon}</span>
+                    <div className="source-info">
+                      <h4>{sourceInfo.label}</h4>
+                      <p className="source-count">{data.count} clients</p>
+                    </div>
+                  </div>
+                  <div className="source-stats">
+                    <div className="stat-item">
+                      <span className="stat-label">Total Revenue</span>
+                      <span className="stat-value">{formatCurrency(data.totalSpent)}</span>
+                    </div>
+                    <div className="stat-item">
+                      <span className="stat-label">Avg per Client</span>
+                      <span className="stat-value">{formatCurrency(avgSpend)}</span>
+                    </div>
+                    <div className="stat-item">
+                      <span className="stat-label">Avg Visits</span>
+                      <span className="stat-value">{avgVisits.toFixed(1)}</span>
+                    </div>
+                    <div className="stat-item">
+                      <span className="stat-label">% of Total</span>
+                      <span className="stat-value">
+                        {((data.count / stats.totalClients) * 100).toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+        </div>
+        {Object.keys(stats.referralSources || {}).length === 0 && (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+            <p>No referral source data yet. Start collecting this info when adding new clients!</p>
+          </div>
+        )}
+      </div>
+
+      {/* Communication Preferences Overview */}
+      <div className="report-section">
+        <h2>📱 Communication Preferences</h2>
+        <p className="section-subtitle" style={{ marginBottom: '20px', color: '#666' }}>
+          Understand how clients prefer to be contacted and respect their preferences
+        </p>
+        <div className="communication-overview">
+          <div className="comm-stats-grid">
+            <div className="comm-stat-card">
+              <div className="comm-icon">📱</div>
+              <h4>SMS Consent</h4>
+              <p className="comm-count">
+                {allClients.filter(c => c.marketingConsent?.sms).length} / {stats.totalClients}
+              </p>
+              <span className="comm-percentage">
+                {stats.totalClients > 0 
+                  ? ((allClients.filter(c => c.marketingConsent?.sms).length / stats.totalClients) * 100).toFixed(1)
+                  : 0}%
+              </span>
+            </div>
+            
+            <div className="comm-stat-card">
+              <div className="comm-icon">💬</div>
+              <h4>WhatsApp Consent</h4>
+              <p className="comm-count">
+                {allClients.filter(c => c.marketingConsent?.whatsapp).length} / {stats.totalClients}
+              </p>
+              <span className="comm-percentage">
+                {stats.totalClients > 0 
+                  ? ((allClients.filter(c => c.marketingConsent?.whatsapp).length / stats.totalClients) * 100).toFixed(1)
+                  : 0}%
+              </span>
+            </div>
+            
+            <div className="comm-stat-card">
+              <div className="comm-icon">📧</div>
+              <h4>Email Consent</h4>
+              <p className="comm-count">
+                {allClients.filter(c => c.marketingConsent?.email).length} / {stats.totalClients}
+              </p>
+              <span className="comm-percentage">
+                {stats.totalClients > 0 
+                  ? ((allClients.filter(c => c.marketingConsent?.email).length / stats.totalClients) * 100).toFixed(1)
+                  : 0}%
+              </span>
+            </div>
+            
+            <div className="comm-stat-card warning">
+              <div className="comm-icon">🚫</div>
+              <h4>Do Not Disturb</h4>
+              <p className="comm-count">
+                {allClients.filter(c => c.communicationStatus?.doNotDisturb).length}
+              </p>
+              <span className="comm-percentage">
+                {stats.totalClients > 0 
+                  ? ((allClients.filter(c => c.communicationStatus?.doNotDisturb).length / stats.totalClients) * 100).toFixed(1)
+                  : 0}%
+              </span>
+            </div>
+            
+            <div className="comm-stat-card danger">
+              <div className="comm-icon">⛔</div>
+              <h4>Blocked</h4>
+              <p className="comm-count">
+                {allClients.filter(c => c.communicationStatus?.blocked).length}
+              </p>
+              <span className="comm-percentage">
+                {stats.totalClients > 0 
+                  ? ((allClients.filter(c => c.communicationStatus?.blocked).length / stats.totalClients) * 100).toFixed(1)
+                  : 0}%
+              </span>
+            </div>
+            
+            <div className="comm-stat-card info">
+              <div className="comm-icon">⚠️</div>
+              <h4>Warnings Issued</h4>
+              <p className="comm-count">
+                {allClients.filter(c => (c.communicationStatus?.warningCount || 0) > 0).length}
+              </p>
+              <span className="comm-percentage">
+                {allClients.reduce((sum, c) => sum + (c.communicationStatus?.warningCount || 0), 0)} total
+              </span>
+            </div>
+          </div>
+          
+          <div className="comm-insights" style={{ marginTop: '20px', padding: '20px', background: '#F3F4F6', borderRadius: '8px' }}>
+            <h4 style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>💡</span>
+              <span>Communication Insights</span>
+            </h4>
+            <ul style={{ margin: 0, paddingLeft: '20px', color: '#666' }}>
+              <li style={{ marginBottom: '8px' }}>
+                <strong>Preferred Channel:</strong> {
+                  (() => {
+                    const sms = allClients.filter(c => c.marketingConsent?.sms).length;
+                    const whatsapp = allClients.filter(c => c.marketingConsent?.whatsapp).length;
+                    const email = allClients.filter(c => c.marketingConsent?.email).length;
+                    const max = Math.max(sms, whatsapp, email);
+                    if (max === 0) return 'No data yet';
+                    if (whatsapp === max) return `WhatsApp (${whatsapp} clients)`;
+                    if (sms === max) return `SMS (${sms} clients)`;
+                    return `Email (${email} clients)`;
+                  })()
+                }
+              </li>
+              <li style={{ marginBottom: '8px' }}>
+                <strong>Reachable Clients:</strong> {
+                  allClients.filter(c => 
+                    (c.marketingConsent?.sms || c.marketingConsent?.whatsapp || c.marketingConsent?.email) &&
+                    !c.communicationStatus?.blocked &&
+                    !c.communicationStatus?.doNotDisturb
+                  ).length
+                } clients can receive marketing messages
+              </li>
+              <li>
+                <strong>Action Required:</strong> {
+                  (() => {
+                    const dnd = allClients.filter(c => c.communicationStatus?.doNotDisturb).length;
+                    const blocked = allClients.filter(c => c.communicationStatus?.blocked).length;
+                    if (dnd > 0 || blocked > 0) {
+                      return `Review ${dnd + blocked} clients with communication restrictions`;
+                    }
+                    return 'All clients have clear communication preferences ✓';
+                  })()
+                }
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
 

@@ -208,3 +208,89 @@ exports.deleteBooking = async (req, res) => {
     });
   }
 };
+
+
+// Get available time slots for a specific date and staff member
+exports.getAvailableSlots = async (req, res) => {
+  try {
+    const { date, staffId } = req.query;
+    
+    if (!date) {
+      return res.status(400).json({
+        success: false,
+        message: 'Date is required'
+      });
+    }
+
+    // Parse the date
+    const selectedDate = new Date(date);
+    const startOfDay = new Date(selectedDate.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(selectedDate.setHours(23, 59, 59, 999));
+
+    // Build query
+    const query = {
+      tenantId: req.tenantId,
+      scheduledDate: {
+        $gte: startOfDay,
+        $lte: endOfDay
+      },
+      status: { $nin: ['cancelled', 'no-show'] }
+    };
+
+    // Filter by staff if provided
+    if (staffId) {
+      query.assignedTo = staffId;
+    }
+
+    // Get all bookings for the day
+    const bookings = await Booking.find(query).select('scheduledDate totalDuration assignedTo services');
+
+    // Operating hours (9 AM to 6 PM)
+    const operatingStart = 9; // 9 AM
+    const operatingEnd = 18; // 6 PM
+
+    // Generate hourly slots
+    const slots = [];
+    for (let hour = operatingStart; hour < operatingEnd; hour++) {
+      const slotTime = new Date(selectedDate);
+      slotTime.setHours(hour, 0, 0, 0);
+      
+      // Check if this slot is available
+      const isBooked = bookings.some(booking => {
+        const bookingStart = new Date(booking.scheduledDate);
+        const bookingHour = bookingStart.getHours();
+        
+        // Round duration to nearest hour
+        const durationHours = Math.ceil((booking.totalDuration || 60) / 60);
+        const bookingEnd = bookingHour + durationHours;
+        
+        // Check if slot overlaps with booking
+        return hour >= bookingHour && hour < bookingEnd;
+      });
+
+      slots.push({
+        time: slotTime,
+        hour: `${hour}:00`,
+        available: !isBooked,
+        staffId: staffId || null
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: slots,
+      bookings: bookings.map(b => ({
+        time: b.scheduledDate,
+        duration: b.totalDuration,
+        services: b.services.map(s => s.serviceName).join(', ')
+      }))
+    });
+  } catch (error) {
+    logger.error('Get available slots error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get available slots',
+      error: error.message
+    });
+  }
+};

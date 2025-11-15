@@ -3,7 +3,8 @@ const {
   createBooking,
   getBookings,
   updateBooking,
-  deleteBooking
+  deleteBooking,
+  getAvailableSlots
 } = require('../controllers/bookingController');
 const { protect, checkPermission } = require('../middleware/auth');
 const { enforceTenantIsolation } = require('../middleware/tenantIsolation');
@@ -12,6 +13,8 @@ const router = express.Router();
 
 router.use(protect);
 router.use(enforceTenantIsolation);
+
+router.get('/availability', getAvailableSlots);
 
 router.route('/')
   .get(getBookings)

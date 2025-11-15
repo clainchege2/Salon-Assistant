@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import BookingCalendar from '../components/BookingCalendar';
 import './AddBooking.css';
 
 export default function AddBooking() {
@@ -31,6 +32,7 @@ export default function AddBooking() {
     referredBy: '',
     hairType: '',
     instagramHandle: '',
+    tiktokHandle: '',
     smsConsent: true,
     whatsappConsent: true,
     emailConsent: false
@@ -41,7 +43,12 @@ export default function AddBooking() {
     description: ''
   });
   const [modalError, setModalError] = useState('');
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState(null);
   const navigate = useNavigate();
+
+  // Calculate total duration from selected services
+  const totalDuration = formData.services.reduce((sum, s) => sum + (s.duration || 0), 0);
 
   useEffect(() => {
     fetchData();
@@ -82,6 +89,17 @@ export default function AddBooking() {
       console.error('Error fetching data:', error);
       setError('Failed to load data. Please refresh the page.');
     }
+  };
+
+  const handleSlotSelect = (slot) => {
+    const slotDate = new Date(slot.time);
+    setFormData({
+      ...formData,
+      scheduledDate: slotDate.toISOString().split('T')[0],
+      scheduledTime: `${slotDate.getHours().toString().padStart(2, '0')}:00`
+    });
+    setSelectedSlot(slot);
+    setShowCalendar(false);
   };
 
   const handleServiceToggle = (service) => {
@@ -160,8 +178,10 @@ export default function AddBooking() {
       };
 
       // Add optional fields
-      if (newClient.instagramHandle) {
-        clientData.socialMedia = { instagram: newClient.instagramHandle };
+      if (newClient.instagramHandle || newClient.tiktokHandle) {
+        clientData.socialMedia = {};
+        if (newClient.instagramHandle) clientData.socialMedia.instagram = newClient.instagramHandle;
+        if (newClient.tiktokHandle) clientData.socialMedia.tiktok = newClient.tiktokHandle;
       }
       if (newClient.hairType) {
         clientData.preferences = { hairType: newClient.hairType };
@@ -185,7 +205,7 @@ export default function AddBooking() {
       setNewClient({ 
         firstName: '', lastName: '', phone: '+254', email: '', dateOfBirth: '',
         gender: '', referralSource: '', referredBy: '', hairType: '', instagramHandle: '',
-        smsConsent: true, whatsappConsent: true, emailConsent: false
+        tiktokHandle: '', smsConsent: true, whatsappConsent: true, emailConsent: false
       });
 
       // Show success message
@@ -384,6 +404,17 @@ export default function AddBooking() {
                   </select>
                   <span className="input-hint">Helps recommend suitable services</span>
                 </div>
+              </div>
+            </div>
+
+            {/* Social Media Section */}
+            <div className="form-section">
+              <div className="section-header">
+                <span className="section-icon">📱</span>
+                <span className="section-title">Social Media (Optional)</span>
+              </div>
+              
+              <div className="quick-form-row">
                 <div className="input-wrapper">
                   <label className="input-label">Instagram Handle</label>
                   <input
@@ -393,6 +424,16 @@ export default function AddBooking() {
                     onChange={(e) => setNewClient({ ...newClient, instagramHandle: e.target.value })}
                   />
                   <span className="input-hint">For tagging in posts (with permission)</span>
+                </div>
+                <div className="input-wrapper">
+                  <label className="input-label">TikTok Handle</label>
+                  <input
+                    type="text"
+                    placeholder="@username"
+                    value={newClient.tiktokHandle}
+                    onChange={(e) => setNewClient({ ...newClient, tiktokHandle: e.target.value })}
+                  />
+                  <span className="input-hint">For tagging in TikTok videos</span>
                 </div>
               </div>
             </div>
@@ -503,28 +544,6 @@ export default function AddBooking() {
           </select>
         </div>
 
-        <div className="form-row">
-          <div className="form-group">
-            <label>Date *</label>
-            <input
-              type="date"
-              value={formData.scheduledDate}
-              onChange={(e) => setFormData({ ...formData, scheduledDate: e.target.value })}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Time *</label>
-            <input
-              type="time"
-              value={formData.scheduledTime}
-              onChange={(e) => setFormData({ ...formData, scheduledTime: e.target.value })}
-              required
-            />
-          </div>
-        </div>
-
         <div className="form-group">
           <div className="services-header">
             <label>Services * (Select at least one)</label>
@@ -626,12 +645,12 @@ export default function AddBooking() {
         )}
 
         <div className="form-group">
-          <label>Assign To Staff Member {staff.length > 0 && `(${staff.length} available)`}</label>
+          <label>Assign To Staff Member * {staff.length > 0 && `(${staff.length} available)`}</label>
           <select
             value={formData.assignedTo}
             onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
           >
-            <option value="">Select staff member (optional)</option>
+            <option value="">Select staff member (required for calendar)</option>
             {staff.length === 0 && <option disabled>Loading staff...</option>}
             {staff.map(member => (
               <option key={member._id} value={member._id}>
@@ -640,6 +659,60 @@ export default function AddBooking() {
             ))}
           </select>
         </div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Date *</label>
+            <input
+              type="date"
+              value={formData.scheduledDate}
+              onChange={(e) => setFormData({ ...formData, scheduledDate: e.target.value })}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Time *</label>
+            <div className="time-selection">
+              <input
+                type="time"
+                value={formData.scheduledTime}
+                onChange={(e) => setFormData({ ...formData, scheduledTime: e.target.value })}
+                required
+                readOnly
+              />
+              <button 
+                type="button"
+                className="btn-calendar"
+                onClick={() => {
+                  console.log('Calendar button clicked. Show:', !showCalendar);
+                  console.log('Date:', formData.scheduledDate, 'Staff:', formData.assignedTo, 'Services:', formData.services.length);
+                  setShowCalendar(!showCalendar);
+                }}
+                disabled={!formData.scheduledDate || !formData.assignedTo || formData.services.length === 0}
+              >
+                📅 View Available Slots
+              </button>
+            </div>
+            {!formData.scheduledDate && <p className="help-text">⚠️ Select a date first</p>}
+            {!formData.assignedTo && <p className="help-text">⚠️ Select a staff member first</p>}
+            {formData.services.length === 0 && <p className="help-text">⚠️ Select at least one service first</p>}
+            {formData.scheduledDate && formData.assignedTo && formData.services.length > 0 && (
+              <p className="help-text success">✓ Ready to view available slots</p>
+            )}
+          </div>
+        </div>
+
+        {showCalendar && formData.scheduledDate && formData.assignedTo && (
+          <div className="calendar-container">
+            <BookingCalendar
+              selectedDate={formData.scheduledDate}
+              staffId={formData.assignedTo}
+              serviceDuration={totalDuration}
+              onSelectSlot={handleSlotSelect}
+            />
+          </div>
+        )}
 
         <div className="form-group">
           <label>Customer Instructions</label>

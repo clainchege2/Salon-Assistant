@@ -18,6 +18,8 @@ export default function AddClient() {
     allergies: '',
     skinSensitivity: '',
     notes: '',
+    instagramHandle: '',
+    tiktokHandle: '',
     smsConsent: true,
     emailConsent: false,
     whatsappConsent: false,
@@ -46,6 +48,10 @@ export default function AddClient() {
         gender: formData.gender || undefined,
         occupation: formData.occupation || undefined,
         referralSource: formData.referralSource || undefined,
+        socialMedia: {
+          instagram: formData.instagramHandle || undefined,
+          tiktok: formData.tiktokHandle || undefined
+        },
         marketingConsent: {
           sms: formData.smsConsent,
           email: formData.emailConsent,
@@ -239,6 +245,32 @@ export default function AddClient() {
             rows="3"
             placeholder="Preferences, favorite styles, special requests, etc..."
           />
+        </div>
+
+        <div className="form-section-title">📱 Social Media</div>
+
+        <div className="form-row">
+          <div className="form-group">
+            <label>Instagram Handle</label>
+            <input
+              type="text"
+              value={formData.instagramHandle}
+              onChange={(e) => setFormData({ ...formData, instagramHandle: e.target.value })}
+              placeholder="@username"
+            />
+            <small>For tagging in posts (with permission)</small>
+          </div>
+
+          <div className="form-group">
+            <label>TikTok Handle</label>
+            <input
+              type="text"
+              value={formData.tiktokHandle}
+              onChange={(e) => setFormData({ ...formData, tiktokHandle: e.target.value })}
+              placeholder="@username"
+            />
+            <small>For tagging in TikTok videos</small>
+          </div>
         </div>
 
         <div className="form-section-title">📱 Communication Preferences</div>
