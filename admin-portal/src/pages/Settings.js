@@ -23,6 +23,9 @@ export default function Settings() {
     phone: '',
     email: '',
     website: '',
+    country: 'Kenya',
+    currency: 'KES',
+    timezone: 'Africa/Nairobi',
     operatingHours: {
       monday: { open: '09:00', close: '18:00', closed: false },
       tuesday: { open: '09:00', close: '18:00', closed: false },
@@ -105,10 +108,13 @@ export default function Settings() {
         setTenant(tenant);
         setBusinessData({
           businessName: tenant.businessName || '',
-          address: tenant.address || '',
+          address: typeof tenant.address === 'string' ? tenant.address : (tenant.address?.street || ''),
           phone: tenant.phone || '',
           email: tenant.email || '',
           website: tenant.website || '',
+          country: tenant.country || 'Kenya',
+          currency: tenant.settings?.currency || 'KES',
+          timezone: tenant.settings?.timezone || 'Africa/Nairobi',
           operatingHours: tenant.operatingHours || businessData.operatingHours,
           notifications: tenant.notifications || businessData.notifications
         });
@@ -488,6 +494,76 @@ export default function Settings() {
                     placeholder="123 Main Street, Nairobi, Kenya"
                     rows="3"
                   />
+                </div>
+              </div>
+            </div>
+
+            {/* Regional & Currency Settings */}
+            <div className="settings-section">
+              <h2>🌍 Regional & Currency Settings</h2>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>Country/Region *</label>
+                  <select
+                    value={businessData.country || 'Kenya'}
+                    onChange={(e) => {
+                      const country = e.target.value;
+                      const currencyMap = {
+                        'Kenya': 'KES',
+                        'USA': 'USD',
+                        'UK': 'GBP',
+                        'Nigeria': 'NGN',
+                        'South Africa': 'ZAR',
+                        'Ghana': 'GHS'
+                      };
+                      setBusinessData({ 
+                        ...businessData, 
+                        country,
+                        currency: currencyMap[country] || 'KES'
+                      });
+                    }}
+                  >
+                    <option value="Kenya">Kenya</option>
+                    <option value="USA">United States</option>
+                    <option value="UK">United Kingdom</option>
+                    <option value="Nigeria">Nigeria</option>
+                    <option value="South Africa">South Africa</option>
+                    <option value="Ghana">Ghana</option>
+                  </select>
+                  <small className="form-hint">This affects currency display and date/time formats</small>
+                </div>
+
+                <div className="form-group">
+                  <label>Currency</label>
+                  <select
+                    value={businessData.currency || 'KES'}
+                    onChange={(e) => setBusinessData({ ...businessData, currency: e.target.value })}
+                  >
+                    <option value="KES">KES - Kenyan Shilling (KSh)</option>
+                    <option value="USD">USD - US Dollar ($)</option>
+                    <option value="GBP">GBP - British Pound (£)</option>
+                    <option value="NGN">NGN - Nigerian Naira (₦)</option>
+                    <option value="ZAR">ZAR - South African Rand (R)</option>
+                    <option value="GHS">GHS - Ghanaian Cedi (GH₵)</option>
+                  </select>
+                  <small className="form-hint">Currency used throughout the application</small>
+                </div>
+
+                <div className="form-group">
+                  <label>Timezone</label>
+                  <select
+                    value={businessData.timezone || 'Africa/Nairobi'}
+                    onChange={(e) => setBusinessData({ ...businessData, timezone: e.target.value })}
+                  >
+                    <option value="Africa/Nairobi">East Africa Time (EAT)</option>
+                    <option value="America/New_York">Eastern Time (ET)</option>
+                    <option value="America/Chicago">Central Time (CT)</option>
+                    <option value="America/Los_Angeles">Pacific Time (PT)</option>
+                    <option value="Europe/London">Greenwich Mean Time (GMT)</option>
+                    <option value="Africa/Lagos">West Africa Time (WAT)</option>
+                    <option value="Africa/Johannesburg">South Africa Time (SAST)</option>
+                  </select>
+                  <small className="form-hint">Timezone for appointments and reports</small>
                 </div>
               </div>
             </div>

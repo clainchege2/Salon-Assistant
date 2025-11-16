@@ -34,6 +34,12 @@ export default function Login() {
         // Set new data
         localStorage.setItem('adminToken', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
+        
+        // Store tenant data for localization
+        if (response.data.tenant) {
+          localStorage.setItem('tenant', JSON.stringify(response.data.tenant));
+        }
+        
         console.log('Navigating to dashboard...');
         navigate('/dashboard');
       } else {

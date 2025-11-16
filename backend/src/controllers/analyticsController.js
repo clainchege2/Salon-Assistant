@@ -155,6 +155,16 @@ exports.getOverview = async (req, res) => {
     });
     const topStylist = Object.entries(stylistRevenue).sort((a, b) => b[1] - a[1])[0];
 
+    // Initialize peak hours variables (will be calculated from heatmap)
+    const formatHour = (h) => {
+      if (h === 12) return '12pm';
+      if (h > 12) return `${h - 12}pm`;
+      return `${h}am`;
+    };
+    
+    let peakHours = 'No peak hours data';
+    let peakDayText = 'weekdays';
+
     // Generate revenue data for chart - adaptive based on date range
     // Minimum granularity is 1 day for all ranges
     const revenueData = [];
@@ -181,9 +191,9 @@ exports.getOverview = async (req, res) => {
       dataPoints = daysDiff;
       groupBy = 'day';
     } else if (daysDiff <= 181) {
-      // 180D: Daily data (181 points max)
-      dataPoints = daysDiff;
-      groupBy = 'day';
+      // 180D: Weekly data (~26 points)
+      dataPoints = Math.ceil(daysDiff / 7);
+      groupBy = 'week';
     } else if (daysDiff <= 366) {
       // 1Y: Weekly data (~52 points)
       dataPoints = Math.ceil(daysDiff / 7);
@@ -292,16 +302,53 @@ exports.getOverview = async (req, res) => {
         lastMonth: revenue * 0.85 // Mock comparison data
       });
     }
-    // Generate heatmap data (sample)
+    // Generate heatmap data from actual bookings
     const heatmapData = [];
+    const dayHourCounts = {};
+    
+    // Count bookings by day and hour
+    bookings.forEach(b => {
+      const date = new Date(b.scheduledDate);
+      const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      const hour = date.getHours();
+      const key = `${dayOfWeek}-${hour}`;
+      dayHourCounts[key] = (dayHourCounts[key] || 0) + 1;
+    });
+    
+    // Create heatmap array (9am-6pm = 10 hours)
     for (let day = 0; day < 7; day++) {
-      for (let hour = 0; hour < 10; hour++) {
+      for (let hour = 9; hour <= 18; hour++) {
+        const key = `${day}-${hour}`;
         heatmapData.push({
           day,
-          hour,
-          value: Math.floor(Math.random() * 10)
+          hour: hour - 9, // Normalize to 0-9 for display
+          value: dayHourCounts[key] || 0
         });
       }
+    }
+    
+    // Find actual peak from heatmap data
+    const maxHeatmapValue = Math.max(...heatmapData.map(h => h.value));
+    const peakCell = heatmapData.find(h => h.value === maxHeatmapValue);
+    
+    if (peakCell && maxHeatmapValue > 0) {
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const peakDayName = dayNames[peakCell.day];
+      const peakHourActual = peakCell.hour + 9; // Convert back to actual hour
+      
+      // Find consecutive 2-hour window on peak day
+      let bestWindow = { start: peakHourActual, count: 0 };
+      for (let h = 9; h <= 17; h++) {
+        const key1 = `${peakCell.day}-${h}`;
+        const key2 = `${peakCell.day}-${h + 1}`;
+        const windowCount = (dayHourCounts[key1] || 0) + (dayHourCounts[key2] || 0);
+        if (windowCount > bestWindow.count) {
+          bestWindow = { start: h, count: windowCount };
+        }
+      }
+      
+      peakHours = `${formatHour(bestWindow.start)}-${formatHour(bestWindow.start + 2)}`;
+      peakDayText = `${peakDayName}s`;
     }
 
     // Calculate actual revenue change by comparing to previous equivalent period
@@ -318,9 +365,18 @@ exports.getOverview = async (req, res) => {
     });
     
     const previousRevenue = previousBookings.reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+    const comparisonAppointments = previousBookings.length;
+    const previousAvgTicketSize = comparisonAppointments > 0 ? previousRevenue / comparisonAppointments : 0;
     const actualChange = previousRevenue > 0 
       ? Math.round(((totalRevenue - previousRevenue) / previousRevenue) * 100)
       : 0;
+    
+    // Create previousData object for compatibility
+    const previousData = {
+      totalRevenue: previousRevenue,
+      totalAppointments: comparisonAppointments,
+      avgTicketSize: previousAvgTicketSize
+    };
     
     // Generate insight message based on selected range
     let periodName = 'period';
@@ -358,24 +414,38 @@ exports.getOverview = async (req, res) => {
     } else {
       revenueInsight = `Revenue remained stable compared to previous ${periodName}.`;
     }
+    
+    // Generate dynamic insights
+    const dynamicInsights = {
+      revenue: revenueInsight,
+      trend: topService ? `${topService[0]} is your most popular service with ${topService[1]} bookings` : 'No service data available',
+      warning: actualChange < -10 ? `Revenue is down ${Math.abs(actualChange)}% - consider promotional campaigns` : null
+    };
 
     res.json({
       totalRevenue,
       revenueChange: actualChange,
       totalAppointments,
-      appointmentsChange: 8,
+      appointmentsChange: comparisonAppointments > 0 
+        ? (((totalAppointments - comparisonAppointments) / comparisonAppointments) * 100).toFixed(1)
+        : 0,
       avgTicketSize,
-      ticketChange: 5,
+      ticketChange: previousData.avgTicketSize > 0
+        ? (((avgTicketSize - previousData.avgTicketSize) / previousData.avgTicketSize) * 100).toFixed(1)
+        : 0,
       returningClientsPercent,
       returningChange: 3,
       topService: topService ? { name: topService[0], count: topService[1] } : null,
       topStylist: topStylist ? { name: topStylist[0], revenue: topStylist[1] } : null,
       revenueData,
       heatmapData,
+      peakHours,
+      peakDay: peakDayText,
       insights: {
-        revenue: revenueInsight,
-        trend: topService ? `${topService[0]} generated the most bookings this period.` : 'No service data available.',
-        warning: 'Your slowest booking day is Tuesday.'
+        revenue: dynamicInsights.revenue,
+        trend: dynamicInsights.trend,
+        warning: dynamicInsights.warning,
+        peakTime: `Most bookings occur ${peakDayText} between ${peakHours}`
       }
     });
   } catch (error) {
@@ -520,17 +590,46 @@ exports.getAppointments = async (req, res) => {
     }
 
     // Time of day data
-    const timeOfDayData = [
-      { hour: '9-10am', bookings: Math.floor(Math.random() * 20) },
-      { hour: '10-11am', bookings: Math.floor(Math.random() * 20) },
-      { hour: '11-12pm', bookings: Math.floor(Math.random() * 20) },
-      { hour: '12-1pm', bookings: Math.floor(Math.random() * 20) },
-      { hour: '1-2pm', bookings: Math.floor(Math.random() * 20) },
-      { hour: '2-3pm', bookings: Math.floor(Math.random() * 20) },
-      { hour: '3-4pm', bookings: Math.floor(Math.random() * 20) },
-      { hour: '4-5pm', bookings: Math.floor(Math.random() * 20) },
-      { hour: '5-6pm', bookings: Math.floor(Math.random() * 20) }
-    ];
+    // Calculate real time of day data
+    const hourCounts = {};
+    bookings.forEach(b => {
+      const hour = new Date(b.scheduledDate).getHours();
+      hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+    });
+    
+    const timeOfDayData = [];
+    for (let h = 9; h <= 17; h++) {
+      const formatHour = (hour) => {
+        if (hour === 12) return '12-1pm';
+        if (hour > 12) return `${hour - 12}-${hour - 11}pm`;
+        return `${hour}-${hour + 1}am`;
+      };
+      timeOfDayData.push({
+        hour: formatHour(h),
+        bookings: hourCounts[h] || 0
+      });
+    }
+    
+    // Calculate peak hours (same logic as Overview)
+    const formatHour = (h) => {
+      if (h === 12) return '12pm';
+      if (h > 12) return `${h - 12}pm`;
+      return `${h}am`;
+    };
+    
+    let maxBookings = 0;
+    let peakHourStart = 9;
+    for (let hour = 9; hour <= 17; hour++) {
+      const windowBookings = (hourCounts[hour] || 0) + (hourCounts[hour + 1] || 0);
+      if (windowBookings > maxBookings) {
+        maxBookings = windowBookings;
+        peakHourStart = hour;
+      }
+    }
+    
+    const peakHours = maxBookings > 0 
+      ? `${formatHour(peakHourStart)}-${formatHour(peakHourStart + 2)}`
+      : 'No peak hours data';
 
     res.json({
       completed,
@@ -547,11 +646,21 @@ exports.getAppointments = async (req, res) => {
         { name: 'No-shows', value: noShows }
       ],
       timeOfDayData,
-      peakHours: '2-6pm',
+      peakHours,
       insights: {
-        overbooked: 'Fridays 3-5pm are consistently overbooked',
-        underutilized: 'Tuesday mornings have 40% availability',
-        suggestion: 'Offer weekday lunch deals to boost mid-day bookings'
+        volume: total > 0 
+          ? `You had ${total} appointment${total === 1 ? '' : 's'} during this period`
+          : 'No appointments in this period',
+        completion: total > 0
+          ? completed === total
+            ? `Perfect! All ${completed} appointments were completed`
+            : cancelled + noShows > 5
+              ? `${cancelled + noShows} appointments didn't happen - consider sending more reminders`
+              : `Great job! ${completed} out of ${total} appointments completed successfully`
+          : 'Start booking appointments to see completion insights',
+        peak: maxBookings > 0
+          ? `Busiest time: ${peakHours} - plan extra staff during these hours`
+          : 'Not enough data to identify peak hours yet'
       }
     });
   } catch (error) {
@@ -678,12 +787,15 @@ exports.getClients = async (req, res) => {
       });
     }
 
-    // Churn
-    const ninetyDaysAgo = new Date();
-    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+    // Churn - Calculate based on selected range (clients who haven't visited during the period)
+    // Use the start of the selected period as the churn threshold
+    const churnThreshold = new Date(startDate);
     const churnedClients = clients.filter(c => 
-      c.lastVisit && new Date(c.lastVisit) < ninetyDaysAgo
+      c.lastVisit && new Date(c.lastVisit) < churnThreshold
     ).length;
+    
+    // Calculate churn period in days for display
+    const churnDays = Math.ceil((new Date() - churnThreshold) / (1000 * 60 * 60 * 24));
 
     res.json({
       totalClients: clients.length,
@@ -706,7 +818,8 @@ exports.getClients = async (req, res) => {
       avgSpendPerClient: avgSpend.toFixed(2),
       highValueCount: Math.floor(clients.length * 0.1),
       highValueThreshold: 500,
-      churnedClients
+      churnedClients,
+      churnDays
     });
   } catch (error) {
     console.error('Error in getClients:', error);
@@ -796,9 +909,9 @@ exports.getFinance = async (req, res) => {
 
     const bookings = await Booking.find({
       tenantId,
-      date: { $gte: startDate, $lte: endDate },
+      scheduledDate: { $gte: startDate, $lte: endDate },
       status: { $in: ['confirmed', 'completed'] }
-    }).populate('service');
+    });
 
     const totalRevenue = bookings.reduce((sum, b) => sum + (b.totalPrice || 0), 0);
     const serviceRevenue = totalRevenue * 0.85; // Mock split

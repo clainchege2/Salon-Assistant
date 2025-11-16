@@ -651,7 +651,10 @@ export default function SalonDashboard() {
                     </td>
                     <td>
                       <span className="stylist-name">
-                        {booking.staffName || 'Unassigned'}
+                        {booking.stylistId 
+                          ? `${booking.stylistId.firstName} ${booking.stylistId.lastName}`
+                          : (booking.staffName || 'Unassigned')
+                        }
                       </span>
                     </td>
                     <td>

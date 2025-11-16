@@ -181,6 +181,17 @@ exports.login = async (req, res) => {
         tenantSlug: tenant.slug,
         businessName: tenant.businessName,
         subscriptionTier: tenant.subscriptionTier
+      },
+      tenant: {
+        id: tenant._id,
+        businessName: tenant.businessName,
+        slug: tenant.slug,
+        country: tenant.country,
+        settings: {
+          currency: tenant.settings?.currency || 'KES',
+          timezone: tenant.settings?.timezone || 'Africa/Nairobi',
+          locale: tenant.settings?.locale
+        }
       }
     });
   } catch (error) {
@@ -312,7 +323,13 @@ exports.getMe = async (req, res) => {
         businessName: tenant.businessName,
         slug: tenant.slug,
         subscriptionTier: tenant.subscriptionTier,
-        status: tenant.status
+        status: tenant.status,
+        country: tenant.country,
+        settings: {
+          currency: tenant.settings?.currency || 'KES',
+          timezone: tenant.settings?.timezone || 'Africa/Nairobi',
+          locale: tenant.settings?.locale
+        }
       }
     };
 

@@ -39,7 +39,7 @@ router.get('/me', protect, async (req, res) => {
 // Update own tenant information
 router.put('/me', protect, async (req, res) => {
   try {
-    const { businessName, address, phone, email, website, operatingHours, notifications } = req.body;
+    const { businessName, address, phone, email, website, country, currency, timezone, operatingHours, notifications } = req.body;
     
     const tenant = await Tenant.findById(req.tenantId);
     
@@ -52,16 +52,33 @@ router.put('/me', protect, async (req, res) => {
 
     // Update fields
     if (businessName) tenant.businessName = businessName;
-    if (address) tenant.address = address;
+    
+    // Handle address - can be string or object
+    if (address) {
+      if (typeof address === 'string') {
+        // If string, store in street field
+        tenant.address = { street: address };
+      } else {
+        // If object, store as is
+        tenant.address = address;
+      }
+    }
+    
     if (phone) tenant.phone = phone;
     if (email) tenant.ownerEmail = email;
     if (website) tenant.website = website;
+    if (country) tenant.country = country;
     if (operatingHours) tenant.operatingHours = operatingHours;
     if (notifications) tenant.notifications = notifications;
+    
+    // Update settings
+    if (!tenant.settings) tenant.settings = {};
+    if (currency) tenant.settings.currency = currency;
+    if (timezone) tenant.settings.timezone = timezone;
 
     await tenant.save();
 
-    logger.info(`Tenant updated: ${tenant.businessName}`);
+    logger.info(`Tenant updated: ${tenant.businessName} (Country: ${country}, Currency: ${currency})`);
 
     res.json({
       success: true,

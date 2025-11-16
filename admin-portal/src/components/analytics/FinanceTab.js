@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import KPICard from './KPICard';
+import { formatCurrency } from '../../utils/formatters';
 import './FinanceTab.css';
 
 const FinanceTab = ({ dateRange, customRange }) => {
@@ -32,28 +33,28 @@ const FinanceTab = ({ dateRange, customRange }) => {
     {
       icon: '💰',
       label: 'Total Revenue',
-      value: `$${data?.totalRevenue?.toLocaleString() || '0'}`,
+      value: formatCurrency(data?.totalRevenue || 0),
       change: data?.revenueChange || 0,
       color: '#2ecc71'
     },
     {
       icon: '💇',
       label: 'Service Revenue',
-      value: `$${data?.serviceRevenue?.toLocaleString() || '0'}`,
+      value: formatCurrency(data?.serviceRevenue || 0),
       subValue: `${data?.servicePercent || 0}% of total`,
       color: '#ff69b4'
     },
     {
       icon: '🛍️',
       label: 'Product Revenue',
-      value: `$${data?.productRevenue?.toLocaleString() || '0'}`,
+      value: formatCurrency(data?.productRevenue || 0),
       subValue: `${data?.productPercent || 0}% of total`,
       color: '#3498db'
     },
     {
       icon: '💵',
       label: 'Tips',
-      value: `$${data?.tips?.toLocaleString() || '0'}`,
+      value: formatCurrency(data?.tips || 0),
       subValue: `${data?.tipsPercent || 0}% of total`,
       color: '#f39c12'
     }
@@ -81,9 +82,9 @@ const FinanceTab = ({ dateRange, customRange }) => {
             <div className="insight-card info">
               <div className="insight-icon">💰</div>
               <div className="insight-text">
-                {data.profitability.bestMargins?.[0] ? 
-                  `${data.profitability.bestMargins[0].name} has the best profit margin at ${data.profitability.bestMargins[0].margin}%` :
-                  'Color services have highest margins but also highest consumable costs'
+                {data.profitability.bestMargins?.[0] 
+                  ? `${data.profitability.bestMargins[0].name} has the best profit margin at ${data.profitability.bestMargins[0].margin}%`
+                  : 'Track service costs to identify high-margin offerings'
                 }
               </div>
             </div>
@@ -91,7 +92,7 @@ const FinanceTab = ({ dateRange, customRange }) => {
               <div className="insight-icon">⚡</div>
               <div className="insight-text">
                 {data?.topStylists?.[0] ? 
-                  `${data.topStylists[0].name} is your top revenue generator at $${data.topStylists[0].revenue?.toLocaleString()}` :
+                  `${data.topStylists[0].name} is your top revenue generator at ${formatCurrency(data.topStylists[0].revenue)}` :
                   'Focus on high-margin services to maximize profitability'
                 }
               </div>

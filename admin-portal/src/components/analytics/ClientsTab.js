@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import KPICard from './KPICard';
+import { formatCurrency } from '../../utils/formatters';
 import './ClientsTab.css';
 
 const ClientsTab = ({ dateRange, customRange }) => {
@@ -53,7 +54,7 @@ const ClientsTab = ({ dateRange, customRange }) => {
     {
       icon: '💰',
       label: 'Avg Spend',
-      value: `$${data?.avgSpend || '0'}`,
+      value: formatCurrency(data?.avgSpend || 0),
       change: data?.spendChange || 0,
       color: '#f39c12'
     }
@@ -70,27 +71,34 @@ const ClientsTab = ({ dateRange, customRange }) => {
       </div>
 
       {/* Churn Indicators - Moved Up for Visibility */}
-      <div className="chart-widget">
-        <div className="widget-header">
-          <h3>⚠️ Churn Alert</h3>
-        </div>
-        
-        <div className="churn-section">
-          <div className="churn-stat">
-            <div className="churn-number">{data?.churnedClients || '0'}</div>
-            <div className="churn-label">Clients haven't returned in 90+ days</div>
+      {data?.churnedClients > 0 && (
+        <div className="chart-widget">
+          <div className="widget-header">
+            <h3>⚠️ Churn Alert</h3>
           </div>
           
-          <div className="churn-actions">
-            <h4>Suggested Re-engagement Actions</h4>
-            <ul>
-              <li>Send "We miss you" email with 15% discount</li>
-              <li>Offer complimentary consultation</li>
-              <li>Share new services or seasonal promotions</li>
-            </ul>
+          <div className="churn-section">
+            <div className="churn-stat">
+              <div className="churn-number">{data.churnedClients}</div>
+              <div className="churn-label">
+                {data.churnedClients === 1 
+                  ? `Client hasn't visited in ${data.churnDays || '90+'}+ days` 
+                  : `Clients haven't visited in ${data.churnDays || '90+'}+ days`}
+              </div>
+            </div>
+            
+            <div className="churn-actions">
+              <h4>Win-Back Campaign Ideas</h4>
+              <ul>
+                <li>Send personalized "We miss you" message with {data.churnedClients > 10 ? '20%' : '15%'} discount</li>
+                <li>Offer complimentary consultation or treatment upgrade</li>
+                <li>Highlight new services or seasonal promotions</li>
+                <li>Request feedback to understand why they left</li>
+              </ul>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="chart-widget">
         <div className="widget-header">
@@ -125,26 +133,33 @@ const ClientsTab = ({ dateRange, customRange }) => {
       <div className="two-column-grid">
         <div className="chart-widget">
           <div className="widget-header">
-            <h3>Client Segmentation</h3>
+            <h3>New vs Returning</h3>
           </div>
           
-          <ResponsiveContainer width="100%" height={250}>
+          <ResponsiveContainer width="100%" height={280}>
             <PieChart>
               <Pie
-                data={data?.segmentationData || []}
+                data={[
+                  { name: 'Returning', value: data?.returningClients || 0 },
+                  { name: 'New', value: data?.newClients || 0 }
+                ]}
                 cx="50%"
-                cy="50%"
+                cy="45%"
                 labelLine={false}
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                outerRadius={80}
+                label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                outerRadius={85}
                 fill="#8884d8"
                 dataKey="value"
               >
-                {(data?.segmentationData || []).map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
+                <Cell fill="#9b59b6" />
+                <Cell fill="#2ecc71" />
               </Pie>
-              <Tooltip />
+              <Tooltip formatter={(value) => `${value} clients`} />
+              <Legend 
+                verticalAlign="bottom" 
+                height={40}
+                formatter={(value, entry) => `${value}: ${entry.payload.value}`}
+              />
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -161,12 +176,12 @@ const ClientsTab = ({ dateRange, customRange }) => {
             </div>
             <div className="metric-item">
               <div className="metric-label">Avg Spend Per Client</div>
-              <div className="metric-value">${data?.avgSpendPerClient || '0'}</div>
+              <div className="metric-value">{formatCurrency(data?.avgSpendPerClient || 0)}</div>
             </div>
             <div className="metric-item">
               <div className="metric-label">Highest Value Clients</div>
               <div className="metric-value">{data?.highValueCount || '0'} clients</div>
-              <div className="metric-subvalue">Spending ${data?.highValueThreshold || '500'}+</div>
+              <div className="metric-subvalue">Spending {formatCurrency(data?.highValueThreshold || 500)}+</div>
             </div>
           </div>
         </div>

@@ -18,6 +18,12 @@ export async function refreshUserData() {
     if (response.data.success) {
       // Update localStorage with fresh user data
       localStorage.setItem('user', JSON.stringify(response.data.user));
+      
+      // Store tenant data for localization
+      if (response.data.user.tenant) {
+        localStorage.setItem('tenant', JSON.stringify(response.data.user.tenant));
+      }
+      
       console.log('✅ User data refreshed:', response.data.user);
       return response.data.user;
     }

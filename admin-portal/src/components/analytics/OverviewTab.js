@@ -4,6 +4,7 @@ import KPICard from './KPICard';
 import HeatmapChart from './HeatmapChart';
 import InsightCard from './InsightCard';
 import LoadingSkeleton from '../LoadingSkeleton';
+import { formatCurrency } from '../../utils/formatters';
 import './OverviewTab.css';
 
 const OverviewTab = ({ dateRange, customRange }) => {
@@ -64,7 +65,7 @@ const OverviewTab = ({ dateRange, customRange }) => {
     {
       icon: '💰',
       label: 'Total Revenue',
-      value: `$${data?.totalRevenue?.toLocaleString() || '0'}`,
+      value: formatCurrency(data?.totalRevenue || 0),
       change: data?.revenueChange || 0,
       color: '#ff69b4'
     },
@@ -78,7 +79,7 @@ const OverviewTab = ({ dateRange, customRange }) => {
     {
       icon: '',
       label: 'Avg Booking Value',
-      value: `$${data?.avgTicketSize?.toFixed(2) || '0'}`,
+      value: formatCurrency(data?.avgTicketSize || 0),
       change: data?.ticketChange || 0,
       color: '#3498db'
     },
@@ -100,28 +101,40 @@ const OverviewTab = ({ dateRange, customRange }) => {
       icon: '👑',
       label: 'Top Stylist',
       value: data?.topStylist?.name || 'N/A',
-      subValue: `$${data?.topStylist?.revenue?.toLocaleString() || '0'}`,
+      subValue: formatCurrency(data?.topStylist?.revenue || 0),
       color: '#e74c3c'
     }
   ];
 
+  // Determine insight types based on changes
+  const getInsightType = (change) => {
+    if (change > 5) return 'positive';
+    if (change < -5) return 'warning';
+    return 'info';
+  };
+
+  const revenueChange = data?.revenueChange || 0;
+  const appointmentsChange = data?.appointmentsChange || 0;
+
   const insights = [
     {
-      icon: '💡',
-      text: data?.insights?.revenue || 'Revenue increased 14% compared to last month.',
-      type: 'positive'
+      icon: '💰',
+      text: data?.insights?.revenue || `Revenue ${revenueChange > 0 ? 'increased' : 'decreased'} ${Math.abs(revenueChange).toFixed(1)}% vs previous period`,
+      type: getInsightType(revenueChange)
     },
     {
-      icon: '📈',
-      text: data?.insights?.trend || 'Hair color services generated the most revenue this month.',
+      icon: '📅',
+      text: appointmentsChange !== 0 
+        ? `Appointments ${appointmentsChange > 0 ? 'up' : 'down'} ${Math.abs(appointmentsChange).toFixed(1)}% from last period`
+        : 'Appointment volume remained stable',
+      type: getInsightType(appointmentsChange)
+    },
+    data?.topService?.name && {
+      icon: '💅',
+      text: data?.insights?.trend || `${data.topService.name} is your top service with ${data.topService.count} bookings`,
       type: 'info'
-    },
-    {
-      icon: '⚠️',
-      text: data?.insights?.warning || 'Your slowest booking day is Tuesday.',
-      type: 'warning'
     }
-  ];
+  ].filter(Boolean); // Remove null/undefined entries
 
   return (
     <div className="overview-tab">
@@ -148,8 +161,8 @@ const OverviewTab = ({ dateRange, customRange }) => {
           <h3>Revenue Over Time</h3>
           <div className="chart-info">
             <span style={{ fontSize: '13px', color: '#999' }}>
-              {['1D', '7D', '30D', '90D', '180D'].includes(dateRange) && 'Daily view'}
-              {['1Y', '2Y', '3Y', '5Y'].includes(dateRange) && 'Weekly view'}
+              {['1D', '7D', '30D', '90D'].includes(dateRange) && 'Daily view'}
+              {['180D', '1Y', '2Y', '3Y', '5Y'].includes(dateRange) && 'Weekly view'}
               {['7Y', '9Y', '10Y'].includes(dateRange) && 'Monthly view'}
               {['15Y', '20Y', 'ALL'].includes(dateRange) && 'Yearly view'}
               {dateRange === 'thisWeek' && 'Daily view'}
@@ -219,9 +232,11 @@ const OverviewTab = ({ dateRange, customRange }) => {
           <h3>Peak Booking Hours</h3>
         </div>
         <HeatmapChart data={data?.heatmapData || []} />
-        <div className="insight-footer">
-          💡 Most bookings occur Fridays between 2–6pm.
-        </div>
+        {data?.insights?.peakTime && (
+          <div className="insight-footer">
+            {data.insights.peakTime}
+          </div>
+        )}
       </div>
     </div>
   );

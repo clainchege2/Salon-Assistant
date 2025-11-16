@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { formatCurrency, getCurrencyCode } from '../../utils/formatters';
 import './ServicesTab.css';
 
 const ServicesTab = ({ dateRange, customRange }) => {
@@ -71,9 +72,9 @@ const ServicesTab = ({ dateRange, customRange }) => {
           <div className="insight-card positive">
             <div className="insight-icon">💰</div>
             <div className="insight-text">
-              {data?.topServices?.[0] ? 
-                `${data.topServices[0].name} is your top revenue generator at $${data.topServices[0].revenue?.toLocaleString()}` :
-                'Hair color services generate the highest revenue per booking'
+              {data?.topServices?.[0] 
+                ? `${data.topServices[0].name} is your top revenue generator at ${formatCurrency(data.topServices[0].revenue)}`
+                : 'Add bookings to see top service performance'
               }
             </div>
           </div>
@@ -85,12 +86,14 @@ const ServicesTab = ({ dateRange, customRange }) => {
             </div>
           </div>
           
-          <div className="insight-card warning">
-            <div className="insight-icon">⚡</div>
-            <div className="insight-text">
-              Services with 4-6 week rebooking cycles show the best client retention. Focus marketing on these services.
+          {data?.topServices && data.topServices.length > 1 && (
+            <div className="insight-card warning">
+              <div className="insight-icon">⚡</div>
+              <div className="insight-text">
+                {`${data.topServices.length} services tracked - diversify offerings to maximize revenue`}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -135,7 +138,7 @@ const ServicesTab = ({ dateRange, customRange }) => {
                   </div>
                   <div className="detail-item">
                     <span className="detail-label">Avg Revenue:</span>
-                    <span className="detail-value">${service.avgRevenue || '0'}</span>
+                    <span className="detail-value">{formatCurrency(service.avgRevenue || 0)}</span>
                   </div>
                   <div className="detail-item">
                     <span className="detail-label">Most Common Age Group:</span>
@@ -205,9 +208,8 @@ const ServicesTab = ({ dateRange, customRange }) => {
                 type="number" 
                 dataKey="revenue" 
                 name="Revenue" 
-                unit="$"
                 stroke="#999"
-                label={{ value: 'Revenue ($)', angle: -90, position: 'insideLeft' }}
+                label={{ value: `Revenue (${getCurrencyCode()})`, angle: -90, position: 'insideLeft' }}
               />
               <Tooltip cursor={{ strokeDasharray: '3 3' }} />
               <Scatter 

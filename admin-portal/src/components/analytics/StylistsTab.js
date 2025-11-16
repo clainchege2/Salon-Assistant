@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import LoadingSkeleton from '../LoadingSkeleton';
+import { formatCurrency } from '../../utils/formatters';
 import './StylistsTab.css';
 
 const StylistsTab = ({ dateRange, customRange }) => {
@@ -97,8 +98,8 @@ const StylistsTab = ({ dateRange, customRange }) => {
               <div className="stylist-info">
                 <div className="stylist-name">{stylist.name}</div>
                 <div className="stylist-stats">
-                  {sortBy === 'revenue' && `$${stylist.revenue?.toLocaleString()} • ${stylist.bookings} bookings`}
-                  {sortBy === 'bookings' && `${stylist.bookings} bookings • $${stylist.revenue?.toLocaleString()}`}
+                  {sortBy === 'revenue' && `${formatCurrency(stylist.revenue)} • ${stylist.bookings} bookings`}
+                  {sortBy === 'bookings' && `${stylist.bookings} bookings • ${formatCurrency(stylist.revenue)}`}
                   {sortBy === 'rating' && `⭐ ${stylist.rating?.toFixed(1)} rating • ${stylist.bookings} bookings`}
                   {sortBy === 'avgTime' && `${stylist.avgTime}min avg • ${stylist.bookings} bookings`}
                 </div>
@@ -120,7 +121,7 @@ const StylistsTab = ({ dateRange, customRange }) => {
                     <div className="detail-grid">
                       <div className="detail-item">
                         <span className="detail-label">Total Revenue</span>
-                        <span className="detail-value">${stylist.revenue?.toLocaleString()}</span>
+                        <span className="detail-value">{formatCurrency(stylist.revenue)}</span>
                       </div>
                       <div className="detail-item">
                         <span className="detail-label">Total Bookings</span>

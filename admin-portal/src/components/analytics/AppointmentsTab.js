@@ -76,19 +76,19 @@ const AppointmentsTab = ({ dateRange, customRange }) => {
           <div className="insight-card info">
             <div className="insight-icon">📊</div>
             <div className="insight-text">
-              {data?.insights?.overbooked || 'Fridays 3-5pm are consistently overbooked'}
-            </div>
-          </div>
-          <div className="insight-card warning">
-            <div className="insight-icon">⚠️</div>
-            <div className="insight-text">
-              {data?.insights?.underutilized || 'Tuesday mornings have 40% availability'}
+              {data?.insights?.volume || 'Loading appointment data...'}
             </div>
           </div>
           <div className="insight-card positive">
-            <div className="insight-icon">💡</div>
+            <div className="insight-icon">✅</div>
             <div className="insight-text">
-              {data?.insights?.suggestion || 'Offer weekday lunch deals to boost mid-day bookings'}
+              {data?.insights?.completion || 'Track completion rates'}
+            </div>
+          </div>
+          <div className="insight-card info">
+            <div className="insight-icon">⏰</div>
+            <div className="insight-text">
+              {data?.insights?.peak || 'Analyzing peak hours...'}
             </div>
           </div>
         </div>
