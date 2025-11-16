@@ -283,7 +283,7 @@ export default function Clients() {
         </button>
         <div className="page-title-wrapper">
           <div className="title-with-icon">
-            <span className="title-icon">👩🏾</span>
+            <span className="title-icon">💇🏾‍♀️</span>
             <div className="title-content">
               <h1>Client Management</h1>
               <p className="page-tagline">Build lasting relationships with your valued clients</p>

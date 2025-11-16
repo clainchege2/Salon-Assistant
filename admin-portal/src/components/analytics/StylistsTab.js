@@ -172,22 +172,7 @@ const StylistsTab = ({ dateRange, customRange }) => {
         </div>
       </div>
 
-      <div className="chart-widget">
-        <div className="widget-header">
-          <h3>Revenue by Stylist</h3>
-        </div>
-        
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={data?.revenueData || []}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis dataKey="name" stroke="#999" />
-            <YAxis stroke="#999" />
-            <Tooltip />
-            <Bar dataKey="revenue" fill="#ff69b4" radius={[8, 8, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-
+      {/* Efficiency Panel - Moved Up for Better Visibility */}
       <div className="chart-widget">
         <div className="widget-header">
           <h3>Efficiency Panel</h3>
@@ -217,6 +202,22 @@ const StylistsTab = ({ dateRange, customRange }) => {
             <div className="efficiency-value">{data?.avgIdleTime || '0'}hrs</div>
           </div>
         </div>
+      </div>
+
+      <div className="chart-widget">
+        <div className="widget-header">
+          <h3>Revenue by Stylist</h3>
+        </div>
+        
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={data?.revenueData || []}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <XAxis dataKey="name" stroke="#999" />
+            <YAxis stroke="#999" />
+            <Tooltip />
+            <Bar dataKey="revenue" fill="#ff69b4" radius={[8, 8, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );

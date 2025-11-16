@@ -69,6 +69,31 @@ const AppointmentsTab = ({ dateRange, customRange }) => {
         ))}
       </div>
 
+      {/* Key Insights - Moved to Top */}
+      <div className="insights-section">
+        <h3>Key Insights</h3>
+        <div className="insights-grid">
+          <div className="insight-card info">
+            <div className="insight-icon">📊</div>
+            <div className="insight-text">
+              {data?.insights?.overbooked || 'Fridays 3-5pm are consistently overbooked'}
+            </div>
+          </div>
+          <div className="insight-card warning">
+            <div className="insight-icon">⚠️</div>
+            <div className="insight-text">
+              {data?.insights?.underutilized || 'Tuesday mornings have 40% availability'}
+            </div>
+          </div>
+          <div className="insight-card positive">
+            <div className="insight-icon">💡</div>
+            <div className="insight-text">
+              {data?.insights?.suggestion || 'Offer weekday lunch deals to boost mid-day bookings'}
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="chart-widget">
         <div className="widget-header">
           <h3>Appointment Volume</h3>
@@ -145,30 +170,6 @@ const AppointmentsTab = ({ dateRange, customRange }) => {
           
           <div className="insight-footer">
             💡 Peak booking hours: {data?.peakHours || '2-6pm'}
-          </div>
-        </div>
-      </div>
-
-      <div className="insights-section">
-        <h3>Insights & Recommendations</h3>
-        <div className="insights-grid">
-          <div className="insight-card info">
-            <div className="insight-icon">📊</div>
-            <div className="insight-text">
-              {data?.insights?.overbooked || 'Fridays 3-5pm are consistently overbooked'}
-            </div>
-          </div>
-          <div className="insight-card warning">
-            <div className="insight-icon">⚠️</div>
-            <div className="insight-text">
-              {data?.insights?.underutilized || 'Tuesday mornings have 40% availability'}
-            </div>
-          </div>
-          <div className="insight-card positive">
-            <div className="insight-icon">💡</div>
-            <div className="insight-text">
-              {data?.insights?.suggestion || 'Offer weekday lunch deals to boost mid-day bookings'}
-            </div>
           </div>
         </div>
       </div>

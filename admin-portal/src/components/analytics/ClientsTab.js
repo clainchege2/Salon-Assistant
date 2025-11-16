@@ -69,6 +69,29 @@ const ClientsTab = ({ dateRange, customRange }) => {
         ))}
       </div>
 
+      {/* Churn Indicators - Moved Up for Visibility */}
+      <div className="chart-widget">
+        <div className="widget-header">
+          <h3>⚠️ Churn Alert</h3>
+        </div>
+        
+        <div className="churn-section">
+          <div className="churn-stat">
+            <div className="churn-number">{data?.churnedClients || '0'}</div>
+            <div className="churn-label">Clients haven't returned in 90+ days</div>
+          </div>
+          
+          <div className="churn-actions">
+            <h4>Suggested Re-engagement Actions</h4>
+            <ul>
+              <li>Send "We miss you" email with 15% discount</li>
+              <li>Offer complimentary consultation</li>
+              <li>Share new services or seasonal promotions</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
       <div className="chart-widget">
         <div className="widget-header">
           <h3>Client Growth</h3>
@@ -145,28 +168,6 @@ const ClientsTab = ({ dateRange, customRange }) => {
               <div className="metric-value">{data?.highValueCount || '0'} clients</div>
               <div className="metric-subvalue">Spending ${data?.highValueThreshold || '500'}+</div>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="chart-widget">
-        <div className="widget-header">
-          <h3>Churn Indicators</h3>
-        </div>
-        
-        <div className="churn-section">
-          <div className="churn-stat">
-            <div className="churn-number">{data?.churnedClients || '0'}</div>
-            <div className="churn-label">Clients haven't returned in 90+ days</div>
-          </div>
-          
-          <div className="churn-actions">
-            <h4>Suggested Re-engagement Actions</h4>
-            <ul>
-              <li>Send "We miss you" email with 15% discount</li>
-              <li>Offer complimentary consultation</li>
-              <li>Share new services or seasonal promotions</li>
-            </ul>
           </div>
         </div>
       </div>

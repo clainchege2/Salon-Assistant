@@ -67,6 +67,39 @@ const FinanceTab = ({ dateRange, customRange }) => {
         ))}
       </div>
 
+      {/* Key Insights - Moved to Top */}
+      {data?.profitability && (
+        <div className="insights-section">
+          <h3>Key Financial Insights</h3>
+          <div className="insights-grid">
+            <div className="insight-card positive">
+              <div className="insight-icon">📈</div>
+              <div className="insight-text">
+                {data?.trendInsight || 'Revenue up 18% compared to same period last year'}
+              </div>
+            </div>
+            <div className="insight-card info">
+              <div className="insight-icon">💰</div>
+              <div className="insight-text">
+                {data.profitability.bestMargins?.[0] ? 
+                  `${data.profitability.bestMargins[0].name} has the best profit margin at ${data.profitability.bestMargins[0].margin}%` :
+                  'Color services have highest margins but also highest consumable costs'
+                }
+              </div>
+            </div>
+            <div className="insight-card warning">
+              <div className="insight-icon">⚡</div>
+              <div className="insight-text">
+                {data?.topStylists?.[0] ? 
+                  `${data.topStylists[0].name} is your top revenue generator at $${data.topStylists[0].revenue?.toLocaleString()}` :
+                  'Focus on high-margin services to maximize profitability'
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="chart-widget">
         <div className="widget-header">
           <h3>Monthly Revenue Trend</h3>
@@ -96,10 +129,6 @@ const FinanceTab = ({ dateRange, customRange }) => {
             />
           </LineChart>
         </ResponsiveContainer>
-        
-        <div className="insight-footer">
-          💡 {data?.trendInsight || 'Revenue up 18% compared to same period last year'}
-        </div>
       </div>
 
       <div className="chart-widget">
@@ -204,10 +233,6 @@ const FinanceTab = ({ dateRange, customRange }) => {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-          </div>
-          
-          <div className="insight-footer">
-            💡 {data.profitability.insight || 'Color services have highest margins but also highest consumable costs'}
           </div>
         </div>
       )}

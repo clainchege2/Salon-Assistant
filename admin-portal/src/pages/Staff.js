@@ -262,11 +262,11 @@ export default function Staff() {
 
   const getRoleIcon = (role) => {
     const icons = {
-      owner: '👑',
-      manager: '👨‍💼',
-      stylist: '✂️'
+      owner: '',
+      manager: '',
+      stylist: ''
     };
-    return icons[role] || '👤';
+    return icons[role] || '';
   };
 
   if (loading) return <div className="loading">Loading staff...</div>;
@@ -279,7 +279,7 @@ export default function Staff() {
         </button>
         <div className="page-title-wrapper">
           <div className="title-with-icon">
-            <span className="title-icon">👩🏾‍🦱</span>
+            <span className="title-icon">👔</span>
             <div className="title-content">
               <h1>Team Management</h1>
               <p className="page-tagline">Empower your team, elevate your salon</p>
@@ -328,7 +328,6 @@ export default function Staff() {
                         <tr className="role-section-header">
                           <td colSpan="5">
                             <div className="section-title">
-                              <span className="section-icon">👔</span>
                               <span>Managers ({grouped.managers.length})</span>
                             </div>
                           </td>
@@ -414,7 +413,6 @@ export default function Staff() {
                         <tr className="role-section-header">
                           <td colSpan="5">
                             <div className="section-title">
-                              <span className="section-icon">✂️</span>
                               <span>Stylists ({grouped.stylists.length})</span>
                             </div>
                           </td>
@@ -556,9 +554,9 @@ export default function Staff() {
                 value={editingStaff.role}
                 onChange={(e) => setEditingStaff({ ...editingStaff, role: e.target.value })}
               >
-                <option value="stylist">✂️ Stylist</option>
-                <option value="manager">👨‍💼 Manager</option>
-                <option value="owner">👑 Owner</option>
+                <option value="stylist">Stylist</option>
+                <option value="manager">Manager</option>
+                <option value="owner">Owner</option>
               </select>
               <p className="help-text">
                 Stylists can manage bookings and clients. Managers have additional access to communications and reports.
@@ -644,8 +642,8 @@ export default function Staff() {
                 value={newStaff.role}
                 onChange={(e) => setNewStaff({ ...newStaff, role: e.target.value })}
               >
-                <option value="stylist">✂️ Stylist</option>
-                <option value="manager">👨‍💼 Manager</option>
+                <option value="stylist">Stylist</option>
+                <option value="manager">Manager</option>
               </select>
               <p className="help-text">
                 Stylists can manage bookings and clients. Managers have additional access to communications and reports.

@@ -76,8 +76,8 @@ const OverviewTab = ({ dateRange, customRange }) => {
       color: '#9b59b6'
     },
     {
-      icon: '🎫',
-      label: 'Avg Ticket Size',
+      icon: '',
+      label: 'Avg Booking Value',
       value: `$${data?.avgTicketSize?.toFixed(2) || '0'}`,
       change: data?.ticketChange || 0,
       color: '#3498db'
@@ -130,6 +130,16 @@ const OverviewTab = ({ dateRange, customRange }) => {
         {kpiData.map((kpi, index) => (
           <KPICard key={index} {...kpi} />
         ))}
+      </div>
+
+      {/* Quick Insights - Moved to Top */}
+      <div className="insights-section">
+        <h3>Key Insights</h3>
+        <div className="insights-grid">
+          {insights.map((insight, index) => (
+            <InsightCard key={index} {...insight} />
+          ))}
+        </div>
       </div>
 
       {/* Revenue Trend Chart */}
@@ -211,16 +221,6 @@ const OverviewTab = ({ dateRange, customRange }) => {
         <HeatmapChart data={data?.heatmapData || []} />
         <div className="insight-footer">
           💡 Most bookings occur Fridays between 2–6pm.
-        </div>
-      </div>
-
-      {/* AI Insights */}
-      <div className="insights-section">
-        <h3>Quick Insights</h3>
-        <div className="insights-grid">
-          {insights.map((insight, index) => (
-            <InsightCard key={index} {...insight} />
-          ))}
         </div>
       </div>
     </div>

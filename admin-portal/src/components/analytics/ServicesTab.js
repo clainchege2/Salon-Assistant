@@ -14,31 +14,98 @@ const ServicesTab = ({ dateRange, customRange }) => {
   const fetchServicesData = async () => {
     try {
       const token = localStorage.getItem('adminToken');
+      console.log('[ServicesTab] Fetching data for range:', dateRange);
       const response = await fetch(`http://localhost:5000/api/analytics/services?range=${dateRange}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      
+      if (!response.ok) {
+        console.error('[ServicesTab] Response not OK:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('[ServicesTab] Error response:', errorText);
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
       const result = await response.json();
+      console.log('[ServicesTab] Data received:', result);
+      console.log('[ServicesTab] topServices:', result?.topServices);
+      console.log('[ServicesTab] categoryData:', result?.categoryData);
+      console.log('[ServicesTab] scatterData:', result?.scatterData);
       setData(result);
     } catch (error) {
-      console.error('Error fetching services data:', error);
+      console.error('[ServicesTab] Error fetching services data:', error);
+      setData(null);
     } finally {
       setLoading(false);
     }
   };
 
   if (loading) return <div className="loading-state">Loading services data...</div>;
+  
+  if (!data) {
+    return (
+      <div className="empty-state">
+        <h3>Unable to load services data</h3>
+        <p>Please check the console for errors or try refreshing the page.</p>
+      </div>
+    );
+  }
 
   const COLORS = ['#ff69b4', '#9b59b6', '#3498db', '#2ecc71', '#f39c12', '#e74c3c'];
 
+  console.log('[ServicesTab] Rendering with data:', {
+    hasTopServices: !!data?.topServices,
+    topServicesLength: data?.topServices?.length,
+    hasCategoryData: !!data?.categoryData,
+    categoryDataLength: data?.categoryData?.length,
+    hasScatterData: !!data?.scatterData,
+    scatterDataLength: data?.scatterData?.length
+  });
+
   return (
     <div className="services-tab">
+      {/* Insights Section - Moved to Top */}
+      <div className="insights-section">
+        <h3>Key Insights</h3>
+        <div className="insights-grid">
+          <div className="insight-card positive">
+            <div className="insight-icon">💰</div>
+            <div className="insight-text">
+              {data?.topServices?.[0] ? 
+                `${data.topServices[0].name} is your top revenue generator at $${data.topServices[0].revenue?.toLocaleString()}` :
+                'Hair color services generate the highest revenue per booking'
+              }
+            </div>
+          </div>
+          
+          <div className="insight-card info">
+            <div className="insight-icon">📊</div>
+            <div className="insight-text">
+              {data?.scatterInsight || 'Quick services like blowouts have high frequency but lower revenue—consider bundling with treatments'}
+            </div>
+          </div>
+          
+          <div className="insight-card warning">
+            <div className="insight-icon">⚡</div>
+            <div className="insight-text">
+              Services with 4-6 week rebooking cycles show the best client retention. Focus marketing on these services.
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="chart-widget">
         <div className="widget-header">
           <h3>Top 5 Services</h3>
         </div>
         
         <div className="services-list">
-          {(data?.topServices || []).map((service, index) => (
+          {(!data?.topServices || data.topServices.length === 0) ? (
+            <div className="empty-state">
+              <p>No service data available for this period.</p>
+            </div>
+          ) : (
+            data.topServices.map((service, index) => (
             <div key={index} className="service-row">
               <div className="service-rank">#{index + 1}</div>
               <div className="service-icon" style={{ background: `${COLORS[index]}15`, color: COLORS[index] }}>
@@ -85,7 +152,8 @@ const ServicesTab = ({ dateRange, customRange }) => {
                 </div>
               )}
             </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 
@@ -150,9 +218,6 @@ const ServicesTab = ({ dateRange, customRange }) => {
             </ScatterChart>
           </ResponsiveContainer>
           
-          <div className="insight-footer">
-            💡 {data?.scatterInsight || 'Blowouts are high frequency but low revenue—bundle opportunity'}
-          </div>
         </div>
       </div>
     </div>

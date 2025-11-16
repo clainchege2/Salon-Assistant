@@ -238,7 +238,7 @@ export default function Services() {
         </button>
         <div className="page-title-wrapper">
           <div className="title-with-icon">
-            <span className="title-icon">✂️</span>
+            <span className="title-icon">💅🏾</span>
             <div className="title-content">
               <h1>Services & Pricing</h1>
               <p className="page-tagline">Manage your salon's service offerings</p>

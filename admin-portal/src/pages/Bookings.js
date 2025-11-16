@@ -284,7 +284,7 @@ export default function Bookings() {
                   <span>{formatTime(booking.scheduledDate)}</span>
                 </div>
                 <div className="detail-row">
-                  <span className="icon">✂️</span>
+                  <span className="icon">💇</span>
                   <span>{booking.services?.map(s => s.serviceName).join(', ')}</span>
                 </div>
                 {booking.assignedTo && (

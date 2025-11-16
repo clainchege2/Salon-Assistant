@@ -19,9 +19,9 @@ const Analytics = () => {
   const tabs = [
     { id: 'overview', label: 'Overview', icon: '📊' },
     { id: 'appointments', label: 'Appointments', icon: '📅' },
-    { id: 'services', label: 'Services', icon: '💇' },
-    { id: 'clients', label: 'Clients', icon: '👩' },
-    { id: 'stylists', label: 'Stylists', icon: '🧑‍🎨' },
+    { id: 'services', label: 'Services', icon: '💅🏾' },
+    { id: 'clients', label: 'Clients', icon: '💇🏾‍♀️' },
+    { id: 'stylists', label: 'Stylists', icon: '👔' },
     { id: 'finance', label: 'Finance', icon: '💰' }
   ];
 
@@ -69,65 +69,22 @@ const Analytics = () => {
   return (
     <ErrorBoundary>
     <div className="analytics-page">
-      <div className="analytics-header">
-        <div className="header-left">
-          <button onClick={() => navigate('/dashboard')} className="back-btn">
-            ← Back to Dashboard
-          </button>
-          <h1>Analytics</h1>
-          <p className="subtitle">Business performance at a glance</p>
+      <div className="page-header">
+        <button onClick={() => navigate('/dashboard')} className="back-btn">
+          ← Back
+        </button>
+        <div className="page-title-wrapper">
+          <div className="title-with-icon">
+            <span className="title-icon">📈</span>
+            <div className="title-content">
+              <h1>Analytics</h1>
+              <p className="page-tagline">Business performance at a glance</p>
+            </div>
+          </div>
         </div>
         <div className="header-actions">
           <button className="export-btn" onClick={handleDownload} title="Export Report">
-            <span className="icon">📥</span>
-            Export
-          </button>
-          <div className="date-range-selector">
-            <button 
-              className="filter-btn"
-              onClick={() => setShowDatePicker(!showDatePicker)}
-            >
-              <span className="icon">📅</span>
-              {dateRanges.find(r => r.id === dateRange)?.label}
-              <span className="dropdown-arrow">▼</span>
-            </button>
-            
-            {showDatePicker && (
-              <div className="date-picker-dropdown">
-                {dateRanges.map(range => (
-                  <div
-                    key={range.id}
-                    className={`date-option ${dateRange === range.id ? 'active' : ''}`}
-                    onClick={() => {
-                      setDateRange(range.id);
-                      if (range.id !== 'custom') setShowDatePicker(false);
-                    }}
-                  >
-                    {range.label}
-                  </div>
-                ))}
-                {dateRange === 'custom' && (
-                  <div className="custom-range-inputs">
-                    <input
-                      type="date"
-                      value={customRange.start}
-                      onChange={(e) => setCustomRange({...customRange, start: e.target.value})}
-                    />
-                    <span>to</span>
-                    <input
-                      type="date"
-                      value={customRange.end}
-                      onChange={(e) => setCustomRange({...customRange, end: e.target.value})}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-          
-          <button className="download-btn" onClick={handleDownload}>
-            <span className="icon">⬇️</span>
-            Download
+            📥 Export
           </button>
         </div>
       </div>
@@ -143,6 +100,52 @@ const Analytics = () => {
             {tab.label}
           </button>
         ))}
+      </div>
+
+      {/* Date Range Selector - Positioned above content */}
+      <div className="content-controls">
+        <div className="date-range-selector">
+          <label>Date Range:</label>
+          <button 
+            className="filter-btn"
+            onClick={() => setShowDatePicker(!showDatePicker)}
+          >
+            {dateRanges.find(r => r.id === dateRange)?.label}
+            <span className="dropdown-arrow">▼</span>
+          </button>
+          
+          {showDatePicker && (
+            <div className="date-picker-dropdown">
+              {dateRanges.map(range => (
+                <div
+                  key={range.id}
+                  className={`date-option ${dateRange === range.id ? 'active' : ''}`}
+                  onClick={() => {
+                    setDateRange(range.id);
+                    if (range.id !== 'custom') setShowDatePicker(false);
+                  }}
+                >
+                  {range.label}
+                </div>
+              ))}
+              {dateRange === 'custom' && (
+                <div className="custom-range-inputs">
+                  <input
+                    type="date"
+                    value={customRange.start}
+                    onChange={(e) => setCustomRange({...customRange, start: e.target.value})}
+                  />
+                  <span>to</span>
+                  <input
+                    type="date"
+                    value={customRange.end}
+                    onChange={(e) => setCustomRange({...customRange, end: e.target.value})}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="analytics-content">

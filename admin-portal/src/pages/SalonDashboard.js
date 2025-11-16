@@ -426,7 +426,7 @@ export default function SalonDashboard() {
       <div className="quick-actions-bar compact">
         {/* FREE Features */}
         <button className="quick-action-btn" onClick={() => navigate('/bookings')}>
-          <span className="btn-emoji">📋</span> Bookings
+          <span className="btn-emoji">📅</span> Bookings
           {pendingBookingsCount > 0 && (
             <span className="notification-badge">{pendingBookingsCount}</span>
           )}
@@ -465,7 +465,7 @@ export default function SalonDashboard() {
             className="quick-action-btn"
             onClick={() => navigate('/staff')}
           >
-            <span className="btn-emoji">👨🏿‍💼</span> Staff
+            <span className="btn-emoji">👔</span> Staff
           </button>
         ) : user?.role === 'owner' && subscriptionTier === 'free' && (
           <button
@@ -473,7 +473,7 @@ export default function SalonDashboard() {
             onClick={() => showUpgradePrompt('Staff Management')}
             title="Upgrade to PRO to unlock"
           >
-            <span className="btn-emoji">👨🏿‍💼</span> Staff
+            <span className="btn-emoji">👔</span> Staff
             <span className="lock-icon">🔒</span>
           </button>
         )}
@@ -523,7 +523,7 @@ export default function SalonDashboard() {
             className="quick-action-btn"
             onClick={() => navigate('/analytics')}
           >
-            <span className="btn-emoji">📊</span> Analytics
+            <span className="btn-emoji">📈</span> Analytics
           </button>
         ) : user?.role === 'owner' && (subscriptionTier === 'free' || subscriptionTier === 'pro') && (
           <button
@@ -531,7 +531,7 @@ export default function SalonDashboard() {
             onClick={() => showUpgradePrompt('Analytics')}
             title="Upgrade to PREMIUM to unlock"
           >
-            <span className="btn-emoji">📊</span> Analytics
+            <span className="btn-emoji">📈</span> Analytics
             <span className="lock-icon">🔒</span>
           </button>
         )}
