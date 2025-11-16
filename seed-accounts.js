@@ -53,6 +53,17 @@ async function seedAccounts() {
       phone: '+254712000001',
       role: 'owner',
       status: 'active',
+      subscriptionTier: 'free',
+      permissions: {
+        canViewCommunications: false,
+        canDeleteBookings: true,
+        canDeleteClients: true,
+        canManageStaff: false,
+        canManageServices: true,
+        canViewReports: false,
+        canViewMarketing: false,
+        canManageInventory: false
+      },
       createdAt: new Date(),
       updatedAt: new Date()
     });
@@ -88,6 +99,17 @@ async function seedAccounts() {
         phone: '+254712000002',
         role: 'owner',
         status: 'active',
+        subscriptionTier: 'pro',
+        permissions: {
+          canViewCommunications: true,
+          canDeleteBookings: true,
+          canDeleteClients: true,
+          canManageStaff: true,
+          canManageServices: true,
+          canViewReports: false,
+          canViewMarketing: false,
+          canManageInventory: true
+        },
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -101,6 +123,17 @@ async function seedAccounts() {
         phone: '+254712000012',
         role: 'stylist',
         status: 'active',
+        subscriptionTier: 'pro',
+        permissions: {
+          canViewCommunications: false,
+          canDeleteBookings: false,
+          canDeleteClients: false,
+          canManageStaff: false,
+          canManageServices: false,
+          canViewReports: false,
+          canViewMarketing: false,
+          canManageInventory: false
+        },
         createdAt: new Date(),
         updatedAt: new Date()
       }
@@ -137,6 +170,17 @@ async function seedAccounts() {
         phone: '+254712000003',
         role: 'owner',
         status: 'active',
+        subscriptionTier: 'premium',
+        permissions: {
+          canViewCommunications: true,
+          canDeleteBookings: true,
+          canDeleteClients: true,
+          canManageStaff: true,
+          canManageServices: true,
+          canViewReports: true,
+          canViewMarketing: true,
+          canManageInventory: true
+        },
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -150,6 +194,17 @@ async function seedAccounts() {
         phone: '+254712000013',
         role: 'stylist',
         status: 'active',
+        subscriptionTier: 'premium',
+        permissions: {
+          canViewCommunications: false,
+          canDeleteBookings: false,
+          canDeleteClients: false,
+          canManageStaff: false,
+          canManageServices: false,
+          canViewReports: false,
+          canViewMarketing: false,
+          canManageInventory: false
+        },
         createdAt: new Date(),
         updatedAt: new Date()
       },
@@ -163,13 +218,16 @@ async function seedAccounts() {
         phone: '+254712000023',
         role: 'manager',
         status: 'active',
+        subscriptionTier: 'premium',
         permissions: {
           canViewCommunications: true,
           canDeleteBookings: true,
           canDeleteClients: false,
           canManageStaff: true,
           canManageServices: true,
-          canViewReports: true
+          canViewReports: true,
+          canViewMarketing: true,
+          canManageInventory: true
         },
         createdAt: new Date(),
         updatedAt: new Date()

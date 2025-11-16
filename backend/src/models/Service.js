@@ -35,7 +35,7 @@ const serviceSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['active', 'pending', 'approved', 'rejected'],
+    enum: ['active', 'pending', 'rejected'],
     default: 'active'
   },
   suggestedBy: {

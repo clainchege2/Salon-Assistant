@@ -1,0 +1,120 @@
+.finance-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.revenue-sources {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.source-section h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 16px 0;
+}
+
+.source-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.source-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.source-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.source-rank {
+  font-size: 14px;
+  font-weight: 700;
+  color: #999;
+  min-width: 30px;
+}
+
+.source-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+  flex: 1;
+}
+
+.source-revenue {
+  font-size: 18px;
+  font-weight: 700;
+  color: #2ecc71;
+  text-align: right;
+}
+
+.source-bar {
+  height: 8px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.source-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ff69b4, #9b59b6);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.profitability-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 24px;
+}
+
+.profit-card {
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 12px;
+}
+
+.profit-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.profit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.profit-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.profit-margin {
+  font-weight: 700;
+  color: #2ecc71;
+}
+
+@media (max-width: 768px) {
+  .revenue-sources,
+  .profitability-section {
+    grid-template-columns: 1fr;
+  }
+}

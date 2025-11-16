@@ -49,7 +49,7 @@ const clientSchema = new mongoose.Schema({
   occupation: String,
   referralSource: {
     type: String,
-    enum: ['social-media', 'friend', 'google', 'walk-by', 'advertisement', 'other']
+    enum: ['tiktok', 'instagram', 'facebook', 'whatsapp', 'friend', 'google', 'walk-by', 'advertisement', 'other']
   },
   referredBy: {
     type: mongoose.Schema.Types.ObjectId,

@@ -41,11 +41,6 @@ exports.getCommunications = async (req, res) => {
     
     const filter = { tenantId: req.tenantId };
     
-    // If user is not owner, only show communications they sent
-    if (req.user.role !== 'owner') {
-      filter.sentBy = req.user._id;
-    }
-    
     if (direction) filter.direction = direction;
     if (messageType) filter.messageType = messageType;
     if (status) filter.status = status;
@@ -498,18 +493,6 @@ exports.getFeedback = async (req, res) => {
     const { status, minRating, maxRating, requiresAction } = req.query;
     
     const filter = { tenantId: req.tenantId };
-    
-    // If user is not owner, only show feedback for their bookings
-    if (req.user.role !== 'owner') {
-      // Find bookings assigned to this user
-      const Booking = require('../models/Booking');
-      const userBookings = await Booking.find({ 
-        tenantId: req.tenantId,
-        assignedTo: req.user._id 
-      }).select('_id');
-      const bookingIds = userBookings.map(b => b._id);
-      filter.bookingId = { $in: bookingIds };
-    }
     
     if (status) filter.status = status;
     if (minRating) filter.overallRating = { $gte: parseInt(minRating) };

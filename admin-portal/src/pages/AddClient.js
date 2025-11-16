@@ -191,12 +191,15 @@ export default function AddClient() {
             onChange={(e) => setFormData({ ...formData, referralSource: e.target.value })}
           >
             <option value="">Select...</option>
-            <option value="social-media">Social Media (Instagram, Facebook)</option>
-            <option value="friend">Friend/Family Referral</option>
-            <option value="google">Google Search</option>
-            <option value="walk-by">Walked By</option>
-            <option value="advertisement">Advertisement</option>
-            <option value="other">Other</option>
+            <option value="tiktok">🎵 TikTok</option>
+            <option value="instagram">📸 Instagram</option>
+            <option value="facebook">👥 Facebook</option>
+            <option value="whatsapp">💬 WhatsApp</option>
+            <option value="friend">👫 Friend/Family Referral</option>
+            <option value="google">🔍 Google Search</option>
+            <option value="walk-by">🚶 Walked By</option>
+            <option value="advertisement">📢 Advertisement</option>
+            <option value="other">📝 Other</option>
           </select>
         </div>
 

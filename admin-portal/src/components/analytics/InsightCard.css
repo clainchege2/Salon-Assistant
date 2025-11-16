@@ -1,0 +1,42 @@
+.insight-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  border-left: 4px solid;
+  transition: all 0.3s;
+}
+
+.insight-card:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.insight-card.positive {
+  border-left-color: #2ecc71;
+  background: linear-gradient(135deg, #ffffff 0%, #f0fff4 100%);
+}
+
+.insight-card.info {
+  border-left-color: #3498db;
+  background: linear-gradient(135deg, #ffffff 0%, #f0f8ff 100%);
+}
+
+.insight-card.warning {
+  border-left-color: #f39c12;
+  background: linear-gradient(135deg, #ffffff 0%, #fffbf0 100%);
+}
+
+.insight-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.insight-text {
+  font-size: 15px;
+  color: #333;
+  line-height: 1.6;
+}

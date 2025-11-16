@@ -13,6 +13,7 @@ import Marketing from './pages/Marketing';
 import Settings from './pages/Settings';
 import Staff from './pages/Staff';
 import Reports from './pages/Reports';
+import Analytics from './pages/Analytics';
 import AccessDeniedModal from './components/AccessDeniedModal';
 import './App.css';
 import './styles/global-improvements.css';
@@ -210,6 +211,14 @@ function App() {
           element={
             <ProtectedRoute requiredTier="pro" requiredPermission="canViewReports">
               <Reports />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/analytics" 
+          element={
+            <ProtectedRoute requiredTier="pro" requiredPermission="canViewReports">
+              <Analytics />
             </ProtectedRoute>
           } 
         />

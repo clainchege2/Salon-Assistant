@@ -521,17 +521,17 @@ export default function SalonDashboard() {
         {hasFeatureAccess('reports') ? (
           <button
             className="quick-action-btn"
-            onClick={() => navigate('/reports')}
+            onClick={() => navigate('/analytics')}
           >
-            <span className="btn-emoji">📈</span> Analytics
+            <span className="btn-emoji">📊</span> Analytics
           </button>
         ) : user?.role === 'owner' && (subscriptionTier === 'free' || subscriptionTier === 'pro') && (
           <button
             className="quick-action-btn locked premium"
-            onClick={() => showUpgradePrompt('Reports')}
+            onClick={() => showUpgradePrompt('Analytics')}
             title="Upgrade to PREMIUM to unlock"
           >
-            <span className="btn-emoji">📈</span> Analytics
+            <span className="btn-emoji">📊</span> Analytics
             <span className="lock-icon">🔒</span>
           </button>
         )}

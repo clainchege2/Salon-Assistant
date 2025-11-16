@@ -1,0 +1,90 @@
+.clients-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.metrics-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 8px 0;
+}
+
+.metric-item {
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.metric-label {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metric-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.metric-subvalue {
+  font-size: 14px;
+  color: #999;
+  margin-top: 4px;
+}
+
+.churn-section {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 32px;
+  align-items: center;
+}
+
+.churn-stat {
+  text-align: center;
+  padding: 24px;
+  background: linear-gradient(135deg, #fff5f5 0%, #ffe0e0 100%);
+  border-radius: 12px;
+}
+
+.churn-number {
+  font-size: 48px;
+  font-weight: 700;
+  color: #e74c3c;
+  margin-bottom: 8px;
+}
+
+.churn-label {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.4;
+}
+
+.churn-actions h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 12px 0;
+}
+
+.churn-actions ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.churn-actions li {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.8;
+}
+
+@media (max-width: 768px) {
+  .churn-section {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
