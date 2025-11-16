@@ -72,26 +72,28 @@ const AppointmentsTab = ({ dateRange, customRange }) => {
       <div className="chart-widget">
         <div className="widget-header">
           <h3>Appointment Volume</h3>
-          <div className="chart-toggle">
-            <button 
-              className={volumeView === 'daily' ? 'active' : ''}
-              onClick={() => setVolumeView('daily')}
-            >
-              Daily
-            </button>
-            <button 
-              className={volumeView === 'weekly' ? 'active' : ''}
-              onClick={() => setVolumeView('weekly')}
-            >
-              Weekly
-            </button>
+          <div className="chart-info">
+            <span style={{ fontSize: '13px', color: '#999' }}>
+              {['1D', '7D', '30D', '90D', '180D'].includes(dateRange) && 'Daily view'}
+              {['1Y', '2Y', '3Y', '5Y'].includes(dateRange) && 'Weekly view'}
+              {['7Y', '9Y', '10Y'].includes(dateRange) && 'Monthly view'}
+              {['15Y', '20Y', 'ALL'].includes(dateRange) && 'Yearly view'}
+              {data?.volumeData && ` • ${data.volumeData.length} data points`}
+            </span>
           </div>
         </div>
         
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={data?.volumeData || []}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis dataKey="date" stroke="#999" />
+            <XAxis 
+              dataKey="date" 
+              stroke="#999"
+              angle={data?.volumeData && data.volumeData.length > 30 ? -45 : 0}
+              textAnchor={data?.volumeData && data.volumeData.length > 30 ? "end" : "middle"}
+              height={data?.volumeData && data.volumeData.length > 30 ? 80 : 30}
+              interval={data?.volumeData && data.volumeData.length > 90 ? Math.floor(data.volumeData.length / 20) : 'preserveStartEnd'}
+            />
             <YAxis stroke="#999" />
             <Tooltip />
             <Bar dataKey="appointments" fill="#ff69b4" radius={[8, 8, 0, 0]} />

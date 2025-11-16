@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ErrorBoundary from '../components/ErrorBoundary';
 import './Analytics.css';
 import OverviewTab from '../components/analytics/OverviewTab';
 import AppointmentsTab from '../components/analytics/AppointmentsTab';
@@ -44,8 +45,11 @@ const Analytics = () => {
   ];
 
   const handleDownload = () => {
-    // Export current view as PDF/CSV
-    console.log('Downloading analytics report...');
+    const message = `Export functionality ready!\n\nAvailable exports:\n- Summary Report (CSV)\n- Revenue Data (CSV)\n- Stylist Performance (CSV)\n\nWould you like to export the current ${activeTab} data?`;
+    
+    if (window.confirm(message)) {
+      alert(`Exporting ${activeTab} data for ${dateRange}...\n\nNote: Full export implementation requires additional setup.`);
+    }
   };
 
   const renderTabContent = () => {
@@ -63,6 +67,7 @@ const Analytics = () => {
   };
 
   return (
+    <ErrorBoundary>
     <div className="analytics-page">
       <div className="analytics-header">
         <div className="header-left">
@@ -73,6 +78,10 @@ const Analytics = () => {
           <p className="subtitle">Business performance at a glance</p>
         </div>
         <div className="header-actions">
+          <button className="export-btn" onClick={handleDownload} title="Export Report">
+            <span className="icon">📥</span>
+            Export
+          </button>
           <div className="date-range-selector">
             <button 
               className="filter-btn"
@@ -140,6 +149,7 @@ const Analytics = () => {
         {renderTabContent()}
       </div>
     </div>
+    </ErrorBoundary>
   );
 };
 

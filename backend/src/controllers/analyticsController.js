@@ -160,8 +160,6 @@ exports.getOverview = async (req, res) => {
     const revenueData = [];
     const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
     
-    console.log(`[Analytics] Range: ${range}, Days: ${daysDiff}, Bookings: ${bookings.length}`);
-    
     let dataPoints, groupBy;
     
     // Determine grouping based on trading-style ranges
@@ -294,9 +292,6 @@ exports.getOverview = async (req, res) => {
         lastMonth: revenue * 0.85 // Mock comparison data
       });
     }
-    
-    console.log(`[Analytics] Generated ${revenueData.length} data points using ${groupBy} granularity`);
-
     // Generate heatmap data (sample)
     const heatmapData = [];
     for (let day = 0; day < 7; day++) {
@@ -410,21 +405,117 @@ exports.getAppointments = async (req, res) => {
       ? bookings.reduce((sum, b) => sum + (b.totalDuration || 60), 0) / bookings.length
       : 0;
 
-    // Volume data (last 7 days)
+    // Volume data - adaptive based on date range
     const volumeData = [];
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      const dayStart = new Date(date.setHours(0, 0, 0, 0));
-      const dayEnd = new Date(date.setHours(23, 59, 59, 999));
+    const daysDiff = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+    
+    let dataPoints, groupBy;
+    
+    // Use same logic as Overview tab
+    if (daysDiff <= 1) {
+      dataPoints = 1;
+      groupBy = 'day';
+    } else if (daysDiff <= 7) {
+      dataPoints = daysDiff;
+      groupBy = 'day';
+    } else if (daysDiff <= 31) {
+      dataPoints = daysDiff;
+      groupBy = 'day';
+    } else if (daysDiff <= 91) {
+      dataPoints = daysDiff;
+      groupBy = 'day';
+    } else if (daysDiff <= 181) {
+      dataPoints = daysDiff;
+      groupBy = 'day';
+    } else if (daysDiff <= 366) {
+      dataPoints = Math.ceil(daysDiff / 7);
+      groupBy = 'week';
+    } else if (daysDiff <= 1826) {
+      dataPoints = Math.ceil(daysDiff / 7);
+      groupBy = 'week';
+    } else if (daysDiff <= 3653) {
+      dataPoints = Math.ceil(daysDiff / 30);
+      groupBy = 'month';
+    } else {
+      dataPoints = Math.ceil(daysDiff / 365);
+      groupBy = 'year';
+    }
+    
+    for (let i = 0; i < dataPoints; i++) {
+      let periodStart, periodEnd, label;
       
-      const dayBookings = bookings.filter(b => 
-        new Date(b.date) >= dayStart && new Date(b.date) <= dayEnd
-      );
+      if (groupBy === 'day') {
+        periodStart = new Date(startDate);
+        periodStart.setDate(periodStart.getDate() + i);
+        periodStart.setHours(0, 0, 0, 0);
+        periodEnd = new Date(periodStart);
+        periodEnd.setHours(23, 59, 59, 999);
+        
+        if (daysDiff <= 7) {
+          label = periodStart.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        } else if (daysDiff <= 30) {
+          label = periodStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        } else {
+          label = periodStart.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
+        }
+      } else if (groupBy === 'week') {
+        periodStart = new Date(startDate);
+        periodStart.setDate(periodStart.getDate() + (i * 7));
+        periodStart.setHours(0, 0, 0, 0);
+        periodEnd = new Date(periodStart);
+        periodEnd.setDate(periodEnd.getDate() + 6);
+        periodEnd.setHours(23, 59, 59, 999);
+        
+        if (periodEnd > endDate) {
+          periodEnd = new Date(endDate);
+          periodEnd.setHours(23, 59, 59, 999);
+        }
+        
+        label = periodStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      } else if (groupBy === 'month') {
+        periodStart = new Date(startDate);
+        periodStart.setMonth(periodStart.getMonth() + i);
+        periodStart.setDate(1);
+        periodStart.setHours(0, 0, 0, 0);
+        periodEnd = new Date(periodStart);
+        periodEnd.setMonth(periodEnd.getMonth() + 1);
+        periodEnd.setDate(0);
+        periodEnd.setHours(23, 59, 59, 999);
+        
+        if (periodEnd > endDate) {
+          periodEnd = new Date(endDate);
+          periodEnd.setHours(23, 59, 59, 999);
+        }
+        
+        label = periodStart.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      } else {
+        periodStart = new Date(startDate);
+        periodStart.setFullYear(periodStart.getFullYear() + i);
+        periodStart.setMonth(0);
+        periodStart.setDate(1);
+        periodStart.setHours(0, 0, 0, 0);
+        periodEnd = new Date(periodStart);
+        periodEnd.setFullYear(periodEnd.getFullYear() + 1);
+        periodEnd.setMonth(0);
+        periodEnd.setDate(0);
+        periodEnd.setHours(23, 59, 59, 999);
+        
+        if (periodEnd > endDate) {
+          periodEnd = new Date(endDate);
+          periodEnd.setHours(23, 59, 59, 999);
+        }
+        
+        label = periodStart.getFullYear().toString();
+      }
+      
+      const periodBookings = bookings.filter(b => {
+        const bookingDate = new Date(b.scheduledDate);
+        return bookingDate >= periodStart && bookingDate <= periodEnd;
+      });
       
       volumeData.push({
-        date: dayStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        appointments: dayBookings.length
+        date: label,
+        appointments: periodBookings.length
       });
     }
 
@@ -478,9 +569,9 @@ exports.getServices = async (req, res) => {
 
     const bookings = await Booking.find({
       tenantId,
-      date: { $gte: startDate, $lte: endDate },
+      scheduledDate: { $gte: startDate, $lte: endDate },
       status: { $in: ['confirmed', 'completed'] }
-    }).populate('service');
+    });
 
     // Top services
     const serviceStats = {};
@@ -629,8 +720,6 @@ exports.getStylists = async (req, res) => {
       tenantId,
       role: { $in: ['stylist', 'owner', 'manager'] }
     });
-
-    console.log(`Found ${bookings.length} bookings and ${stylists.length} stylists`);
 
     // Calculate stylist stats
     const stylistStats = stylists.map(stylist => {

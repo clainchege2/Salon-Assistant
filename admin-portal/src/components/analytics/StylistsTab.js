@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import LoadingSkeleton from '../LoadingSkeleton';
 import './StylistsTab.css';
 
 const StylistsTab = ({ dateRange, customRange }) => {
@@ -27,15 +28,38 @@ const StylistsTab = ({ dateRange, customRange }) => {
     }
   };
 
-  if (loading) return <div className="loading-state">Loading stylists data...</div>;
+  // Use useMemo to ensure sorting updates when sortBy changes
+  // Must be called before any early returns (React hooks rule)
+  const sortedStylists = useMemo(() => {
+    if (!data?.stylists) return [];
+    
+    return [...data.stylists].sort((a, b) => {
+      if (sortBy === 'revenue') return b.revenue - a.revenue; // Highest first
+      if (sortBy === 'bookings') return b.bookings - a.bookings; // Most first
+      if (sortBy === 'rating') return b.rating - a.rating; // Highest first
+      if (sortBy === 'avgTime') return a.avgTime - b.avgTime; // Fastest first (better for clients)
+      return 0;
+    });
+  }, [data, sortBy]);
 
-  const sortedStylists = [...(data?.stylists || [])].sort((a, b) => {
-    if (sortBy === 'revenue') return b.revenue - a.revenue;
-    if (sortBy === 'bookings') return b.bookings - a.bookings;
-    if (sortBy === 'rating') return b.rating - a.rating;
-    if (sortBy === 'avgTime') return a.avgTime - b.avgTime;
-    return 0;
-  });
+  if (loading) {
+    return (
+      <div className="stylists-tab">
+        <LoadingSkeleton type="list" />
+        <LoadingSkeleton type="chart" />
+      </div>
+    );
+  }
+  
+  if (!data || !data.stylists || data.stylists.length === 0) {
+    return (
+      <div className="empty-state">
+        <div className="empty-icon">🧑‍🎨</div>
+        <h3>No Stylist Data</h3>
+        <p>No stylists found for the selected period. Try a different date range.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="stylists-tab">
@@ -73,11 +97,17 @@ const StylistsTab = ({ dateRange, customRange }) => {
               <div className="stylist-info">
                 <div className="stylist-name">{stylist.name}</div>
                 <div className="stylist-stats">
-                  ${stylist.revenue?.toLocaleString()} • {stylist.bookings} bookings
+                  {sortBy === 'revenue' && `$${stylist.revenue?.toLocaleString()} • ${stylist.bookings} bookings`}
+                  {sortBy === 'bookings' && `${stylist.bookings} bookings • $${stylist.revenue?.toLocaleString()}`}
+                  {sortBy === 'rating' && `⭐ ${stylist.rating?.toFixed(1)} rating • ${stylist.bookings} bookings`}
+                  {sortBy === 'avgTime' && `${stylist.avgTime}min avg • ${stylist.bookings} bookings`}
                 </div>
               </div>
               <div className="stylist-rating">
-                ⭐ {stylist.rating?.toFixed(1) || '0.0'}
+                {sortBy === 'revenue' && `$${stylist.revenue?.toLocaleString()}`}
+                {sortBy === 'bookings' && `${stylist.bookings}`}
+                {sortBy === 'rating' && `⭐ ${stylist.rating?.toFixed(1) || '0.0'}`}
+                {sortBy === 'avgTime' && `${stylist.avgTime}min`}
               </div>
               <button className="expand-btn">
                 {selectedStylist === index ? '−' : '+'}

@@ -3,6 +3,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import KPICard from './KPICard';
 import HeatmapChart from './HeatmapChart';
 import InsightCard from './InsightCard';
+import LoadingSkeleton from '../LoadingSkeleton';
 import './OverviewTab.css';
 
 const OverviewTab = ({ dateRange, customRange }) => {
@@ -31,8 +32,6 @@ const OverviewTab = ({ dateRange, customRange }) => {
       }
       
       const result = await response.json();
-      console.log(`[Analytics] Received ${result.revenueData?.length || 0} data points for ${dateRange}`);
-      console.log('[Analytics] Revenue data:', result.revenueData);
       setData(result);
     } catch (error) {
       console.error('Error fetching overview data:', error);
@@ -42,11 +41,23 @@ const OverviewTab = ({ dateRange, customRange }) => {
   };
 
   if (loading) {
-    return <div className="loading-state">Loading analytics...</div>;
+    return (
+      <div className="overview-tab">
+        <LoadingSkeleton type="kpi-grid" />
+        <LoadingSkeleton type="chart" />
+        <LoadingSkeleton type="chart" />
+      </div>
+    );
   }
   
   if (!data) {
-    return <div className="loading-state">No data available</div>;
+    return (
+      <div className="empty-state">
+        <div className="empty-icon">📊</div>
+        <h3>No Data Available</h3>
+        <p>Unable to load analytics data. Please try refreshing the page.</p>
+      </div>
+    );
   }
 
   const kpiData = [
