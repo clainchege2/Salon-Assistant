@@ -232,6 +232,31 @@ router.post('/feedback', async (req, res) => {
     };
     await booking.save();
 
+    // Also create a Feedback document for Communications Hub
+    logger.info('Attempting to create Feedback document...');
+    try {
+      const Feedback = require('../models/Feedback');
+      logger.info('Feedback model loaded');
+      
+      const feedbackData = {
+        tenantId: req.tenantId,
+        clientId: req.client._id,
+        bookingId: booking._id,
+        overallRating: rating,
+        comment: comment || '',
+        source: 'portal',
+        status: 'pending'
+      };
+      logger.info('Feedback data:', feedbackData);
+      
+      const feedbackDoc = await Feedback.create(feedbackData);
+      logger.info(`✅ Feedback document created successfully: ${feedbackDoc._id}`);
+    } catch (feedbackError) {
+      logger.error(`❌ Error creating feedback document: ${feedbackError.message}`);
+      logger.error('Full error:', feedbackError);
+      // Don't fail the whole request if feedback doc creation fails
+    }
+
     logger.info(`Feedback submitted by client: ${req.client._id}, booking: ${bookingId}`);
 
     res.json({

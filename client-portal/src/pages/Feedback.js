@@ -25,9 +25,20 @@ export default function Feedback() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // Filter completed bookings
-      const completed = response.data.data.filter(b => b.status === 'completed');
-      setBookings(completed);
+      // Filter completed or confirmed bookings without feedback
+      const eligible = response.data.data.filter(b => 
+        (b.status === 'completed' || b.status === 'confirmed') && !b.feedback
+      );
+      
+      // Remove duplicates by booking ID
+      const uniqueBookings = eligible.filter((booking, index, self) =>
+        index === self.findIndex((b) => b._id === booking._id)
+      );
+      
+      setBookings(uniqueBookings);
+      
+      console.log('Total bookings:', response.data.data.length);
+      console.log('Eligible bookings for feedback:', uniqueBookings.length);
     } catch (err) {
       console.error('Error fetching bookings:', err);
       setError('Failed to load bookings');
@@ -94,9 +105,9 @@ export default function Feedback() {
                 required
               >
                 <option value="">Choose an appointment...</option>
-                {bookings.map(booking => (
+                {bookings.map((booking, index) => (
                   <option key={booking._id} value={booking._id}>
-                    {new Date(booking.scheduledDate).toLocaleDateString()} - {booking.services?.map(s => s.serviceName).join(', ')}
+                    {new Date(booking.scheduledDate).toLocaleDateString()} at {new Date(booking.scheduledDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })} - {booking.services?.map(s => s.serviceName).join(', ')} ({booking.status})
                   </option>
                 ))}
               </select>
@@ -145,10 +156,17 @@ export default function Feedback() {
           </form>
         </div>
 
-        {bookings.length === 0 && (
+        {bookings.length === 0 && !error && (
           <div className="empty-state">
-            <p>No completed appointments yet</p>
-            <small>Complete an appointment to leave feedback</small>
+            <p>No appointments available for feedback</p>
+            <small>You can leave feedback after your appointment is confirmed or completed</small>
+            <button 
+              onClick={() => navigate('/book')} 
+              className="btn btn-primary"
+              style={{marginTop: '16px'}}
+            >
+              Book an Appointment
+            </button>
           </div>
         )}
       </div>

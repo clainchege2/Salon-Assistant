@@ -468,6 +468,20 @@ export default function Bookings() {
                   <p>{viewModal.booking.customerInstructions}</p>
                 </div>
               )}
+              {viewModal.booking.feedback && (
+                <div className="detail-section">
+                  <h3>⭐ Client Feedback</h3>
+                  <div className="feedback-display">
+                    <p><strong>Rating:</strong> {'⭐'.repeat(viewModal.booking.feedback.rating)} ({viewModal.booking.feedback.rating}/5)</p>
+                    {viewModal.booking.feedback.comment && (
+                      <p><strong>Comment:</strong> {viewModal.booking.feedback.comment}</p>
+                    )}
+                    <p className="feedback-date">
+                      <small>Submitted: {new Date(viewModal.booking.feedback.submittedAt).toLocaleDateString()}</small>
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="modal-footer">
               <button className="btn-secondary" onClick={() => setViewModal({ show: false, booking: null })}>Close</button>

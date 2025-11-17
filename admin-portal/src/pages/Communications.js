@@ -87,9 +87,14 @@ export default function Communications() {
         headers: { Authorization: `Bearer ${token}` }
       });
 
+      console.log('Feedback response:', response.data);
+      console.log('Feedback count:', response.data.count);
+      console.log('Feedback data:', response.data.data);
+      
       setFeedback(response.data.data || []);
     } catch (error) {
       console.error('Error fetching feedback:', error);
+      console.error('Error details:', error.response?.data);
     } finally {
       setLoading(false);
     }
