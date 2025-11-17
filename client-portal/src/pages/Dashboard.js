@@ -9,6 +9,7 @@ export default function Dashboard() {
   const [upcomingBookings, setUpcomingBookings] = useState([]);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const [upcomingBookingsCount, setUpcomingBookingsCount] = useState(0);
+  const [newCampaignsCount, setNewCampaignsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -56,7 +57,9 @@ export default function Dashboard() {
 
       const upcoming = response.data.data.filter(b => 
         new Date(b.scheduledDate) > new Date() && 
-        b.status !== 'cancelled'
+        b.status !== 'cancelled' &&
+        b.status !== 'completed' &&
+        b.status !== 'no-show'
       );
       setUpcomingBookings(upcoming.slice(0, 3));
       setUpcomingBookingsCount(upcoming.length);
@@ -68,6 +71,17 @@ export default function Dashboard() {
       );
       const unreadCount = messagesResponse.data.data.filter(m => !m.readAt).length;
       setUnreadMessagesCount(unreadCount);
+
+      // Fetch new campaigns count (only unviewed)
+      const campaignsResponse = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/v1/client/campaigns`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const viewedCampaigns = JSON.parse(localStorage.getItem('viewedCampaigns') || '[]');
+      const unviewedCampaigns = (campaignsResponse.data.data || []).filter(
+        c => !viewedCampaigns.includes(c._id)
+      );
+      setNewCampaignsCount(unviewedCampaigns.length);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -78,12 +92,25 @@ export default function Dashboard() {
   const fetchUnreadCount = async () => {
     try {
       const token = localStorage.getItem('clientToken');
+      
+      // Fetch unread messages
       const messagesResponse = await axios.get(
         `${process.env.REACT_APP_API_URL}/api/v1/client/messages`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const unreadCount = messagesResponse.data.data.filter(m => !m.readAt).length;
       setUnreadMessagesCount(unreadCount);
+
+      // Fetch new campaigns (only unviewed)
+      const campaignsResponse = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/v1/client/campaigns`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const viewedCampaigns = JSON.parse(localStorage.getItem('viewedCampaigns') || '[]');
+      const unviewedCampaigns = (campaignsResponse.data.data || []).filter(
+        c => !viewedCampaigns.includes(c._id)
+      );
+      setNewCampaignsCount(unviewedCampaigns.length);
     } catch (error) {
       console.error('Error fetching unread count:', error);
     }
@@ -124,7 +151,10 @@ export default function Dashboard() {
             <span className="action-icon">📅</span>
             <span className="action-text">Book Appointment</span>
           </button>
-          <button onClick={() => navigate('/bookings')} className="action-card">
+          <button onClick={() => {
+            setUpcomingBookingsCount(0);
+            navigate('/bookings');
+          }} className="action-card">
             <span className="action-icon-wrapper">
               <span className="action-icon">📋</span>
               {upcomingBookingsCount > 0 && (
@@ -133,11 +163,15 @@ export default function Dashboard() {
             </span>
             <span className="action-text">My Bookings</span>
           </button>
-          <button onClick={() => navigate('/messages')} className="action-card">
+          <button onClick={() => {
+            setUnreadMessagesCount(0); // Clear badge immediately
+            setNewCampaignsCount(0); // Clear campaigns badge
+            navigate('/messages');
+          }} className="action-card">
             <span className="action-icon-wrapper">
               <span className="action-icon">📬</span>
-              {unreadMessagesCount > 0 && (
-                <span className="notification-badge">{unreadMessagesCount}</span>
+              {(unreadMessagesCount + newCampaignsCount) > 0 && (
+                <span className="notification-badge">{unreadMessagesCount + newCampaignsCount}</span>
               )}
             </span>
             <span className="action-text">Messages & Offers</span>

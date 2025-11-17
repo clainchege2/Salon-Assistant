@@ -11,10 +11,16 @@ import FinanceTab from '../components/analytics/FinanceTab';
 
 const Analytics = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem('analyticsActiveTab') || 'overview';
+  });
   const [dateRange, setDateRange] = useState('thisMonth');
   const [customRange, setCustomRange] = useState({ start: '', end: '' });
   const [showDatePicker, setShowDatePicker] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem('analyticsActiveTab', activeTab);
+  }, [activeTab]);
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: '📊' },

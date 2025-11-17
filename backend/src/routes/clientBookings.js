@@ -182,6 +182,50 @@ router.post('/bookings', async (req, res) => {
 
     logger.info(`Booking created by client: ${req.client._id}, booking: ${booking._id}`);
 
+    // Send booking confirmation message to client
+    const Message = require('../models/Message');
+    const Communication = require('../models/Communication');
+    
+    const serviceNames = services.map(s => s.serviceName).join(', ');
+    const bookingDate = new Date(scheduledDate).toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+    const bookingTime = new Date(scheduledDate).toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+
+    // Message to client
+    await Message.create({
+      tenantId: req.tenantId,
+      recipientType: 'individual',
+      recipientId: req.client._id,
+      type: 'confirmation',
+      subject: 'Booking Confirmation',
+      message: `Your appointment has been booked! 🎉\n\nService: ${serviceNames}\nDate: ${bookingDate}\nTime: ${bookingTime}\n\nWe'll send you a reminder closer to your appointment. Looking forward to seeing you!`,
+      channel: 'app',
+      status: 'sent',
+      sentAt: new Date()
+    }).catch(err => logger.error(`Failed to create booking message: ${err.message}`));
+
+    // Log in Communications Hub for owner/staff reference
+    const clientName = `${req.client.firstName} ${req.client.lastName}`;
+    await Communication.create({
+      tenantId: req.tenantId,
+      clientId: req.client._id,
+      direction: 'incoming',
+      messageType: 'confirmation',
+      channel: 'portal',
+      subject: 'New Booking Created',
+      message: `${clientName} booked an appointment\n\nService: ${serviceNames}\nDate: ${bookingDate}\nTime: ${bookingTime}\n\nStatus: Pending confirmation`,
+      status: 'sent',
+      requiresAction: true,
+      sentAt: new Date()
+    }).catch(err => logger.error(`Failed to log booking communication: ${err.message}`));
+
     res.status(201).json({
       success: true,
       data: booking,
@@ -189,6 +233,124 @@ router.post('/bookings', async (req, res) => {
     });
   } catch (error) {
     logger.error(`Create booking error: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// @desc    Cancel booking with fee tracking
+// @route   PUT /api/v1/client/bookings/:id/cancel
+// @access  Private (Client)
+router.put('/bookings/:id/cancel', async (req, res) => {
+  try {
+    const { cancellationFee } = req.body;
+
+    // Find booking that belongs to this client
+    const booking = await Booking.findOne({
+      _id: req.params.id,
+      clientId: req.client._id,
+      tenantId: req.tenantId
+    });
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+
+    // Check if booking can be cancelled
+    if (booking.status === 'cancelled') {
+      return res.status(400).json({
+        success: false,
+        message: 'Booking is already cancelled'
+      });
+    }
+
+    if (booking.status === 'completed') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot cancel a completed booking'
+      });
+    }
+
+    // Update booking status
+    booking.status = 'cancelled';
+    booking.cancellationFee = cancellationFee || 0;
+    booking.cancelledAt = new Date();
+    booking.cancelledBy = req.client._id;
+    
+    // Log the fee for future enforcement
+    if (cancellationFee > 0) {
+      booking.notes = `${booking.notes || ''}\nCancellation fee of KSh ${cancellationFee} logged on ${new Date().toLocaleDateString()}. Late cancellation (within 48 hours).`.trim();
+      logger.info(`Cancellation fee logged: KSh ${cancellationFee} for booking ${booking._id}, client ${req.client._id}`);
+    }
+
+    await booking.save();
+
+    // Send cancellation confirmation message to client
+    const Message = require('../models/Message');
+    const Communication = require('../models/Communication');
+    
+    await booking.populate('services clientId');
+    const serviceNames = booking.services?.map(s => s.serviceName).join(', ') || 'your appointment';
+    const bookingDate = new Date(booking.scheduledDate).toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+    const bookingTime = new Date(booking.scheduledDate).toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+
+    let cancellationMessage = `Your appointment has been cancelled.\n\nService: ${serviceNames}\nDate: ${bookingDate}\nTime: ${bookingTime}\n\n`;
+    
+    if (cancellationFee > 0) {
+      cancellationMessage += `A cancellation fee of KSh ${cancellationFee} has been applied as this was cancelled within 48 hours of your appointment.\n\n`;
+    }
+    
+    cancellationMessage += `Need to reschedule? You can book a new appointment anytime!`;
+
+    // Message to client
+    await Message.create({
+      tenantId: req.tenantId,
+      recipientType: 'individual',
+      recipientId: req.client._id,
+      type: 'general',
+      subject: 'Booking Cancelled',
+      message: cancellationMessage,
+      channel: 'app',
+      status: 'sent',
+      sentAt: new Date()
+    }).catch(err => logger.error(`Failed to create cancellation message: ${err.message}`));
+
+    // Log in Communications Hub
+    const clientName = booking.clientId ? `${booking.clientId.firstName} ${booking.clientId.lastName}` : 'Client';
+    await Communication.create({
+      tenantId: req.tenantId,
+      clientId: booking.clientId._id,
+      direction: 'incoming',
+      messageType: 'general',
+      channel: 'portal',
+      subject: 'Booking Cancelled by Client',
+      message: `${clientName} cancelled their appointment\n\nService: ${serviceNames}\nDate: ${bookingDate}\nTime: ${bookingTime}\n\n${cancellationFee > 0 ? `Cancellation fee: KSh ${cancellationFee} (within 48 hours)` : 'No fee (cancelled with sufficient notice)'}`,
+      status: 'sent',
+      requiresAction: false,
+      sentAt: new Date()
+    }).catch(err => logger.error(`Failed to log cancellation communication: ${err.message}`));
+
+    res.json({
+      success: true,
+      data: booking,
+      message: cancellationFee > 0 
+        ? `Booking cancelled. Cancellation fee of KSh ${cancellationFee} has been logged.`
+        : 'Booking cancelled successfully'
+    });
+  } catch (error) {
+    logger.error(`Cancel booking error: ${error.message}`);
     res.status(500).json({
       success: false,
       message: 'Server error'
@@ -348,14 +510,15 @@ router.put('/messages/:id/read', async (req, res) => {
 // @access  Private (Client)
 router.get('/campaigns', async (req, res) => {
   try {
-    const Campaign = require('../models/Campaign');
+    const Marketing = require('../models/Marketing');
     
-    const campaigns = await Campaign.find({
+    // Get sent campaigns (show all sent campaigns regardless of dates for now)
+    const campaigns = await Marketing.find({
       tenantId: req.tenantId,
-      status: 'active',
-      startDate: { $lte: new Date() },
-      endDate: { $gte: new Date() }
-    }).sort({ createdAt: -1 });
+      status: 'sent'
+    }).sort({ sentAt: -1 });
+
+    logger.info(`Found ${campaigns.length} campaigns for tenant ${req.tenantId}`);
 
     res.json({
       success: true,

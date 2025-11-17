@@ -359,3 +359,52 @@
     font-size: 13px;
   }
 }
+
+
+/* Cancellation Policy */
+.cancellation-policy {
+  background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
+  border-left: 4px solid #0ea5e9;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.1);
+}
+
+.cancellation-policy h3 {
+  margin: 0 0 12px 0;
+  font-size: 18px;
+  color: #0c4a6e;
+  font-weight: 700;
+}
+
+.cancellation-policy p {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #0c4a6e;
+}
+
+.cancellation-policy p:last-child {
+  margin-bottom: 0;
+}
+
+.cancellation-policy strong {
+  font-weight: 700;
+  color: #075985;
+}
+
+.policy-note {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.policy-tip {
+  background: white;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
+}

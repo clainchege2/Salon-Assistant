@@ -85,7 +85,23 @@ const bookingSchema = new mongoose.Schema({
   },
   completedAt: Date,
   cancelledAt: Date,
-  cancellationReason: String
+  cancelledBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    refPath: 'cancelledByModel'
+  },
+  cancelledByModel: {
+    type: String,
+    enum: ['User', 'Client']
+  },
+  cancellationReason: String,
+  cancellationFee: {
+    type: Number,
+    default: 0
+  },
+  lateFee: {
+    type: Number,
+    default: 0
+  }
 }, {
   timestamps: true
 });

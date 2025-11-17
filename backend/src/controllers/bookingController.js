@@ -230,6 +230,76 @@ exports.updateBooking = async (req, res) => {
       .populate('stylistId', 'firstName lastName')
       .populate('assignedTo', 'firstName lastName');
 
+    // Send message to client for status changes
+    if (updates.status && updatedBooking.clientId) {
+      const Message = require('../models/Message');
+      const Communication = require('../models/Communication');
+      
+      const serviceNames = updatedBooking.services?.map(s => s.serviceName).join(', ') || 'your appointment';
+      const bookingDate = new Date(updatedBooking.scheduledDate).toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+      const bookingTime = new Date(updatedBooking.scheduledDate).toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+
+      let messageText = '';
+      let subject = '';
+      let commSubject = '';
+      let commMessage = '';
+
+      if (updates.status === 'confirmed') {
+        subject = 'Booking Confirmed';
+        messageText = `Great news! Your appointment has been confirmed. ✅\n\nService: ${serviceNames}\nDate: ${bookingDate}\nTime: ${bookingTime}\n\nWe're looking forward to seeing you!`;
+        commSubject = 'Booking Confirmed';
+        commMessage = `Confirmed appointment for ${updatedBooking.clientId.firstName} ${updatedBooking.clientId.lastName}\n\nService: ${serviceNames}\nDate: ${bookingDate}\nTime: ${bookingTime}`;
+      } else if (updates.status === 'completed') {
+        subject = 'Thank You!';
+        messageText = `Thank you for visiting us! 💜\n\nWe hope you loved your ${serviceNames}. We'd love to hear your feedback!\n\nSee you next time!`;
+        commSubject = 'Booking Completed';
+        commMessage = `Completed appointment for ${updatedBooking.clientId.firstName} ${updatedBooking.clientId.lastName}\n\nService: ${serviceNames}\nDate: ${bookingDate}\nTime: ${bookingTime}`;
+      } else if (updates.status === 'cancelled') {
+        subject = 'Booking Cancelled';
+        messageText = `Your appointment has been cancelled by the salon.\n\nService: ${serviceNames}\nDate: ${bookingDate}\nTime: ${bookingTime}\n\n${updates.cancellationReason || 'Please contact us if you have any questions.'}\n\nYou can book a new appointment anytime!`;
+        commSubject = 'Booking Cancelled by Staff';
+        commMessage = `Cancelled appointment for ${updatedBooking.clientId.firstName} ${updatedBooking.clientId.lastName}\n\nService: ${serviceNames}\nDate: ${bookingDate}\nTime: ${bookingTime}\n\nReason: ${updates.cancellationReason || 'Not specified'}`;
+      }
+
+      if (messageText) {
+        // Message to client
+        await Message.create({
+          tenantId: req.tenantId,
+          recipientType: 'individual',
+          recipientId: updatedBooking.clientId._id,
+          type: updates.status === 'confirmed' ? 'confirmation' : 'general',
+          subject,
+          message: messageText,
+          channel: 'app',
+          status: 'sent',
+          sentBy: req.user._id,
+          sentAt: new Date()
+        }).catch(err => logger.error(`Failed to create status update message: ${err.message}`));
+
+        // Log in Communications Hub
+        await Communication.create({
+          tenantId: req.tenantId,
+          clientId: updatedBooking.clientId._id,
+          direction: 'outgoing',
+          messageType: updates.status === 'confirmed' ? 'confirmation' : 'general',
+          channel: 'portal',
+          subject: commSubject,
+          message: commMessage,
+          status: 'sent',
+          requiresAction: false,
+          sentBy: req.user._id,
+          sentAt: new Date()
+        }).catch(err => logger.error(`Failed to log status communication: ${err.message}`));
+      }
+    }
+
     res.json({
       success: true,
       data: updatedBooking

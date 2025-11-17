@@ -316,6 +316,20 @@ export default function BookAppointment() {
               </div>
             </div>
 
+            <div className="cancellation-policy">
+              <h3>💡 Good to Know</h3>
+              <p>
+                Life happens! You can cancel or reschedule for free anytime up to <strong>2 days (48 hours)</strong> before your appointment.
+              </p>
+              <p className="policy-note">
+                If you need to cancel with less than 2 days notice, there's a small <strong>KSh 100 fee</strong> to help cover our costs. 
+                The same fee applies if you're running more than 30 minutes late.
+              </p>
+              <p className="policy-tip">
+                💬 Need to reschedule? Just cancel and book a new time that works better for you!
+              </p>
+            </div>
+
             <button 
               type="submit" 
               className="btn btn-primary" 

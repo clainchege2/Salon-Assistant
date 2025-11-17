@@ -432,7 +432,10 @@ export default function SalonDashboard() {
       {/* All Features as Compact Buttons - One Line */}
       <div className="quick-actions-bar compact">
         {/* FREE Features */}
-        <button className="quick-action-btn" onClick={() => navigate('/bookings')}>
+        <button className="quick-action-btn" onClick={() => {
+          setPendingBookingsCount(0);
+          navigate('/bookings');
+        }}>
           <span className="btn-emoji">📅</span> Bookings
           {pendingBookingsCount > 0 && (
             <span className="notification-badge">{pendingBookingsCount}</span>
@@ -441,7 +444,10 @@ export default function SalonDashboard() {
         <button className="quick-action-btn" onClick={() => navigate('/clients')}>
           <span className="btn-emoji">💇🏾‍♀️</span> Clients
         </button>
-        <button className="quick-action-btn" onClick={() => navigate('/services')}>
+        <button className="quick-action-btn" onClick={() => {
+          setPendingSuggestionsCount(0);
+          navigate('/services');
+        }}>
           <span className="btn-emoji">💅🏾</span> Services
           {pendingSuggestionsCount > 0 && (
             <span className="notification-badge">{pendingSuggestionsCount}</span>
@@ -452,7 +458,10 @@ export default function SalonDashboard() {
         {hasFeatureAccess('communications') ? (
           <button
             className="quick-action-btn"
-            onClick={() => navigate('/communications')}
+            onClick={() => {
+              setUnreadFeedbackCount(0); // Clear badge immediately
+              navigate('/communications');
+            }}
           >
             <span className="btn-emoji">💬</span> Comms
             {unreadFeedbackCount > 0 && (
@@ -491,7 +500,10 @@ export default function SalonDashboard() {
         {hasFeatureAccess('stock') ? (
           <button
             className="quick-action-btn"
-            onClick={() => navigate('/stock')}
+            onClick={() => {
+              setLowStockCount(0);
+              navigate('/stock');
+            }}
           >
             <span className="btn-emoji">📦</span> Stock
             {lowStockCount > 0 && (

@@ -6,7 +6,9 @@ import './Communications.css';
 export default function Communications() {
   const [communications, setCommunications] = useState([]);
   const [feedback, setFeedback] = useState([]);
-  const [activeTab, setActiveTab] = useState('messages');
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem('communicationsActiveTab') || 'messages';
+  });
   const [directionFilter, setDirectionFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -34,6 +36,10 @@ export default function Communications() {
       fetchFeedback();
     }
   }, [activeTab]); // Only refetch when tab changes, filters are applied on frontend
+
+  useEffect(() => {
+    localStorage.setItem('communicationsActiveTab', activeTab);
+  }, [activeTab]);
 
   const fetchUserTier = async () => {
     try {

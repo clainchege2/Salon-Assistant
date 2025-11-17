@@ -7,13 +7,19 @@ export default function Messages() {
   const [messages, setMessages] = useState([]);
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('messages');
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem('messagesActiveTab') || 'messages';
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchMessages();
     fetchCampaigns();
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem('messagesActiveTab', activeTab);
+  }, [activeTab]);
 
   const fetchMessages = async () => {
     try {
@@ -52,6 +58,12 @@ export default function Messages() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setCampaigns(response.data.data || []);
+      
+      // Mark all campaigns as viewed in localStorage
+      const campaignIds = (response.data.data || []).map(c => c._id);
+      const viewedCampaigns = JSON.parse(localStorage.getItem('viewedCampaigns') || '[]');
+      const updatedViewed = [...new Set([...viewedCampaigns, ...campaignIds])];
+      localStorage.setItem('viewedCampaigns', JSON.stringify(updatedViewed));
     } catch (err) {
       console.error('Error fetching campaigns:', err);
     }
@@ -152,9 +164,19 @@ export default function Messages() {
                       </div>
                     )}
                     <div className="campaign-footer">
-                      <span className="campaign-date">
-                        Valid until: {new Date(campaign.endDate).toLocaleDateString()}
-                      </span>
+                      {campaign.endDate && (
+                        <span className="campaign-date">
+                          Valid until: {new Date(campaign.endDate).toLocaleDateString()}
+                        </span>
+                      )}
+                      <button 
+                        className="btn-book-now"
+                        onClick={() => navigate('/book')}
+                      >
+                        📅 Book Now!
+                      </button>
+                    </div>
+                    <div className="campaign-status">
                       <span className={`status-badge ${campaign.status}`}>
                         {campaign.status}
                       </span>
