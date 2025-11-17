@@ -115,7 +115,7 @@ exports.getOverview = async (req, res) => {
       tenantId,
       scheduledDate: { $gte: startDate, $lte: endDate },
       status: { $in: ['confirmed', 'completed'] }
-    }).populate('services.serviceId stylistId');
+    }).populate('services.serviceId stylistId assignedTo');
 
     // Calculate KPIs
     const totalRevenue = bookings.reduce((sum, b) => sum + (b.totalPrice || 0), 0);
@@ -146,9 +146,10 @@ exports.getOverview = async (req, res) => {
     // Top stylist by revenue
     const stylistRevenue = {};
     bookings.forEach(b => {
-      if (b.stylistId) {
-        const name = b.stylistId.firstName && b.stylistId.lastName 
-          ? `${b.stylistId.firstName} ${b.stylistId.lastName}`
+      const stylist = b.assignedTo || b.stylistId;
+      if (stylist) {
+        const name = stylist.firstName && stylist.lastName 
+          ? `${stylist.firstName} ${stylist.lastName}`
           : 'Unknown';
         stylistRevenue[name] = (stylistRevenue[name] || 0) + (b.totalPrice || 0);
       }
@@ -327,26 +328,24 @@ exports.getOverview = async (req, res) => {
       }
     }
     
-    // Find actual peak from heatmap data
-    const maxHeatmapValue = Math.max(...heatmapData.map(h => h.value));
-    const peakCell = heatmapData.find(h => h.value === maxHeatmapValue);
+    // Find actual peak 2-hour window across ALL days
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    let bestWindow = { day: 0, start: 9, count: 0 };
     
-    if (peakCell && maxHeatmapValue > 0) {
-      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-      const peakDayName = dayNames[peakCell.day];
-      const peakHourActual = peakCell.hour + 9; // Convert back to actual hour
-      
-      // Find consecutive 2-hour window on peak day
-      let bestWindow = { start: peakHourActual, count: 0 };
+    // Check every 2-hour window on every day
+    for (let day = 0; day < 7; day++) {
       for (let h = 9; h <= 17; h++) {
-        const key1 = `${peakCell.day}-${h}`;
-        const key2 = `${peakCell.day}-${h + 1}`;
+        const key1 = `${day}-${h}`;
+        const key2 = `${day}-${h + 1}`;
         const windowCount = (dayHourCounts[key1] || 0) + (dayHourCounts[key2] || 0);
         if (windowCount > bestWindow.count) {
-          bestWindow = { start: h, count: windowCount };
+          bestWindow = { day, start: h, count: windowCount };
         }
       }
-      
+    }
+    
+    if (bestWindow.count > 0) {
+      const peakDayName = dayNames[bestWindow.day];
       peakHours = `${formatHour(bestWindow.start)}-${formatHour(bestWindow.start + 2)}`;
       peakDayText = `${peakDayName}s`;
     }
@@ -838,7 +837,7 @@ exports.getStylists = async (req, res) => {
       tenantId,
       scheduledDate: { $gte: startDate, $lte: endDate },
       status: { $in: ['confirmed', 'completed'] }
-    });
+    }).populate('stylistId assignedTo');
 
     const stylists = await User.find({ 
       tenantId,
@@ -848,8 +847,9 @@ exports.getStylists = async (req, res) => {
     // Calculate stylist stats
     const stylistStats = stylists.map(stylist => {
       const stylistBookings = bookings.filter(b => {
-        if (!b.stylistId) return false;
-        return b.stylistId.toString() === stylist._id.toString();
+        const assignedStylist = b.assignedTo || b.stylistId;
+        if (!assignedStylist) return false;
+        return assignedStylist._id.toString() === stylist._id.toString();
       });
       
       const revenue = stylistBookings.reduce((sum, b) => sum + (b.totalPrice || 0), 0);

@@ -651,9 +651,11 @@ export default function SalonDashboard() {
                     </td>
                     <td>
                       <span className="stylist-name">
-                        {booking.stylistId 
-                          ? `${booking.stylistId.firstName} ${booking.stylistId.lastName}`
-                          : (booking.staffName || 'Unassigned')
+                        {booking.assignedTo 
+                          ? `${booking.assignedTo.firstName} ${booking.assignedTo.lastName}`
+                          : booking.stylistId 
+                            ? `${booking.stylistId.firstName} ${booking.stylistId.lastName}`
+                            : 'Unassigned'
                         }
                       </span>
                     </td>
@@ -718,9 +720,11 @@ export default function SalonDashboard() {
           <h2>📅 My Upcoming Appointments</h2>
           {(() => {
             // Filter to show only stylist's own bookings
-            const myBookings = bookings.filter(booking =>
-              booking.staffName === `${user.firstName} ${user.lastName}`
-            );
+            const myBookings = bookings.filter(booking => {
+              const assignedStaff = booking.assignedTo || booking.stylistId;
+              if (!assignedStaff) return false;
+              return assignedStaff._id === user._id;
+            });
 
             return myBookings.length === 0 ? (
               <div className="empty-state">

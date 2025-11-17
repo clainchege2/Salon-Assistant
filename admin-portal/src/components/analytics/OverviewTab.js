@@ -232,11 +232,6 @@ const OverviewTab = ({ dateRange, customRange }) => {
           <h3>Peak Booking Hours</h3>
         </div>
         <HeatmapChart data={data?.heatmapData || []} />
-        {data?.insights?.peakTime && (
-          <div className="insight-footer">
-            {data.insights.peakTime}
-          </div>
-        )}
       </div>
     </div>
   );

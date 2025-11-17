@@ -19,13 +19,17 @@ const HeatmapChart = ({ data }) => {
     return result;
   }
   
-  const getIntensity = (value) => {
-    if (value === 0) return 0;
-    if (value <= 2) return 0.2;
-    if (value <= 4) return 0.4;
-    if (value <= 6) return 0.6;
-    if (value <= 8) return 0.8;
-    return 1;
+  const getColor = (value) => {
+    if (value === 0) return '#f5f5f5';
+    if (value <= 2) return '#c7e9c0';
+    if (value <= 4) return '#74c476';
+    if (value <= 6) return '#31a354';
+    if (value <= 8) return '#006d2c';
+    return '#00441b';
+  };
+  
+  const getTextColor = (value) => {
+    return value > 4 ? 'white' : '#333';
   };
   
   const getCellData = (dayIndex, hourIndex) => {
@@ -48,14 +52,13 @@ const HeatmapChart = ({ data }) => {
             <div className="day-label">{day}</div>
             {hours.map((hour, hourIndex) => {
               const value = getCellData(dayIndex, hourIndex);
-              const intensity = getIntensity(value);
               return (
                 <div
                   key={hourIndex}
                   className="heatmap-cell"
                   style={{
-                    background: `rgba(255, 105, 180, ${intensity})`,
-                    color: intensity > 0.5 ? 'white' : '#666'
+                    background: getColor(value),
+                    color: getTextColor(value)
                   }}
                   title={`${day} ${hour}: ${value} bookings`}
                 >

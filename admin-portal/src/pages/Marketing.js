@@ -163,6 +163,57 @@ export default function Marketing() {
     setShowCreateModal(true);
   };
 
+  const handleSaveAsDraft = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+
+      let targetClients = [];
+
+      // Determine target clients based on targetType
+      if (campaignForm.targetType === 'occasion') {
+        targetClients = await getSpecialOccasionClients(campaignForm.occasion);
+      } else if (campaignForm.targetType === 'individual') {
+        targetClients = campaignForm.selectedClients;
+      } else if (campaignForm.targetType === 'segment') {
+        targetClients = campaignForm.selectedClients;
+      } else if (campaignForm.targetType === 'dayOfWeek') {
+        targetClients = allClients.filter(c => c.marketingConsent?.sms);
+      } else {
+        targetClients = allClients.filter(c => c.marketingConsent?.sms);
+      }
+
+      const campaignData = {
+        name: campaignForm.name,
+        type: campaignForm.type,
+        occasion: campaignForm.occasion || undefined,
+        message: campaignForm.message,
+        targetAudience: {
+          specificClients: targetClients.map(c => c._id),
+          categories: [],
+          targetType: campaignForm.targetType,
+          dayOfWeek: campaignForm.dayOfWeek || undefined
+        },
+        channel: campaignForm.channel,
+        status: 'draft',
+        scheduledFor: null
+      };
+
+      await axios.post(
+        'http://localhost:5000/api/v1/marketing',
+        campaignData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      showSuccess('Draft Saved!', 'Your campaign has been saved as a draft. You can edit and send it later.');
+      setShowCreateModal(false);
+      resetForm();
+      fetchCampaigns();
+    } catch (error) {
+      console.error('Error:', error);
+      showError('Failed to Save Draft', error.response?.data?.message || error.message);
+    }
+  };
+
   const handleCreateCampaign = async () => {
     try {
       const token = localStorage.getItem('adminToken');
@@ -746,6 +797,14 @@ export default function Marketing() {
                   onClick={() => setShowCreateModal(false)}
                 >
                   Cancel
+                </button>
+                <button
+                  className="secondary-btn"
+                  onClick={handleSaveAsDraft}
+                  disabled={!campaignForm.name.trim() || !campaignForm.message.trim()}
+                  style={{ marginLeft: 'auto', marginRight: '8px' }}
+                >
+                  💾 Save as Draft
                 </button>
                 <button
                   className="primary-btn"
