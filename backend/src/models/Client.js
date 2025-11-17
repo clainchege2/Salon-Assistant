@@ -24,6 +24,10 @@ const clientSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  password: {
+    type: String,
+    select: false  // Don't include password in queries by default
+  },
   category: {
     type: String,
     enum: ['new', 'vip', 'usual', 'longtime-no-see'],

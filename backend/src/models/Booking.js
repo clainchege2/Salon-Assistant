@@ -70,6 +70,15 @@ const bookingSchema = new mongoose.Schema({
   },
   followUpNote: String,
   followUpDate: Date,
+  feedback: {
+    rating: {
+      type: Number,
+      min: 1,
+      max: 5
+    },
+    comment: String,
+    submittedAt: Date
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'

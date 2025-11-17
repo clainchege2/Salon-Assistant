@@ -39,6 +39,8 @@ app.use('/api/', apiLimiter);
 
 // Routes
 app.use('/api/v1/auth', require('./routes/auth'));
+app.use('/api/v1/client-auth', require('./routes/clientAuth'));
+app.use('/api/v1/client', require('./routes/clientBookings'));
 app.use('/api/v1/bookings', require('./routes/bookings'));
 app.use('/api/v1/clients', require('./routes/clients'));
 app.use('/api/v1/services', require('./routes/services'));
