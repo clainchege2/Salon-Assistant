@@ -302,6 +302,47 @@ router.get('/messages', async (req, res) => {
   }
 });
 
+// @desc    Mark message as read
+// @route   PUT /api/v1/client/messages/:id/read
+// @access  Private (Client)
+router.put('/messages/:id/read', async (req, res) => {
+  try {
+    const Message = require('../models/Message');
+    
+    // Find message that belongs to this tenant and is either for this client or for all
+    const message = await Message.findOneAndUpdate(
+      {
+        _id: req.params.id,
+        tenantId: req.tenantId,
+        $or: [
+          { recipientType: 'all' },
+          { recipientId: req.client._id }
+        ]
+      },
+      { readAt: new Date() },
+      { new: true }
+    );
+
+    if (!message) {
+      return res.status(404).json({
+        success: false,
+        message: 'Message not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: message
+    });
+  } catch (error) {
+    logger.error(`Mark message as read error: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
 // @desc    Get campaigns for client
 // @route   GET /api/v1/client/campaigns
 // @access  Private (Client)

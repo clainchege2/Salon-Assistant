@@ -7,11 +7,32 @@ export default function Dashboard() {
   const [client, setClient] = useState(null);
   const [salon, setSalon] = useState(null);
   const [upcomingBookings, setUpcomingBookings] = useState([]);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+  const [upcomingBookingsCount, setUpcomingBookingsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchDashboardData();
+
+    // Refresh unread count when user navigates back to dashboard
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchUnreadCount();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+  // Also refresh count when component mounts (user navigates back)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchUnreadCount();
+    }, 5000); // Check every 5 seconds
+    
+    return () => clearInterval(interval);
   }, []);
 
   const fetchDashboardData = async () => {
@@ -38,10 +59,33 @@ export default function Dashboard() {
         b.status !== 'cancelled'
       );
       setUpcomingBookings(upcoming.slice(0, 3));
+      setUpcomingBookingsCount(upcoming.length);
+
+      // Fetch unread messages count
+      const messagesResponse = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/v1/client/messages`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const unreadCount = messagesResponse.data.data.filter(m => !m.readAt).length;
+      setUnreadMessagesCount(unreadCount);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUnreadCount = async () => {
+    try {
+      const token = localStorage.getItem('clientToken');
+      const messagesResponse = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/v1/client/messages`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const unreadCount = messagesResponse.data.data.filter(m => !m.readAt).length;
+      setUnreadMessagesCount(unreadCount);
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
     }
   };
 
@@ -81,11 +125,21 @@ export default function Dashboard() {
             <span className="action-text">Book Appointment</span>
           </button>
           <button onClick={() => navigate('/bookings')} className="action-card">
-            <span className="action-icon">📋</span>
+            <span className="action-icon-wrapper">
+              <span className="action-icon">📋</span>
+              {upcomingBookingsCount > 0 && (
+                <span className="notification-badge">{upcomingBookingsCount}</span>
+              )}
+            </span>
             <span className="action-text">My Bookings</span>
           </button>
           <button onClick={() => navigate('/messages')} className="action-card">
-            <span className="action-icon">📬</span>
+            <span className="action-icon-wrapper">
+              <span className="action-icon">📬</span>
+              {unreadMessagesCount > 0 && (
+                <span className="notification-badge">{unreadMessagesCount}</span>
+              )}
+            </span>
             <span className="action-text">Messages & Offers</span>
           </button>
           <button onClick={() => navigate('/feedback')} className="action-card">

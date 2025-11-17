@@ -23,6 +23,20 @@ export default function Messages() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setMessages(response.data.data || []);
+      
+      // Mark all unread messages as read
+      const unreadMessages = response.data.data.filter(m => !m.readAt);
+      if (unreadMessages.length > 0) {
+        await Promise.all(
+          unreadMessages.map(msg =>
+            axios.put(
+              `${process.env.REACT_APP_API_URL}/api/v1/client/messages/${msg._id}/read`,
+              {},
+              { headers: { Authorization: `Bearer ${token}` } }
+            ).catch(err => console.error('Error marking message as read:', err))
+          )
+        );
+      }
     } catch (err) {
       console.error('Error fetching messages:', err);
     } finally {

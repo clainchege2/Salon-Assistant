@@ -93,6 +93,23 @@ exports.sendMessage = async (req, res) => {
       }
     }
 
+    // Save message to database so client can see it
+    const Message = require('../models/Message');
+    const newMessage = await Message.create({
+      tenantId: req.tenantId,
+      recipientType: 'individual',
+      recipientId: booking.clientId._id,
+      type: templateType || 'general',
+      subject: templateType === 'confirmation' ? 'Booking Confirmed' : 
+               templateType === 'reminder' ? 'Appointment Reminder' :
+               templateType === 'thank-you' ? 'Thank You' : 'Message from Salon',
+      message: messageText,
+      channel: channel || 'sms',
+      status: 'sent',
+      sentBy: req.user._id,
+      sentAt: new Date()
+    });
+
     // In production, integrate with SMS/Email/WhatsApp API
     // For now, log the message
     logger.info(`Message sent to ${booking.clientId.phone}: ${messageText}`);
@@ -109,7 +126,8 @@ exports.sendMessage = async (req, res) => {
       data: {
         recipient: booking.clientId.phone,
         message: messageText,
-        channel: channel || 'sms'
+        channel: channel || 'sms',
+        messageId: newMessage._id
       }
     });
   } catch (error) {

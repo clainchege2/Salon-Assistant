@@ -254,7 +254,12 @@ export default function AddBooking() {
       </div>
 
       {error && <div className="error-message">{error}</div>}
-      {successMessage && <div className="success-message">{successMessage}</div>}
+      {successMessage && (
+        <>
+          <div className="success-backdrop"></div>
+          <div className="success-message">{successMessage}</div>
+        </>
+      )}
 
       <form onSubmit={handleSubmit} className="booking-form">
         <div className="form-group">

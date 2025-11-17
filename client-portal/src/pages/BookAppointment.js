@@ -198,7 +198,12 @@ export default function BookAppointment() {
       <div className="book-container">
         <div className="card">
           {error && <div className="error-message">{error}</div>}
-          {success && <div className="success-message">{success}</div>}
+          {success && (
+            <>
+              <div className="success-backdrop"></div>
+              <div className="success-message">{success}</div>
+            </>
+          )}
 
           <form onSubmit={handleSubmit}>
             <div className="form-section">

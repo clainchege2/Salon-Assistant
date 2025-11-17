@@ -565,6 +565,21 @@ exports.respondToFeedback = async (req, res) => {
       });
     }
 
+    // Create a message so client can see the response in their Messages page
+    const Message = require('../models/Message');
+    await Message.create({
+      tenantId: req.tenantId,
+      recipientType: 'individual',
+      recipientId: feedback.clientId._id,
+      type: 'general',
+      subject: 'Response to Your Feedback',
+      message: `Thank you for your feedback! ${text}`,
+      channel: 'app',
+      status: 'sent',
+      sentBy: req.user._id,
+      sentAt: new Date()
+    });
+
     res.json({
       success: true,
       data: feedback

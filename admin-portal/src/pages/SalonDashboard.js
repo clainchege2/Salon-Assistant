@@ -16,6 +16,7 @@ export default function SalonDashboard() {
   const [pendingSuggestionsCount, setPendingSuggestionsCount] = useState(0);
   const [lowStockCount, setLowStockCount] = useState(0);
   const [pendingBookingsCount, setPendingBookingsCount] = useState(0);
+  const [unreadFeedbackCount, setUnreadFeedbackCount] = useState(0);
   const [messageModal, setMessageModal] = useState({
     show: false,
     booking: null,
@@ -154,14 +155,20 @@ export default function SalonDashboard() {
         }
       }
 
-      // Count pending/upcoming bookings (today and next 7 days)
-      const today = new Date();
-      const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-      const upcomingBookings = bookingsRes.data.data?.filter(b => {
-        const bookingDate = new Date(b.scheduledDate);
-        return b.status === 'confirmed' && bookingDate >= today && bookingDate <= nextWeek;
-      }) || [];
-      setPendingBookingsCount(upcomingBookings.length);
+      // Count only pending bookings that need confirmation
+      const pendingBookings = bookingsRes.data.data?.filter(b => b.status === 'pending') || [];
+      setPendingBookingsCount(pendingBookings.length);
+
+      // Fetch unread feedback count for communications
+      if (user?.role === 'owner' || user?.permissions?.canViewCommunications) {
+        try {
+          const feedbackRes = await axios.get('http://localhost:5000/api/v1/communications/feedback', config);
+          const unreadCount = feedbackRes.data.data?.filter(f => f.requiresAction && !f.response?.text).length || 0;
+          setUnreadFeedbackCount(unreadCount);
+        } catch (error) {
+          console.error('Error fetching feedback:', error);
+        }
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -448,6 +455,9 @@ export default function SalonDashboard() {
             onClick={() => navigate('/communications')}
           >
             <span className="btn-emoji">💬</span> Comms
+            {unreadFeedbackCount > 0 && (
+              <span className="notification-badge">{unreadFeedbackCount}</span>
+            )}
           </button>
         ) : user?.role === 'owner' && subscriptionTier === 'free' && (
           <button
