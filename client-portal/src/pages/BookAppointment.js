@@ -131,15 +131,6 @@ export default function BookAppointment() {
     setError('');
     setSuccess('');
 
-    // Validate time slot is available
-    if (date && availableSlots.length > 0) {
-      const selectedSlot = availableSlots.find(s => s.hour === time);
-      if (!selectedSlot || !selectedSlot.available) {
-        setError('⚠️ This time slot is no longer available. Please select a different time.');
-        return;
-      }
-    }
-
     setLoading(true);
 
     try {
@@ -323,15 +314,10 @@ export default function BookAppointment() {
             <button 
               type="submit" 
               className="btn btn-primary" 
-              disabled={loading || selectedServices.length === 0 || !time || (date && availableSlots.length > 0 && !availableSlots.find(s => s.hour === time && s.available))}
+              disabled={loading || selectedServices.length === 0 || !time}
             >
               {loading ? 'Booking...' : '✨ Confirm Booking'}
             </button>
-            {date && time && availableSlots.length > 0 && !availableSlots.find(s => s.hour === time && s.available) && (
-              <p style={{ color: '#ef4444', fontSize: '14px', marginTop: '12px', textAlign: 'center' }}>
-                ⚠️ Selected time slot is not available. Please choose an available slot.
-              </p>
-            )}
           </form>
         </div>
       </div>

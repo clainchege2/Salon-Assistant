@@ -178,17 +178,21 @@ export default function Communications() {
 
     try {
       const token = localStorage.getItem('adminToken');
-      await axios.put(
+      console.log('Sending feedback response with token:', token ? 'Token exists' : 'No token');
+      
+      const response = await axios.put(
         `http://localhost:5000/api/v1/communications/feedback/${feedbackId}/respond`,
         { text: feedbackResponse },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
+      console.log('Response sent successfully:', response.data);
       setFeedbackResponse('');
       fetchFeedback();
       showToast('Response sent successfully');
     } catch (error) {
-      showToast('Failed to send response', 'error');
+      console.error('Failed to send response:', error.response?.data || error.message);
+      showToast(error.response?.data?.message || 'Failed to send response', 'error');
     }
   };
 

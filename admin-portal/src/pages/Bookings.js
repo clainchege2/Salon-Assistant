@@ -17,6 +17,7 @@ export default function Bookings() {
   const [cancelModal, setCancelModal] = useState({ show: false, booking: null, reason: '' });
   const [successMessage, setSuccessMessage] = useState('');
   const [error, setError] = useState('');
+  const [openDropdown, setOpenDropdown] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -26,6 +27,16 @@ export default function Bookings() {
   useEffect(() => {
     filterAndSortBookings();
   }, [filter, searchTerm, sortBy, bookings]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.status-dropdown')) {
+        setOpenDropdown(null);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
   const fetchBookings = async () => {
     try {
@@ -163,6 +174,26 @@ export default function Bookings() {
     } catch (error) {
       console.error('Error cancelling booking:', error);
       setError('❌ Failed to cancel booking');
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  const handleUpdateBookingStatus = async (bookingId, status) => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      await axios.put(
+        `http://localhost:5000/api/v1/bookings/${bookingId}`,
+        { status },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      fetchBookings();
+      setViewModal({ show: false, booking: null });
+      const statusText = status === 'completed' ? 'completed' : 'marked as no-show';
+      setSuccessMessage(`✅ Booking ${statusText} successfully!`);
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (error) {
+      console.error('Error updating booking status:', error);
+      setError('❌ Failed to update booking status');
       setTimeout(() => setError(''), 3000);
     }
   };
@@ -329,9 +360,45 @@ export default function Bookings() {
                         </button>
                       )}
                       {booking.status !== 'completed' && booking.status !== 'cancelled' && (
-                        <button className="btn-action cancel" title="Cancel booking" onClick={() => setCancelModal({ show: true, booking, reason: '' })}>
-                          ✕ Cancel
-                        </button>
+                        <div className="status-dropdown">
+                          <button 
+                            className="btn-action status-toggle" 
+                            onClick={() => setOpenDropdown(openDropdown === booking._id ? null : booking._id)}
+                          >
+                            Update Status ▾
+                          </button>
+                          {openDropdown === booking._id && (
+                            <div className="dropdown-menu">
+                              <button 
+                                className="dropdown-item complete"
+                                onClick={() => {
+                                  handleUpdateBookingStatus(booking._id, 'completed');
+                                  setOpenDropdown(null);
+                                }}
+                              >
+                                ✓ Mark Completed
+                              </button>
+                              <button 
+                                className="dropdown-item no-show"
+                                onClick={() => {
+                                  handleUpdateBookingStatus(booking._id, 'no-show');
+                                  setOpenDropdown(null);
+                                }}
+                              >
+                                ⊘ Mark No-Show
+                              </button>
+                              <button 
+                                className="dropdown-item cancel"
+                                onClick={() => {
+                                  setCancelModal({ show: true, booking, reason: '' });
+                                  setOpenDropdown(null);
+                                }}
+                              >
+                                ✕ Cancel Booking
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       )}
                       <button className="btn-action view" title="View details" onClick={() => handleViewBooking(booking)}>
                         View
@@ -484,6 +551,22 @@ export default function Bookings() {
               )}
             </div>
             <div className="modal-footer">
+              {viewModal.booking.status !== 'completed' && viewModal.booking.status !== 'cancelled' && (
+                <button 
+                  className="btn-success" 
+                  onClick={() => handleUpdateBookingStatus(viewModal.booking._id, 'completed')}
+                >
+                  ✓ Mark Completed
+                </button>
+              )}
+              {viewModal.booking.status !== 'no-show' && viewModal.booking.status !== 'cancelled' && (
+                <button 
+                  className="btn-warning" 
+                  onClick={() => handleUpdateBookingStatus(viewModal.booking._id, 'no-show')}
+                >
+                  ⊘ Mark No-Show
+                </button>
+              )}
               <button className="btn-secondary" onClick={() => setViewModal({ show: false, booking: null })}>Close</button>
             </div>
           </div>
