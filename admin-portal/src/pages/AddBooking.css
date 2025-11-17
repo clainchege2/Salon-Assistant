@@ -2,6 +2,8 @@
   min-height: 100vh;
   background: #f5f7fa;
   padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .add-booking-header {
@@ -9,6 +11,9 @@
   align-items: center;
   gap: 20px;
   margin-bottom: 30px;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .back-btn {
@@ -28,6 +33,9 @@
 .add-booking-header h1 {
   color: #333;
   margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
 }
 
 .error-message {
@@ -37,6 +45,9 @@
   border-radius: 8px;
   margin-bottom: 20px;
   animation: slideIn 0.3s ease;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .success-message {
@@ -47,6 +58,9 @@
   margin-bottom: 20px;
   border-left: 4px solid #28a745;
   animation: slideIn 0.3s ease;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 @keyframes slideIn {
@@ -66,6 +80,7 @@
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   max-width: 800px;
+  margin: 0 auto;
 }
 
 .form-group {

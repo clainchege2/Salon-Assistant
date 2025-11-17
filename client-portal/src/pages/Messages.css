@@ -2,53 +2,45 @@
 
 .messages-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #fafafa 0%, #ffffff 100%);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  -webkit-font-smoothing: antialiased;
+  background: #f5f7fa;
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
 }
 
 .messages-header {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  padding: 24px 48px;
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 20px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  margin-bottom: 30px;
+  padding: 0 20px;
 }
 
 .messages-header h1 {
-  font-size: 32px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-  color: #1d1d1f;
+  color: #333;
   margin: 0;
-  background: linear-gradient(135deg, #6B46C1 0%, #9F7AEA 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-size: 28px;
+  font-weight: 700;
+  flex: 1;
+  text-align: center;
+  padding: 0 20px;
 }
 
 .back-btn {
   padding: 10px 20px;
   background: white;
-  color: #1d1d1f;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 980px;
-  font-size: 14px;
-  font-weight: 600;
+  border: 1px solid #ddd;
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 14px;
+  transition: all 0.2s;
+  color: #333;
+  font-weight: 500;
+  flex-shrink: 0;
 }
 
 .back-btn:hover {
-  background: #f9fafb;
-  border-color: #6B46C1;
-  transform: translateY(-2px);
+  background: #f5f7fa;
 }
 
 .messages-container {

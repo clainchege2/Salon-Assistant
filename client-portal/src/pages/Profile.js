@@ -106,15 +106,7 @@ export default function Profile() {
         <button onClick={() => navigate('/dashboard')} className="back-btn">
           ← Back
         </button>
-        <div>
-          <h1>👤 My Profile</h1>
-          {salonName && (
-            <div className="salon-badge" style={{marginTop: '8px'}}>
-              <span className="salon-icon">🏢</span>
-              <span className="salon-name">{salonName}</span>
-            </div>
-          )}
-        </div>
+        <h1>My Profile</h1>
       </div>
 
       <div className="dashboard-container">

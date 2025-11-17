@@ -32,27 +32,26 @@ export default function MyBookings() {
   }
 
   return (
-    <div className="dashboard-page">
-      <div className="book-header">
+    <div className="bookings-page">
+      <div className="bookings-header">
         <button onClick={() => navigate('/dashboard')} className="back-btn">
           ← Back
         </button>
-        <h1>📋 My Bookings</h1>
+        <h1>My Bookings</h1>
       </div>
 
-      <div className="dashboard-container">
-        <div className="card">
-          {bookings.length === 0 ? (
-            <div className="empty-state">
-              <p>No bookings yet</p>
-              <button onClick={() => navigate('/book')} className="btn btn-primary">
-                Book Your First Appointment
-              </button>
-            </div>
-          ) : (
-            <div className="bookings-list">
-              {bookings.map(booking => (
-                <div key={booking._id} className="booking-item">
+      <div className="bookings-container">
+        {bookings.length === 0 ? (
+          <div className="empty-state">
+            <p>No bookings yet</p>
+            <button onClick={() => navigate('/book')} className="btn btn-primary">
+              Book Your First Appointment
+            </button>
+          </div>
+        ) : (
+          <div className="bookings-list">
+            {bookings.map(booking => (
+              <div key={booking._id} className="booking-item">
                   <div className="booking-date">
                     <div className="date-day">
                       {new Date(booking.scheduledDate).getDate()}
@@ -69,9 +68,14 @@ export default function MyBookings() {
                         minute: '2-digit' 
                       })}
                     </p>
-                    {booking.assignedTo && (
+                    {(booking.assignedTo || booking.stylistId) && (
                       <p className="booking-stylist">
-                        with {booking.assignedTo.firstName} {booking.assignedTo.lastName}
+                        with {booking.assignedTo 
+                          ? `${booking.assignedTo.firstName} ${booking.assignedTo.lastName}`
+                          : booking.stylistId 
+                            ? `${booking.stylistId.firstName} ${booking.stylistId.lastName}`
+                            : 'Staff Member'
+                        }
                       </p>
                     )}
                   </div>
@@ -81,10 +85,9 @@ export default function MyBookings() {
                     </span>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

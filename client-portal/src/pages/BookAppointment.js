@@ -6,11 +6,15 @@ import './BookAppointment.css';
 export default function BookAppointment() {
   const [services, setServices] = useState([]);
   const [selectedServices, setSelectedServices] = useState([]);
+  const [staff, setStaff] = useState([]);
+  const [selectedStaff, setSelectedStaff] = useState('');
+  const [availableSlots, setAvailableSlots] = useState([]);
   const [salonName, setSalonName] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
+  const [loadingSlots, setLoadingSlots] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
@@ -18,7 +22,14 @@ export default function BookAppointment() {
   useEffect(() => {
     fetchServices();
     fetchSalonInfo();
+    fetchStaff();
   }, []);
+
+  useEffect(() => {
+    if (date) {
+      fetchAvailability();
+    }
+  }, [date, selectedStaff]);
 
   const fetchSalonInfo = async () => {
     try {
@@ -46,7 +57,6 @@ export default function BookAppointment() {
         return;
       }
       
-      console.log('Fetching services...');
       const response = await axios.get(
         `${process.env.REACT_APP_API_URL}/api/v1/client/services`,
         { 
@@ -54,7 +64,6 @@ export default function BookAppointment() {
         }
       );
       
-      console.log('Services response:', response.data);
       setServices(response.data.data || []);
       
       if (!response.data.data || response.data.data.length === 0) {
@@ -62,10 +71,50 @@ export default function BookAppointment() {
       }
     } catch (error) {
       console.error('Error fetching services:', error);
-      console.error('Error details:', error.response?.data);
       setError(error.response?.data?.message || 'Failed to load services. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchStaff = async () => {
+    try {
+      const token = localStorage.getItem('clientToken');
+      console.log('Fetching staff...');
+      const response = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/v1/client/staff`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      console.log('Staff response:', response.data);
+      setStaff(response.data.data || []);
+      if (!response.data.data || response.data.data.length === 0) {
+        console.warn('No staff members found');
+      }
+    } catch (error) {
+      console.error('Error fetching staff:', error);
+      console.error('Error details:', error.response?.data);
+    }
+  };
+
+  const fetchAvailability = async () => {
+    if (!date) return;
+    
+    setLoadingSlots(true);
+    try {
+      const token = localStorage.getItem('clientToken');
+      const params = new URLSearchParams({ date });
+      if (selectedStaff) params.append('staffId', selectedStaff);
+      
+      const response = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/v1/client/availability?${params}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      setAvailableSlots(response.data.data || []);
+    } catch (error) {
+      console.error('Error fetching availability:', error);
+    } finally {
+      setLoadingSlots(false);
     }
   };
 
@@ -81,6 +130,16 @@ export default function BookAppointment() {
     e.preventDefault();
     setError('');
     setSuccess('');
+
+    // Validate time slot is available
+    if (date && availableSlots.length > 0) {
+      const selectedSlot = availableSlots.find(s => s.hour === time);
+      if (!selectedSlot || !selectedSlot.available) {
+        setError('⚠️ This time slot is no longer available. Please select a different time.');
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
@@ -98,16 +157,31 @@ export default function BookAppointment() {
             price: s.price,
             duration: s.duration
           })),
+          stylistId: selectedStaff || null,
           customerInstructions: notes
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       setSuccess('✅ Booking created successfully!');
+      
+      // Refresh availability to show the newly booked slot
+      if (date) {
+        await fetchAvailability();
+      }
+      
       setTimeout(() => navigate('/bookings'), 2000);
     } catch (err) {
       console.error('Booking error:', err.response?.data);
-      setError(err.response?.data?.message || 'Failed to create booking. Please try again.');
+      
+      // Handle specific error codes
+      if (err.response?.status === 409) {
+        setError('⚠️ This time slot was just booked by someone else. Please refresh and select a different time.');
+        // Refresh availability
+        await fetchAvailability();
+      } else {
+        setError(err.response?.data?.message || 'Failed to create booking. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -119,16 +193,16 @@ export default function BookAppointment() {
         <button onClick={() => navigate('/dashboard')} className="back-btn">
           ← Back
         </button>
-        <div>
-          <h1>📅 Book Appointment</h1>
-          {salonName && (
-            <div className="salon-badge" style={{marginTop: '8px'}}>
-              <span className="salon-icon">🏢</span>
-              <span className="salon-name">{salonName}</span>
-            </div>
-          )}
-        </div>
+        <h1>Book Appointment</h1>
       </div>
+      {salonName && (
+        <div style={{marginBottom: '20px', textAlign: 'center'}}>
+          <div className="salon-badge">
+            <span className="salon-icon">🏢</span>
+            <span className="salon-name">{salonName}</span>
+          </div>
+        </div>
+      )}
 
       <div className="book-container">
         <div className="card">
@@ -163,28 +237,75 @@ export default function BookAppointment() {
             </div>
 
             <div className="form-section">
-              <h2>Select Date & Time</h2>
-              <div className="datetime-grid">
-                <div className="form-group">
-                  <label>Date *</label>
-                  <input
-                    type="date"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    min={new Date().toISOString().split('T')[0]}
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Time *</label>
-                  <input
-                    type="time"
-                    value={time}
-                    onChange={(e) => setTime(e.target.value)}
-                    required
-                  />
-                </div>
+              <h2>Select Stylist (Optional)</h2>
+              <div className="form-group">
+                <label>Preferred Stylist</label>
+                <select
+                  value={selectedStaff}
+                  onChange={(e) => setSelectedStaff(e.target.value)}
+                >
+                  <option value="">Any Available Stylist</option>
+                  {staff.length === 0 && (
+                    <option value="" disabled>Loading staff...</option>
+                  )}
+                  {staff.map(member => (
+                    <option key={member._id} value={member._id}>
+                      {member.firstName} {member.lastName}
+                    </option>
+                  ))}
+                </select>
+                <small style={{ color: '#86868b', fontSize: '13px', marginTop: '4px', display: 'block' }}>
+                  {staff.length === 0 
+                    ? 'Loading staff members...' 
+                    : selectedStaff 
+                      ? '✓ Availability will be filtered for this stylist' 
+                      : 'Leave blank to see all available stylists'
+                  }
+                </small>
               </div>
+            </div>
+
+            <div className="form-section">
+              <h2>Select Date & Time</h2>
+              <div className="form-group">
+                <label>Date *</label>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  required
+                />
+              </div>
+
+              {date && (
+                <div className="form-group">
+                  <label>Available Time Slots *</label>
+                  {loadingSlots ? (
+                    <div className="loading-slots">Loading available times...</div>
+                  ) : availableSlots.length === 0 ? (
+                    <div className="empty-state">
+                      <p>No available slots for this date</p>
+                      <small>Please select a different date</small>
+                    </div>
+                  ) : (
+                    <div className="time-slots-grid">
+                      {availableSlots.map(slot => (
+                        <button
+                          key={slot.hour}
+                          type="button"
+                          className={`time-slot ${!slot.available ? 'disabled' : ''} ${time === slot.hour ? 'selected' : ''}`}
+                          onClick={() => slot.available && setTime(slot.hour)}
+                          disabled={!slot.available}
+                        >
+                          {slot.display}
+                          {!slot.available && <span className="booked-badge">Booked</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="form-section">
@@ -202,10 +323,15 @@ export default function BookAppointment() {
             <button 
               type="submit" 
               className="btn btn-primary" 
-              disabled={loading || selectedServices.length === 0}
+              disabled={loading || selectedServices.length === 0 || !time || (date && availableSlots.length > 0 && !availableSlots.find(s => s.hour === time && s.available))}
             >
               {loading ? 'Booking...' : '✨ Confirm Booking'}
             </button>
+            {date && time && availableSlots.length > 0 && !availableSlots.find(s => s.hour === time && s.available) && (
+              <p style={{ color: '#ef4444', fontSize: '14px', marginTop: '12px', textAlign: 'center' }}>
+                ⚠️ Selected time slot is not available. Please choose an available slot.
+              </p>
+            )}
           </form>
         </div>
       </div>

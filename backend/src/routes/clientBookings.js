@@ -109,6 +109,57 @@ router.post('/bookings', async (req, res) => {
     const totalPrice = services.reduce((sum, s) => sum + (s.price || 0), 0);
     const totalDuration = services.reduce((sum, s) => sum + (s.duration || 0), 0);
 
+    // Check for double booking (only if specific stylist selected)
+    if (stylistId) {
+      const requestedDate = new Date(scheduledDate);
+      const requestedHour = requestedDate.getHours();
+      const durationHours = Math.ceil(totalDuration / 60);
+      const requestedEndHour = requestedHour + durationHours;
+
+      // Get bookings for the same day and stylist
+      const startOfDay = new Date(requestedDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(requestedDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const query = {
+        tenantId: req.tenantId,
+        scheduledDate: {
+          $gte: startOfDay,
+          $lte: endOfDay
+        },
+        status: { $nin: ['cancelled', 'no-show'] },
+        $or: [
+          { assignedTo: stylistId },
+          { stylistId: stylistId }
+        ]
+      };
+
+      const existingBookings = await Booking.find(query);
+
+      // Check for conflicts
+      const hasConflict = existingBookings.some(booking => {
+        const bookingHour = new Date(booking.scheduledDate).getHours();
+        const bookingDuration = Math.ceil((booking.totalDuration || 60) / 60);
+        const bookingEndHour = bookingHour + bookingDuration;
+
+        // Check if time slots overlap
+        return (
+          (requestedHour >= bookingHour && requestedHour < bookingEndHour) ||
+          (requestedEndHour > bookingHour && requestedEndHour <= bookingEndHour) ||
+          (requestedHour <= bookingHour && requestedEndHour >= bookingEndHour)
+        );
+      });
+
+      if (hasConflict) {
+        return res.status(409).json({
+          success: false,
+          message: 'This time slot is already booked for the selected stylist. Please choose a different time or stylist.'
+        });
+      }
+    }
+    // If no stylist selected, skip conflict check - system will auto-assign to available stylist
+
     const booking = await Booking.create({
       tenantId: req.tenantId,
       clientId: req.client._id,
@@ -247,6 +298,188 @@ router.get('/campaigns', async (req, res) => {
     });
   } catch (error) {
     logger.error(`Get campaigns error: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// @desc    Get available staff/stylists
+// @route   GET /api/v1/client/staff
+// @access  Private (Client)
+router.get('/staff', async (req, res) => {
+  try {
+    const User = require('../models/User');
+    
+    logger.info(`Fetching staff for tenant: ${req.tenantId}`);
+    
+    const staff = await User.find({
+      tenantId: req.tenantId,
+      role: 'stylist',
+      status: 'active'
+    }).select('firstName lastName role');
+
+    logger.info(`Found ${staff.length} staff members`);
+
+    res.json({
+      success: true,
+      count: staff.length,
+      data: staff
+    });
+  } catch (error) {
+    logger.error(`Get staff error: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// @desc    Get available time slots for a date and optional staff member
+// @route   GET /api/v1/client/availability
+// @access  Private (Client)
+router.get('/availability', async (req, res) => {
+  try {
+    const { date, staffId } = req.query;
+    
+    if (!date) {
+      return res.status(400).json({
+        success: false,
+        message: 'Date is required'
+      });
+    }
+
+    // Parse the date (date comes as YYYY-MM-DD string)
+    const [year, month, day] = date.split('-').map(Number);
+    const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
+    const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
+    
+    logger.info(`Date range: ${startOfDay.toISOString()} to ${endOfDay.toISOString()}`);
+
+    // Build query
+    const query = {
+      tenantId: req.tenantId,
+      scheduledDate: {
+        $gte: startOfDay,
+        $lte: endOfDay
+      },
+      status: { $nin: ['cancelled', 'no-show'] }
+    };
+
+    // Filter by staff if provided (check both assignedTo and stylistId)
+    if (staffId) {
+      query.$or = [
+        { assignedTo: staffId },
+        { stylistId: staffId }
+      ];
+      logger.info(`Checking availability for staff: ${staffId} on ${date}`);
+    }
+
+    // Get all bookings for the day
+    const bookings = await Booking.find(query).select('scheduledDate totalDuration assignedTo stylistId services status');
+    logger.info(`Found ${bookings.length} bookings for query:`, JSON.stringify(query, null, 2));
+    bookings.forEach(booking => {
+      logger.info(`Booking: ${booking._id}, Date: ${booking.scheduledDate}, AssignedTo: ${booking.assignedTo}, StylistId: ${booking.stylistId}, Status: ${booking.status}`);
+    });
+
+    // Operating hours (9 AM to 6 PM)
+    const operatingStart = 9; // 9 AM
+    const operatingEnd = 18; // 6 PM
+
+    // Generate hourly slots
+    const slots = [];
+    for (let hour = operatingStart; hour < operatingEnd; hour++) {
+      const slotTime = new Date(date);
+      slotTime.setHours(hour, 0, 0, 0);
+      
+      // Check if this slot is available
+      let isBooked = false;
+      
+      if (staffId) {
+        // If specific stylist selected, check only their availability
+        isBooked = bookings.some(booking => {
+          const bookingStart = new Date(booking.scheduledDate);
+          const bookingHour = bookingStart.getHours();
+          
+          // Round duration to nearest hour
+          const durationHours = Math.ceil((booking.totalDuration || 60) / 60);
+          const bookingEnd = bookingHour + durationHours;
+          
+          // Check if slot overlaps with booking
+          return hour >= bookingHour && hour < bookingEnd;
+        });
+      }
+      // If no stylist selected, all slots are available (system will auto-assign)
+      // This allows booking even if some stylists are busy
+
+      slots.push({
+        time: slotTime.toISOString(),
+        hour: `${hour.toString().padStart(2, '0')}:00`,
+        display: `${hour > 12 ? hour - 12 : hour}:00 ${hour >= 12 ? 'PM' : 'AM'}`,
+        available: !isBooked,
+        staffId: staffId || null
+      });
+    }
+
+    logger.info(`Generated ${slots.length} slots, ${slots.filter(s => s.available).length} available`);
+    logger.info(`Slots:`, slots.map(s => `${s.hour}: ${s.available ? 'Available' : 'Booked'}`).join(', '));
+
+    res.json({
+      success: true,
+      data: slots,
+      totalSlots: slots.length,
+      availableSlots: slots.filter(s => s.available).length
+    });
+  } catch (error) {
+    logger.error(`Get availability error: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
+// @desc    Update booking instructions
+// @route   PUT /api/v1/client/bookings/:id/instructions
+// @access  Private (Client)
+router.put('/bookings/:id/instructions', async (req, res) => {
+  try {
+    const { customerInstructions } = req.body;
+
+    const booking = await Booking.findOne({
+      _id: req.params.id,
+      clientId: req.client._id,
+      tenantId: req.tenantId
+    });
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+
+    // Only allow editing for pending or confirmed bookings
+    if (booking.status !== 'pending' && booking.status !== 'confirmed') {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot edit instructions for this booking'
+      });
+    }
+
+    booking.customerInstructions = customerInstructions;
+    await booking.save();
+
+    logger.info(`Instructions updated by client: ${req.client._id}, booking: ${booking._id}`);
+
+    res.json({
+      success: true,
+      data: booking,
+      message: 'Instructions updated successfully'
+    });
+  } catch (error) {
+    logger.error(`Update instructions error: ${error.message}`);
     res.status(500).json({
       success: false,
       message: 'Server error'

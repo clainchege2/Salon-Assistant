@@ -74,7 +74,7 @@ export default function Feedback() {
         <button onClick={() => navigate('/dashboard')} className="back-btn">
           ← Back
         </button>
-        <h1>💬 Share Your Feedback</h1>
+        <h1>Share Your Feedback</h1>
       </div>
 
       <div className="feedback-container">

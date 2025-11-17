@@ -63,7 +63,7 @@ export default function Messages() {
         <button onClick={() => navigate('/dashboard')} className="back-btn">
           ← Back
         </button>
-        <h1>📬 Messages & Offers</h1>
+        <h1>Messages & Offers</h1>
       </div>
 
       <div className="messages-container">

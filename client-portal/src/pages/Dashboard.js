@@ -59,7 +59,7 @@ export default function Dashboard() {
     <div className="dashboard-page">
       <div className="dashboard-header">
         <div className="header-content">
-          <h1>👋 Hi, {client?.firstName}!</h1>
+          <h1>Hi, {client?.firstName}!</h1>
           <p>Welcome to your beauty dashboard</p>
           {salon && (
             <div className="salon-badge">
@@ -153,9 +153,14 @@ export default function Dashboard() {
                         minute: '2-digit' 
                       })}
                     </p>
-                    {booking.assignedTo && (
+                    {(booking.assignedTo || booking.stylistId) && (
                       <p className="booking-stylist">
-                        with {booking.assignedTo.firstName} {booking.assignedTo.lastName}
+                        with {booking.assignedTo 
+                          ? `${booking.assignedTo.firstName} ${booking.assignedTo.lastName}`
+                          : booking.stylistId 
+                            ? `${booking.stylistId.firstName} ${booking.stylistId.lastName}`
+                            : 'Staff Member'
+                        }
                       </p>
                     )}
                   </div>

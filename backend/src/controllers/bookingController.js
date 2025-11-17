@@ -22,6 +22,54 @@ exports.createBooking = async (req, res) => {
     // Use assignedTo if provided, otherwise stylistId, otherwise current user
     const staffMember = assignedTo || stylistId || req.user._id;
 
+    // Check for double booking (only for reserved bookings)
+    if (type === 'reserved') {
+      const requestedDate = new Date(scheduledDate);
+      const requestedHour = requestedDate.getHours();
+      const durationHours = Math.ceil(totalDuration / 60);
+      const requestedEndHour = requestedHour + durationHours;
+
+      // Get bookings for the same day and staff member
+      const startOfDay = new Date(requestedDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date(requestedDate);
+      endOfDay.setHours(23, 59, 59, 999);
+
+      const existingBookings = await Booking.find({
+        tenantId: req.tenantId,
+        $or: [
+          { assignedTo: staffMember },
+          { stylistId: staffMember }
+        ],
+        scheduledDate: {
+          $gte: startOfDay,
+          $lte: endOfDay
+        },
+        status: { $nin: ['cancelled', 'no-show'] }
+      });
+
+      // Check for conflicts
+      const hasConflict = existingBookings.some(booking => {
+        const bookingHour = new Date(booking.scheduledDate).getHours();
+        const bookingDuration = Math.ceil((booking.totalDuration || 60) / 60);
+        const bookingEndHour = bookingHour + bookingDuration;
+
+        // Check if time slots overlap
+        return (
+          (requestedHour >= bookingHour && requestedHour < bookingEndHour) ||
+          (requestedEndHour > bookingHour && requestedEndHour <= bookingEndHour) ||
+          (requestedHour <= bookingHour && requestedEndHour >= bookingEndHour)
+        );
+      });
+
+      if (hasConflict) {
+        return res.status(409).json({
+          success: false,
+          message: 'This time slot is already booked for the selected staff member. Please choose a different time or staff member.'
+        });
+      }
+    }
+
     const booking = await Booking.create({
       tenantId: req.tenantId,
       clientId,
@@ -120,7 +168,7 @@ exports.updateBooking = async (req, res) => {
       });
     }
 
-    const allowedUpdates = ['status', 'services', 'customerInstructions', 'materialsUsed', 'followUpRequired', 'followUpNote'];
+    const allowedUpdates = ['status', 'services', 'customerInstructions', 'materialsUsed', 'followUpRequired', 'followUpNote', 'cancellationReason'];
     const updates = {};
     
     allowedUpdates.forEach(field => {
@@ -128,6 +176,14 @@ exports.updateBooking = async (req, res) => {
         updates[field] = req.body[field];
       }
     });
+
+    // Handle cancellation
+    if (updates.status === 'cancelled') {
+      updates.cancelledAt = Date.now();
+      if (req.body.notes) {
+        updates.cancellationReason = req.body.notes;
+      }
+    }
 
     if (updates.status === 'completed') {
       updates.completedAt = Date.now();
@@ -164,12 +220,19 @@ exports.updateBooking = async (req, res) => {
       }
     }
 
-    Object.assign(booking, updates);
-    await booking.save();
+    // Use findOneAndUpdate to avoid validation issues with required fields
+    const updatedBooking = await Booking.findOneAndUpdate(
+      { _id: req.params.id, tenantId: req.tenantId },
+      { $set: updates },
+      { new: true, runValidators: false }
+    )
+      .populate('clientId', 'firstName lastName phone')
+      .populate('stylistId', 'firstName lastName')
+      .populate('assignedTo', 'firstName lastName');
 
     res.json({
       success: true,
-      data: booking
+      data: updatedBooking
     });
   } catch (error) {
     logger.error(`Update booking error: ${error.message}`);

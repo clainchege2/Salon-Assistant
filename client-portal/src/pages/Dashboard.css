@@ -23,15 +23,11 @@
 }
 
 .header-content h1 {
+  color: #333;
+  margin: 0 0 4px 0;
   font-size: 32px;
   font-weight: 700;
   letter-spacing: -0.5px;
-  color: #1d1d1f;
-  margin: 0 0 4px 0;
-  background: linear-gradient(135deg, #6B46C1 0%, #9F7AEA 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 .header-content p {

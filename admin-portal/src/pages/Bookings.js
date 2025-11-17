@@ -10,10 +10,13 @@ export default function Bookings() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('priority'); // 'priority', 'date-asc', 'date-desc', 'client', 'price'
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'cards'
   const [viewModal, setViewModal] = useState({ show: false, booking: null });
   const [confirmModal, setConfirmModal] = useState({ show: false, booking: null });
   const [cancelModal, setCancelModal] = useState({ show: false, booking: null, reason: '' });
+  const [successMessage, setSuccessMessage] = useState('');
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,8 +24,8 @@ export default function Bookings() {
   }, []);
 
   useEffect(() => {
-    filterBookings();
-  }, [filter, searchTerm, bookings]);
+    filterAndSortBookings();
+  }, [filter, searchTerm, sortBy, bookings]);
 
   const fetchBookings = async () => {
     try {
@@ -38,7 +41,7 @@ export default function Bookings() {
     }
   };
 
-  const filterBookings = () => {
+  const filterAndSortBookings = () => {
     let filtered = bookings;
 
     // Filter by status
@@ -54,7 +57,57 @@ export default function Bookings() {
       });
     }
 
-    setFilteredBookings(filtered);
+    // Sort bookings
+    const sorted = [...filtered].sort((a, b) => {
+      const now = new Date();
+      
+      switch (sortBy) {
+        case 'priority':
+          // Priority order: pending > confirmed > in-progress > completed > cancelled > no-show
+          const priorityOrder = {
+            'pending': 1,
+            'confirmed': 2,
+            'in-progress': 3,
+            'completed': 4,
+            'cancelled': 5,
+            'no-show': 6
+          };
+          const priorityDiff = (priorityOrder[a.status] || 99) - (priorityOrder[b.status] || 99);
+          if (priorityDiff !== 0) return priorityDiff;
+          // If same priority, sort by date (upcoming first)
+          return new Date(a.scheduledDate) - new Date(b.scheduledDate);
+
+        case 'date-asc':
+          // Upcoming first: Filter out completed/past, then sort
+          const aDate = new Date(a.scheduledDate);
+          const bDate = new Date(b.scheduledDate);
+          const aIsPast = aDate < now || a.status === 'completed' || a.status === 'cancelled';
+          const bIsPast = bDate < now || b.status === 'completed' || b.status === 'cancelled';
+          
+          // Upcoming bookings come first
+          if (!aIsPast && bIsPast) return -1;
+          if (aIsPast && !bIsPast) return 1;
+          
+          // Within same category (both upcoming or both past), sort by date
+          return aDate - bDate;
+
+        case 'date-desc':
+          return new Date(b.scheduledDate) - new Date(a.scheduledDate);
+
+        case 'client':
+          const nameA = `${a.clientId?.firstName} ${a.clientId?.lastName}`.toLowerCase();
+          const nameB = `${b.clientId?.firstName} ${b.clientId?.lastName}`.toLowerCase();
+          return nameA.localeCompare(nameB);
+
+        case 'price':
+          return (b.totalPrice || 0) - (a.totalPrice || 0);
+
+        default:
+          return 0;
+      }
+    });
+
+    setFilteredBookings(sorted);
   };
 
   const getStatusColor = (status) => {
@@ -83,10 +136,12 @@ export default function Bookings() {
       );
       fetchBookings();
       setConfirmModal({ show: false, booking: null });
-      alert('✅ Booking confirmed successfully!');
+      setSuccessMessage('✅ Booking confirmed successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
       console.error('Error confirming booking:', error);
-      alert('❌ Failed to confirm booking');
+      setError('❌ Failed to confirm booking');
+      setTimeout(() => setError(''), 3000);
     }
   };
 
@@ -103,10 +158,12 @@ export default function Bookings() {
       );
       fetchBookings();
       setCancelModal({ show: false, booking: null, reason: '' });
-      alert('✅ Booking cancelled successfully!');
+      setSuccessMessage('✅ Booking cancelled successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
     } catch (error) {
       console.error('Error cancelling booking:', error);
-      alert('❌ Failed to cancel booking');
+      setError('❌ Failed to cancel booking');
+      setTimeout(() => setError(''), 3000);
     }
   };
 
@@ -132,6 +189,13 @@ export default function Bookings() {
         </button>
       </div>
 
+      {successMessage && (
+        <div className="success-notification">{successMessage}</div>
+      )}
+      {error && (
+        <div className="error-notification">{error}</div>
+      )}
+
       <div className="bookings-controls">
         <div className="controls-row">
           <input
@@ -141,6 +205,21 @@ export default function Bookings() {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="search-input"
           />
+          
+          <div className="sort-dropdown">
+            <label>Sort by:</label>
+            <select 
+              value={sortBy} 
+              onChange={(e) => setSortBy(e.target.value)}
+              className="sort-select"
+            >
+              <option value="priority">⚡ Priority (Action Needed)</option>
+              <option value="date-asc">📅 Date (Upcoming First)</option>
+              <option value="date-desc">📅 Date (Recent First)</option>
+              <option value="client">👤 Client Name (A-Z)</option>
+              <option value="price">💰 Price (High to Low)</option>
+            </select>
+          </div>
           
           <div className="view-toggle">
             <button 
@@ -225,7 +304,14 @@ export default function Bookings() {
                     </div>
                   </td>
                   <td>{booking.services?.map(s => s.serviceName).join(', ')}</td>
-                  <td>{booking.assignedTo?.firstName || '-'}</td>
+                  <td>
+                    {booking.assignedTo 
+                      ? `${booking.assignedTo.firstName} ${booking.assignedTo.lastName}`
+                      : booking.stylistId 
+                        ? `${booking.stylistId.firstName} ${booking.stylistId.lastName}`
+                        : '-'
+                    }
+                  </td>
                   <td className="price-cell">{formatCurrency(booking.totalPrice)}</td>
                   <td>
                     <span 
@@ -287,10 +373,17 @@ export default function Bookings() {
                   <span className="icon">💇</span>
                   <span>{booking.services?.map(s => s.serviceName).join(', ')}</span>
                 </div>
-                {booking.assignedTo && (
+                {(booking.assignedTo || booking.stylistId) && (
                   <div className="detail-row">
                     <span className="icon">👤</span>
-                    <span>{booking.assignedTo?.firstName} {booking.assignedTo?.lastName}</span>
+                    <span>
+                      {booking.assignedTo 
+                        ? `${booking.assignedTo.firstName} ${booking.assignedTo.lastName}`
+                        : booking.stylistId 
+                          ? `${booking.stylistId.firstName} ${booking.stylistId.lastName}`
+                          : 'Unassigned'
+                      }
+                    </span>
                   </div>
                 )}
                 <div className="detail-row">
@@ -356,10 +449,17 @@ export default function Bookings() {
                 ))}
                 <p className="total-price"><strong>Total:</strong> {formatCurrency(viewModal.booking.totalPrice)}</p>
               </div>
-              {viewModal.booking.assignedTo && (
+              {(viewModal.booking.assignedTo || viewModal.booking.stylistId) && (
                 <div className="detail-section">
                   <h3>Assigned Staff</h3>
-                  <p>{viewModal.booking.assignedTo.firstName} {viewModal.booking.assignedTo.lastName}</p>
+                  <p>
+                    {viewModal.booking.assignedTo 
+                      ? `${viewModal.booking.assignedTo.firstName} ${viewModal.booking.assignedTo.lastName}`
+                      : viewModal.booking.stylistId 
+                        ? `${viewModal.booking.stylistId.firstName} ${viewModal.booking.stylistId.lastName}`
+                        : 'Unassigned'
+                    }
+                  </p>
                 </div>
               )}
               {viewModal.booking.customerInstructions && (
