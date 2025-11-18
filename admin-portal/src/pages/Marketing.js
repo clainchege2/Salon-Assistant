@@ -7,6 +7,7 @@ export default function Marketing() {
   const [campaigns, setCampaigns] = useState([]);
   const [allClients, setAllClients] = useState([]);
   const [segments, setSegments] = useState({});
+  const [holidays, setHolidays] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showSendModal, setShowSendModal] = useState(false);
@@ -48,6 +49,7 @@ export default function Marketing() {
   useEffect(() => {
     fetchCampaigns();
     fetchClients();
+    fetchHolidays();
     fetchSegments();
 
     // Check if coming from Analytics with segment selection
@@ -100,6 +102,18 @@ export default function Marketing() {
     }
   };
 
+  const fetchHolidays = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await axios.get('http://localhost:5000/api/v1/marketing/holidays?type=suggestions', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setHolidays(response.data.data || []);
+    } catch (error) {
+      console.error('Error fetching holidays:', error);
+    }
+  };
+
   const getSpecialOccasionClients = async (occasion) => {
     try {
       const token = localStorage.getItem('adminToken');
@@ -148,17 +162,33 @@ export default function Marketing() {
     setShowResultModal(true);
   };
 
-  const handleQuickAction = (type, occasion = '') => {
+  const getHolidayMessage = (holiday) => {
+    const messages = {
+      'Valentine\'s Day': '💕 Love is in the air! Book your romantic makeover for Valentine\'s Day. Special couples packages available!',
+      'Mother\'s Day': '👩‍👧‍👦 Celebrate the amazing mothers in your life! Treat mom to a special pampering session. Book now!',
+      'Father\'s Day': '👨‍👧‍👦 Show dad some love with our premium grooming services. Father\'s Day specials available!',
+      'Christmas Day': '🎄 Merry Christmas! Get ready for the holidays with our festive styling packages. Ho ho ho!',
+      'New Year\'s Day': '✨ New Year, New You! Start 2025 with a fresh new look. Book your transformation today!',
+      'International Women\'s Day': '👩 Celebrating strong, beautiful women everywhere! Special discounts for all our queens!',
+      'Independence Day': '🇰🇪 Happy Independence Day! Celebrate with pride and style. Patriotic themed services available!'
+    };
+    return messages[holiday.name] || `🎉 Celebrate ${holiday.name} with us! ${holiday.suggestion.replace(/🔥 URGENT: |⏰ |📅 /, '')}`;
+  };
+
+  const handleQuickAction = (type, occasion = '', holiday = null) => {
     setCampaignForm({
-      name: type === 'special' ? `${occasion.charAt(0).toUpperCase() + occasion.slice(1)} Messages` : 'Custom Campaign',
+      name: type === 'special' && occasion !== 'holiday' ? `${occasion.charAt(0).toUpperCase() + occasion.slice(1)} Messages` : (occasion === 'holiday' ? 'Holiday Campaign' : 'Custom Campaign'),
       type,
       occasion,
       message: '',
-      targetType: occasion === 'birthday' ? 'individual' : (type === 'special' ? 'occasion' : 'all'),
+      targetType: occasion === 'birthday' ? 'individual' : (type === 'special' && occasion !== 'holiday' ? 'occasion' : 'all'),
       selectedClients: [],
       selectedSegment: '',
       dayOfWeek: '',
-      channel: 'sms'
+      channel: 'sms',
+      sendOption: 'now',
+      scheduledDate: '',
+      scheduledTime: ''
     });
     setShowCreateModal(true);
   };
@@ -628,6 +658,42 @@ export default function Marketing() {
                   className="form-control"
                 />
               </div>
+
+              {campaignForm.type === 'special' && campaignForm.occasion === 'holiday' && holidays.length > 0 && (
+                <div className="form-group">
+                  <label>Select Holiday</label>
+                  <select
+                    className="form-control"
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        const holiday = holidays.find(h => h.date === e.target.value);
+                        if (holiday) {
+                          const holidayMessage = getHolidayMessage(holiday);
+                          setCampaignForm(prev => ({
+                            ...prev,
+                            name: `${holiday.name} Campaign`,
+                            message: holidayMessage,
+                            sendOption: 'scheduled',
+                            scheduledDate: holiday.date,
+                            scheduledTime: '10:00'
+                          }));
+                        }
+                      }
+                    }}
+                    defaultValue=""
+                  >
+                    <option value="">Choose a holiday...</option>
+                    {holidays.map(h => (
+                      <option key={h.date} value={h.date}>
+                        {h.name} - {new Date(h.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} ({h.daysUntil} days)
+                      </option>
+                    ))}
+                  </select>
+                  <small className="form-hint">
+                    Select a holiday to auto-populate campaign details
+                  </small>
+                </div>
+              )}
 
               <div className="form-group">
                 <label>Target Audience</label>

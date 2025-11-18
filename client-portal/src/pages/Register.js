@@ -10,6 +10,7 @@ export default function Register() {
     lastName: '',
     phone: '+254',
     email: '',
+    dateOfBirth: '',
     password: '',
     confirmPassword: '',
     tenantSlug: ''
@@ -61,6 +62,7 @@ export default function Register() {
         lastName: formData.lastName,
         phone: formData.phone,
         email: formData.email,
+        dateOfBirth: formData.dateOfBirth,
         password: formData.password,
         tenantSlug: formData.tenantSlug
       });
@@ -136,12 +138,25 @@ export default function Register() {
             </div>
 
             <div className="form-group">
-              <label>Email (optional)</label>
+              <label>Email *</label>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Date of Birth *</label>
+              <input
+                type="date"
+                name="dateOfBirth"
+                value={formData.dateOfBirth}
+                onChange={handleChange}
+                max={new Date().toISOString().split('T')[0]}
+                required
               />
             </div>
 

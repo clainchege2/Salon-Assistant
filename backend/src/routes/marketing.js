@@ -21,6 +21,41 @@ router.use(enforceTenantIsolation);
 // Marketing - require PRO tier + canViewMarketing permission
 const marketingCheck = checkTierAndPermission('pro', 'canViewMarketing');
 
+// Holidays endpoint - must be before /:id route to avoid conflicts
+router.get('/holidays', async (req, res) => {
+  try {
+    const Tenant = require('../models/Tenant');
+    const holidaysService = require('../services/holidaysService');
+    
+    const tenant = await Tenant.findById(req.tenantId);
+    const country = tenant?.country || 'Kenya';
+    
+    const { type = 'upcoming' } = req.query;
+    
+    let holidays;
+    if (type === 'upcoming') {
+      holidays = holidaysService.getUpcomingHolidays(country);
+    } else if (type === 'all') {
+      holidays = holidaysService.getHolidaysByCountry(country);
+    } else if (type === 'suggestions') {
+      holidays = holidaysService.getMarketingSuggestions(country);
+    }
+    
+    res.json({
+      success: true,
+      country,
+      data: holidays
+    });
+  } catch (error) {
+    console.error('Error fetching holidays:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch holidays',
+      error: error.message
+    });
+  }
+});
+
 router.get('/analytics', marketingCheck, getAnalytics);
 router.post('/rfm/calculate', marketingCheck, calculateRFM);
 router.get('/segments/:segment/clients', marketingCheck, getSegmentClients);
