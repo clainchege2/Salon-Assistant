@@ -59,6 +59,13 @@
   font-weight: 600;
 }
 
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.btn-profile,
 .btn-logout {
   padding: 10px 24px;
   background: #1d1d1f;
@@ -72,6 +79,7 @@
   letter-spacing: -0.2px;
 }
 
+.btn-profile:hover,
 .btn-logout:hover {
   background: #424245;
   transform: scale(1.02);
@@ -417,6 +425,12 @@
     font-size: 14px;
   }
 
+  .header-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .btn-profile,
   .btn-logout {
     width: 100%;
     text-align: center;

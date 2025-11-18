@@ -139,9 +139,14 @@ export default function Dashboard() {
             </div>
           )}
         </div>
-        <button onClick={handleLogout} className="btn-logout">
-          🚪 Logout
-        </button>
+        <div className="header-actions">
+          <button onClick={() => navigate('/profile')} className="btn-profile">
+            👤 My Profile
+          </button>
+          <button onClick={handleLogout} className="btn-logout">
+            🚪 Logout
+          </button>
+        </div>
       </div>
 
       <div className="dashboard-container">
@@ -179,10 +184,6 @@ export default function Dashboard() {
           <button onClick={() => navigate('/feedback')} className="action-card">
             <span className="action-icon">💬</span>
             <span className="action-text">Share Feedback</span>
-          </button>
-          <button onClick={() => navigate('/profile')} className="action-card">
-            <span className="action-icon">👤</span>
-            <span className="action-text">My Profile</span>
           </button>
         </div>
 
