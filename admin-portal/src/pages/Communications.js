@@ -9,6 +9,7 @@ export default function Communications() {
   const [activeTab, setActiveTab] = useState(() => {
     return localStorage.getItem('communicationsActiveTab') || 'messages';
   });
+  const [birthdayClients, setBirthdayClients] = useState([]);
   const [directionFilter, setDirectionFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -26,14 +27,19 @@ export default function Communications() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeFeature, setUpgradeFeature] = useState('');
   const [userTier, setUserTier] = useState('free');
+  const [showBirthdayModal, setShowBirthdayModal] = useState(false);
+  const [selectedBirthdayClient, setSelectedBirthdayClient] = useState(null);
+  const [birthdayMessage, setBirthdayMessage] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchUserTier();
     if (activeTab === 'messages') {
       fetchCommunications();
-    } else {
+    } else if (activeTab === 'feedback') {
       fetchFeedback();
+    } else if (activeTab === 'birthdays') {
+      fetchBirthdayClients();
     }
   }, [activeTab]); // Only refetch when tab changes, filters are applied on frontend
 
@@ -106,6 +112,51 @@ export default function Communications() {
     }
   };
 
+  const fetchBirthdayClients = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('adminToken');
+      const response = await axios.get('http://localhost:5000/api/v1/communications/birthdays', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setBirthdayClients(response.data.data || []);
+    } catch (error) {
+      console.error('Error fetching birthday clients:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendBirthdayMessage = (client) => {
+    const defaultMessage = `Happy Birthday ${client.firstName}! 🎉🎂 Wishing you a wonderful day filled with joy and happiness! As a special birthday treat, enjoy 10% off your next visit. We look forward to pampering you soon! 💝`;
+    setSelectedBirthdayClient(client);
+    setBirthdayMessage(defaultMessage);
+    setShowBirthdayModal(true);
+  };
+
+  const sendBirthdayMessage = async () => {
+    if (!birthdayMessage.trim()) {
+      showToast('Please enter a message', 'error');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('adminToken');
+      await axios.post(
+        'http://localhost:5000/api/v1/communications/send-birthday',
+        { clientId: selectedBirthdayClient._id, message: birthdayMessage },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      showToast('Birthday message sent successfully! 🎉');
+      setShowBirthdayModal(false);
+      setSelectedBirthdayClient(null);
+      setBirthdayMessage('');
+      fetchBirthdayClients(); // Refresh the list
+    } catch (error) {
+      showToast('Failed to send birthday message', 'error');
+    }
+  };
+
   const handleReply = async (commId) => {
     if (!replyText.trim()) return;
 
@@ -123,6 +174,25 @@ export default function Communications() {
       showToast('Reply sent successfully');
     } catch (error) {
       showToast('Failed to send reply', 'error');
+    }
+  };
+
+  const markMessageAsRead = async (commId) => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      await axios.put(
+        `http://localhost:5000/api/v1/communications/${commId}/read`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      // Update local state
+      setCommunications(prev => 
+        prev.map(c => c._id === commId ? { ...c, readAt: new Date(), status: 'read' } : c)
+      );
+      showToast('Message marked as read');
+    } catch (error) {
+      console.error('Failed to mark as read:', error);
+      showToast('Failed to mark message as read', 'error');
     }
   };
 
@@ -403,12 +473,27 @@ export default function Communications() {
               onClick={() => setActiveTab('messages')}
             >
               Messages
+              {communications.filter(c => c.status === 'pending' || !c.readAt).length > 0 && (
+                <span className="tab-badge">{communications.filter(c => c.status === 'pending' || !c.readAt).length}</span>
+              )}
             </button>
             <button 
               className={activeTab === 'feedback' ? 'active' : ''} 
               onClick={() => setActiveTab('feedback')}
             >
               Feedback & Reviews
+              {feedback.filter(f => f.requiresAction && !f.response?.text).length > 0 && (
+                <span className="tab-badge">{feedback.filter(f => f.requiresAction && !f.response?.text).length}</span>
+              )}
+            </button>
+            <button 
+              className={activeTab === 'birthdays' ? 'active' : ''} 
+              onClick={() => setActiveTab('birthdays')}
+            >
+              🎂 Birthday Alerts
+              {birthdayClients.filter(b => b.daysUntil <= 7).length > 0 && (
+                <span className="tab-badge">{birthdayClients.filter(b => b.daysUntil <= 7).length}</span>
+              )}
             </button>
           </div>
 
@@ -455,7 +540,7 @@ export default function Communications() {
               </div>
             ) : (
               filteredCommunications.map(comm => (
-                <div key={comm._id} className="comm-card">
+                <div key={comm._id} className={`comm-card ${!comm.readAt ? 'unread' : ''}`}>
                   <div className="comm-card-header">
                     <div className="comm-direction">
                       {getDirectionIcon(comm.direction)} {comm.direction === 'outgoing' ? 'SENT' : 'RECEIVED'}
@@ -483,6 +568,16 @@ export default function Communications() {
                     </div>
 
                     <div className="comm-actions">
+                      {!comm.readAt && (
+                        <button 
+                          className="btn-mark-read"
+                          onClick={() => markMessageAsRead(comm._id)}
+                          title="Mark as read"
+                        >
+                          ✓ Mark as Read
+                        </button>
+                      )}
+                      
                       <button 
                         className="btn-secondary"
                         onClick={() => {
@@ -625,6 +720,57 @@ export default function Communications() {
             ))
           )}
         </div>
+          )}
+
+          {activeTab === 'birthdays' && (
+            <div className="birthday-list">
+              <div className="birthday-header">
+                <h2>🎂 Upcoming Birthdays</h2>
+                <p>Send personalized birthday wishes to your clients</p>
+              </div>
+
+              {birthdayClients.length === 0 ? (
+                <div className="empty-state">
+                  <p>No upcoming birthdays in the next 30 days</p>
+                  <small>Clients with birthdays will appear here</small>
+                </div>
+              ) : (
+                <div className="birthday-cards">
+                  {birthdayClients.map(client => (
+                    <div key={client._id} className="birthday-card">
+                      <div className="birthday-icon">
+                        {client.daysUntil === 0 ? '🎉' : '🎂'}
+                      </div>
+                      <div className="birthday-info">
+                        <h3>{client.firstName} {client.lastName}</h3>
+                        <p className="birthday-phone">{client.phone}</p>
+                        <p className="birthday-date">
+                          {client.daysUntil === 0 ? (
+                            <strong style={{color: '#e91e63'}}>🎉 Birthday Today!</strong>
+                          ) : client.daysUntil === 1 ? (
+                            <strong style={{color: '#ff9800'}}>Tomorrow</strong>
+                          ) : (
+                            `In ${client.daysUntil} days - ${new Date(client.nextBirthday).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`
+                          )}
+                        </p>
+                        <div className="birthday-stats">
+                          <span>Visits: {client.totalVisits || 0}</span>
+                          <span>Status: {client.category || 'New'}</span>
+                        </div>
+                      </div>
+                      <div className="birthday-actions">
+                        <button 
+                          className="btn-birthday"
+                          onClick={() => handleSendBirthdayMessage(client)}
+                        >
+                          📱 Send Birthday Message
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </>
       )}
@@ -905,6 +1051,73 @@ export default function Communications() {
               </button>
               <button className="btn-primary upgrade-btn-footer">
                 Upgrade to PRO - KSh 2,500/month
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Birthday Message Modal */}
+      {showBirthdayModal && selectedBirthdayClient && (
+        <div className="modal-overlay" onClick={() => setShowBirthdayModal(false)}>
+          <div className="modal-content birthday-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>🎂 Send Birthday Message</h2>
+              <button className="close-btn" onClick={() => setShowBirthdayModal(false)}>×</button>
+            </div>
+            <div className="modal-body">
+              <div className="birthday-modal-client">
+                <div className="client-avatar">
+                  {selectedBirthdayClient.firstName[0]}{selectedBirthdayClient.lastName[0]}
+                </div>
+                <div className="client-details">
+                  <h3>{selectedBirthdayClient.firstName} {selectedBirthdayClient.lastName}</h3>
+                  <p>{selectedBirthdayClient.phone}</p>
+                  {selectedBirthdayClient.daysUntil === 0 ? (
+                    <span className="birthday-today">🎉 Birthday Today!</span>
+                  ) : (
+                    <span className="birthday-upcoming">
+                      Birthday in {selectedBirthdayClient.daysUntil} day{selectedBirthdayClient.daysUntil !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>Birthday Message</label>
+                <textarea
+                  value={birthdayMessage}
+                  onChange={(e) => setBirthdayMessage(e.target.value)}
+                  rows="6"
+                  placeholder="Type your birthday message..."
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    fontFamily: 'inherit',
+                    resize: 'vertical'
+                  }}
+                />
+                <small style={{ color: '#6b7280', marginTop: '8px', display: 'block' }}>
+                  Personalize your message to make it special for {selectedBirthdayClient.firstName}
+                </small>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="btn-secondary" 
+                onClick={() => setShowBirthdayModal(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn-primary"
+                onClick={sendBirthdayMessage}
+                disabled={!birthdayMessage.trim()}
+              >
+                📱 Send Message
               </button>
             </div>
           </div>

@@ -17,6 +17,7 @@ export default function SalonDashboard() {
   const [lowStockCount, setLowStockCount] = useState(0);
   const [pendingBookingsCount, setPendingBookingsCount] = useState(0);
   const [unreadFeedbackCount, setUnreadFeedbackCount] = useState(0);
+  const [upcomingBirthdaysCount, setUpcomingBirthdaysCount] = useState(0);
   const [messageModal, setMessageModal] = useState({
     show: false,
     booking: null,
@@ -65,9 +66,15 @@ export default function SalonDashboard() {
 
   useEffect(() => {
     fetchFreshUserData(); // Fetch fresh user data from backend
-    fetchData();
     fetchTenantInfo();
   }, []);
+
+  // Fetch data when user is loaded
+  useEffect(() => {
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
 
   // Fetch fresh user data from backend to get latest permissions
   const fetchFreshUserData = async () => {
@@ -159,14 +166,19 @@ export default function SalonDashboard() {
       const pendingBookings = bookingsRes.data.data?.filter(b => b.status === 'pending') || [];
       setPendingBookingsCount(pendingBookings.length);
 
-      // Fetch unread feedback count for communications
+      // Fetch unread feedback count and upcoming birthdays for communications
       if (user?.role === 'owner' || user?.permissions?.canViewCommunications) {
         try {
           const feedbackRes = await axios.get('http://localhost:5000/api/v1/communications/feedback', config);
           const unreadCount = feedbackRes.data.data?.filter(f => f.requiresAction && !f.response?.text).length || 0;
           setUnreadFeedbackCount(unreadCount);
+
+          // Fetch upcoming birthdays (next 7 days for badge)
+          const birthdaysRes = await axios.get('http://localhost:5000/api/v1/communications/birthdays', config);
+          const upcomingBirthdays = birthdaysRes.data.data?.filter(b => b.daysUntil <= 7) || [];
+          setUpcomingBirthdaysCount(upcomingBirthdays.length);
         } catch (error) {
-          console.error('Error fetching feedback:', error);
+          console.error('Error fetching communications data:', error);
         }
       }
     } catch (error) {
@@ -460,12 +472,13 @@ export default function SalonDashboard() {
             className="quick-action-btn"
             onClick={() => {
               setUnreadFeedbackCount(0); // Clear badge immediately
+              setUpcomingBirthdaysCount(0); // Clear birthday badge
               navigate('/communications');
             }}
           >
             <span className="btn-emoji">💬</span> Comms
-            {unreadFeedbackCount > 0 && (
-              <span className="notification-badge">{unreadFeedbackCount}</span>
+            {(unreadFeedbackCount + upcomingBirthdaysCount) > 0 && (
+              <span className="notification-badge">{unreadFeedbackCount + upcomingBirthdaysCount}</span>
             )}
           </button>
         ) : user?.role === 'owner' && subscriptionTier === 'free' && (

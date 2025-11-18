@@ -39,7 +39,7 @@ exports.getSalons = async (req, res) => {
 // @access  Public
 exports.register = async (req, res) => {
   try {
-    const { firstName, lastName, phone, email, password, tenantSlug } = req.body;
+    const { firstName, lastName, phone, email, dateOfBirth, password, tenantSlug } = req.body;
 
     // Validation
     if (!firstName || !lastName || !phone || !password) {
@@ -86,6 +86,7 @@ exports.register = async (req, res) => {
       lastName,
       phone,
       email: email || undefined,
+      dateOfBirth: dateOfBirth || undefined,
       password: hashedPassword,
       category: 'new',
       totalVisits: 0,

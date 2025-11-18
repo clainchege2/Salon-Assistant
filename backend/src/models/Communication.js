@@ -36,10 +36,27 @@ const communicationSchema = new mongoose.Schema({
     ],
     default: 'general'
   },
-  // Legacy support
+  // Legacy support - includes all possible message types for backward compatibility
   type: {
     type: String,
-    enum: ['feedback', 'inquiry', 'complaint', 'follow-up', 'reply'],
+    enum: [
+      'feedback', 
+      'inquiry', 
+      'complaint', 
+      'follow-up', 
+      'reply',
+      'reminder',
+      'confirmation',
+      'birthday',
+      'promotion',
+      'feedback-request',
+      'feedback-response',
+      'general',
+      'warning',
+      'blocked',
+      'thank_you',
+      'thank-you'
+    ],
   },
   channel: {
     type: String,

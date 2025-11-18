@@ -249,12 +249,15 @@ exports.replyCommunication = async (req, res) => {
 // Mark as read
 exports.markAsRead = async (req, res) => {
   try {
+    logger.info(`Marking communication ${req.params.id} as read by user ${req.user?._id}`);
+    
     const communication = await Communication.findOne({
       _id: req.params.id,
       tenantId: req.tenantId
     });
 
     if (!communication) {
+      logger.warn(`Communication ${req.params.id} not found for tenant ${req.tenantId}`);
       return res.status(404).json({
         success: false,
         message: 'Communication not found'
@@ -271,12 +274,15 @@ exports.markAsRead = async (req, res) => {
         readAt: new Date()
       });
 
-      if (communication.status === 'new') {
+      if (communication.status === 'new' || communication.status === 'pending') {
         communication.status = 'read';
       }
 
       communication.readAt = new Date();
       await communication.save();
+      logger.info(`Communication ${req.params.id} marked as read successfully`);
+    } else {
+      logger.info(`Communication ${req.params.id} already marked as read`);
     }
 
     res.json({
@@ -284,7 +290,7 @@ exports.markAsRead = async (req, res) => {
       data: communication
     });
   } catch (error) {
-    logger.error(`Mark as read error: ${error.message}`);
+    logger.error(`Mark as read error: ${error.message}`, { stack: error.stack });
     res.status(400).json({
       success: false,
       message: error.message
