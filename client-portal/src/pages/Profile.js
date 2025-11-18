@@ -128,6 +128,33 @@ export default function Profile() {
                 </button>
               </div>
 
+              {/* Stats Overview */}
+              <div className="stats-container" style={{marginBottom: '24px'}}>
+                <div className="stats-grid">
+                  <div className="stat-card">
+                    <div className="stat-icon">⭐</div>
+                    <div className="stat-content">
+                      <h3>{client?.loyaltyPoints || 0}</h3>
+                      <p>Points</p>
+                    </div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-icon">💇</div>
+                    <div className="stat-content">
+                      <h3>{client?.totalVisits || 0}</h3>
+                      <p>Visits</p>
+                    </div>
+                  </div>
+                  <div className="stat-card">
+                    <div className="stat-icon">🎉</div>
+                    <div className="stat-content">
+                      <h3>{client?.category || 'New'}</h3>
+                      <p>Status</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="profile-stats">
                 <div className="stat-item">
                   <strong>Total Visits:</strong>

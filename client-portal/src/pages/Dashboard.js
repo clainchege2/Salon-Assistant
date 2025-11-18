@@ -187,31 +187,6 @@ export default function Dashboard() {
           </button>
         </div>
 
-        {/* Stats Cards */}
-        <div className="stats-grid">
-          <div className="stat-card">
-            <div className="stat-icon">⭐</div>
-            <div className="stat-content">
-              <h3>{client?.loyaltyPoints || 0}</h3>
-              <p>Loyalty Points</p>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon">💇</div>
-            <div className="stat-content">
-              <h3>{client?.totalVisits || 0}</h3>
-              <p>Total Visits</p>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon">🎉</div>
-            <div className="stat-content">
-              <h3>{client?.category || 'New'}</h3>
-              <p>Status</p>
-            </div>
-          </div>
-        </div>
-
         {/* Upcoming Appointments */}
         <div className="card">
           <h2>📅 Upcoming Appointments</h2>
