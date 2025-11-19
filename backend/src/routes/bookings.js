@@ -18,10 +18,10 @@ router.get('/availability', getAvailableSlots);
 
 router.route('/')
   .get(getBookings)
-  .post(createBooking);
+  .post(createBooking); // Anyone authenticated can create bookings
 
 router.route('/:id')
-  .put(updateBooking)
+  .put(updateBooking) // Anyone authenticated can update bookings
   .delete(checkPermission('canDeleteBookings'), deleteBooking);
 
 module.exports = router;

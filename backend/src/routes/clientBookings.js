@@ -502,6 +502,24 @@ router.post('/feedback', async (req, res) => {
   }
 });
 
+// @desc    Get client profile
+// @route   GET /api/v1/client/profile
+// @access  Private (Client)
+router.get('/profile', async (req, res) => {
+  try {
+    res.json({
+      success: true,
+      data: req.client
+    });
+  } catch (error) {
+    logger.error(`Get profile error: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+});
+
 // @desc    Get messages for client
 // @route   GET /api/v1/client/messages
 // @access  Private (Client)

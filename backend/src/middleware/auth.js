@@ -65,7 +65,13 @@ exports.authorize = (...roles) => {
 
 exports.checkPermission = (permission) => {
   return (req, res, next) => {
-    if (req.user.role === 'owner' || req.user.permissions[permission]) {
+    // Owner has all permissions
+    if (req.user.role === 'owner') {
+      return next();
+    }
+    
+    // Check if user has the specific permission set to true
+    if (req.user.permissions && req.user.permissions[permission] === true) {
       return next();
     }
     

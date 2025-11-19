@@ -1,7 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const { protect, checkPermission } = require('../middleware/auth');
+const { enforceTenantIsolation } = require('../middleware/tenantIsolation');
 const auditLogger = require('../middleware/auditLogger');
+
+// Apply middleware to all routes
+router.use(protect);
+router.use(enforceTenantIsolation);
 
 // Placeholder controller - implement as needed
 const reportController = {
@@ -26,8 +31,7 @@ const reportController = {
 // @route   GET /api/v1/reports/dashboard
 // @access  Private (Admin/Manager)
 router.get('/dashboard', 
-  protect,
-  checkPermission('view_reports'),
+  checkPermission('canViewReports'),
   reportController.getDashboard
 );
 
@@ -35,8 +39,7 @@ router.get('/dashboard',
 // @route   GET /api/v1/reports/financial
 // @access  Private (Admin/Manager)
 router.get('/financial', 
-  protect,
-  checkPermission('view_reports'),
+  checkPermission('canViewReports'),
   reportController.getFinancial
 );
 
@@ -44,8 +47,7 @@ router.get('/financial',
 // @route   GET /api/v1/reports/bookings/export
 // @access  Private (Admin/Manager)
 router.get('/bookings/export', 
-  protect,
-  checkPermission('view_reports'),
+  checkPermission('canViewReports'),
   auditLogger('EXPORT_BOOKINGS_REPORT', { sensitive: true, logReads: true }),
   reportController.exportBookingsReport
 );
@@ -54,8 +56,7 @@ router.get('/bookings/export',
 // @route   GET /api/v1/reports/clients/export
 // @access  Private (Admin/Manager)
 router.get('/clients/export', 
-  protect,
-  checkPermission('view_reports'),
+  checkPermission('canViewReports'),
   auditLogger('EXPORT_CLIENTS_REPORT', { sensitive: true, logReads: true }),
   reportController.exportClientsReport
 );
@@ -64,8 +65,7 @@ router.get('/clients/export',
 // @route   GET /api/v1/reports/financial/export
 // @access  Private (Admin/Manager)
 router.get('/financial/export', 
-  protect,
-  checkPermission('view_reports'),
+  checkPermission('canViewReports'),
   auditLogger('EXPORT_FINANCIAL_REPORT', { sensitive: true, logReads: true }),
   reportController.exportFinancialReport
 );

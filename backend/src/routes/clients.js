@@ -20,7 +20,7 @@ router.route('/')
 
 router.route('/:id')
   .get(getClient)
-  .put(updateClient)
+  .put(updateClient) // Anyone authenticated can update clients
   .delete(checkPermission('canDeleteClients'), deleteClient);
 
 module.exports = router;

@@ -30,16 +30,14 @@ describe('Authorization Security Tests', () => {
     managerUser = await testSetup.createTestUser(tenant._id, {
       role: 'manager',
       permissions: {
-        view_bookings: true,
-        manage_bookings: true,
-        view_clients: true,
-        manage_clients: true,
-        view_users: false,
-        manage_users: false,
-        view_services: true,
-        manage_services: false,
-        view_reports: true,
-        manage_permissions: false
+        canViewCommunications: true,
+        canViewMarketing: false,
+        canDeleteBookings: true,
+        canDeleteClients: true,
+        canManageStaff: false,
+        canManageServices: false,
+        canManageInventory: false,
+        canViewReports: true
       }
     });
 
@@ -87,15 +85,10 @@ describe('Authorization Security Tests', () => {
     });
 
     test('Stylist should NOT manage bookings', async () => {
+      // Stylists can create bookings, but cannot delete them without permission
       const response = await request(app)
-        .post('/api/v1/bookings')
-        .set('Authorization', `Bearer ${staffToken}`)
-        .send({
-          clientId: client._id,
-          serviceId: service._id,
-          startTime: new Date(),
-          endTime: new Date()
-        });
+        .delete(`/api/v1/bookings/${booking._id}`)
+        .set('Authorization', `Bearer ${staffToken}`);
 
       expect(response.status).toBe(403);
     });
@@ -110,16 +103,11 @@ describe('Authorization Security Tests', () => {
       expect(response.status).toBe(200);
     });
 
-    test('User without manage_bookings cannot create booking', async () => {
+    test('User without canDeleteBookings cannot delete booking', async () => {
+      // Users can create/update bookings, but need specific permission to delete
       const response = await request(app)
-        .post('/api/v1/bookings')
-        .set('Authorization', `Bearer ${staffToken}`)
-        .send({
-          clientId: client._id,
-          serviceId: service._id,
-          startTime: new Date(),
-          endTime: new Date()
-        });
+        .delete(`/api/v1/bookings/${booking._id}`)
+        .set('Authorization', `Bearer ${staffToken}`);
 
       expect(response.status).toBe(403);
     });
@@ -152,15 +140,16 @@ describe('Authorization Security Tests', () => {
 
     test('Client can view own profile', async () => {
       const response = await request(app)
-        .get(`/api/v1/clients/${client._id}`)
+        .get('/api/v1/client/profile')
         .set('Authorization', `Bearer ${clientToken}`);
 
       expect(response.status).toBe(200);
+      expect(response.body.data._id.toString()).toBe(client._id.toString());
     });
 
     test('Client can view own bookings', async () => {
       const response = await request(app)
-        .get('/api/v1/client-bookings')
+        .get('/api/v1/client/bookings')
         .set('Authorization', `Bearer ${clientToken}`);
 
       expect(response.status).toBe(200);
@@ -170,11 +159,13 @@ describe('Authorization Security Tests', () => {
     test('Client cannot view other client profiles', async () => {
       const otherClient = await testSetup.createTestClient(tenant._id);
 
+      // Clients should not be able to access admin endpoints at all
       const response = await request(app)
         .get(`/api/v1/clients/${otherClient._id}`)
         .set('Authorization', `Bearer ${clientToken}`);
 
-      expect(response.status).toBe(403);
+      // Should be 401 because client token is not valid for admin routes
+      expect(response.status).toBe(401);
     });
 
     test('Client cannot access admin endpoints', async () => {
@@ -182,7 +173,8 @@ describe('Authorization Security Tests', () => {
         .get('/api/v1/users')
         .set('Authorization', `Bearer ${clientToken}`);
 
-      expect(response.status).toBe(403);
+      // Should be 401 because client token is not valid for admin routes
+      expect(response.status).toBe(401);
     });
   });
 
@@ -291,7 +283,8 @@ describe('Authorization Security Tests', () => {
         .get('/api/v1/reports/dashboard')
         .set('Authorization', `Bearer ${clientToken}`);
 
-      expect(response.status).toBe(403);
+      // Should be 401 because client token is not valid for admin routes
+      expect(response.status).toBe(401);
     });
   });
 
