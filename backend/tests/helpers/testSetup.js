@@ -148,7 +148,7 @@ class TestSetup {
   /**
    * Create test service
    */
-  async createTestService(tenantId, overrides = {}) => {
+  async createTestService(tenantId, overrides = {}) {
     const serviceData = {
       tenantId,
       name: 'Test Service',
