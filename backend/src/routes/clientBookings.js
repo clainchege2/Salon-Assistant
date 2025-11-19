@@ -97,7 +97,8 @@ router.get('/bookings/:id', async (req, res) => {
 // @access  Private (Client)
 router.post('/bookings', async (req, res) => {
   try {
-    const { scheduledDate, services, customerInstructions, stylistId } = req.body;
+    const { scheduledDate, services, customerInstructions } = req.body;
+    let stylistId = req.body.stylistId; // Use let instead of const so we can reassign
 
     if (!scheduledDate || !services || services.length === 0) {
       return res.status(400).json({
@@ -109,56 +110,122 @@ router.post('/bookings', async (req, res) => {
     const totalPrice = services.reduce((sum, s) => sum + (s.price || 0), 0);
     const totalDuration = services.reduce((sum, s) => sum + (s.duration || 0), 0);
 
-    // Check for double booking (only if specific stylist selected)
+    // Check for double booking
+    const requestedDate = new Date(scheduledDate);
+    const requestedHour = requestedDate.getHours();
+    const durationHours = Math.ceil(totalDuration / 60);
+    const requestedEndHour = requestedHour + durationHours;
+
+    // Get bookings for the same day
+    const startOfDay = new Date(requestedDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(requestedDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const query = {
+      tenantId: req.tenantId,
+      scheduledDate: {
+        $gte: startOfDay,
+        $lte: endOfDay
+      },
+      status: { $nin: ['cancelled', 'no-show'] }
+    };
+
+    // If specific stylist selected, check only their availability
     if (stylistId) {
-      const requestedDate = new Date(scheduledDate);
-      const requestedHour = requestedDate.getHours();
-      const durationHours = Math.ceil(totalDuration / 60);
-      const requestedEndHour = requestedHour + durationHours;
+      query.$or = [
+        { assignedTo: stylistId },
+        { stylistId: stylistId }
+      ];
+    }
 
-      // Get bookings for the same day and stylist
-      const startOfDay = new Date(requestedDate);
-      startOfDay.setHours(0, 0, 0, 0);
-      const endOfDay = new Date(requestedDate);
-      endOfDay.setHours(23, 59, 59, 999);
+    const existingBookings = await Booking.find(query);
 
-      const query = {
-        tenantId: req.tenantId,
-        scheduledDate: {
-          $gte: startOfDay,
-          $lte: endOfDay
-        },
-        status: { $nin: ['cancelled', 'no-show'] },
-        $or: [
-          { assignedTo: stylistId },
-          { stylistId: stylistId }
-        ]
-      };
+    // Check for conflicts
+    const hasConflict = existingBookings.some(booking => {
+      const bookingHour = new Date(booking.scheduledDate).getHours();
+      const bookingDuration = Math.ceil((booking.totalDuration || 60) / 60);
+      const bookingEndHour = bookingHour + bookingDuration;
 
-      const existingBookings = await Booking.find(query);
+      // Check if time slots overlap
+      return (
+        (requestedHour >= bookingHour && requestedHour < bookingEndHour) ||
+        (requestedEndHour > bookingHour && requestedEndHour <= bookingEndHour) ||
+        (requestedHour <= bookingHour && requestedEndHour >= bookingEndHour)
+      );
+    });
 
-      // Check for conflicts
-      const hasConflict = existingBookings.some(booking => {
-        const bookingHour = new Date(booking.scheduledDate).getHours();
-        const bookingDuration = Math.ceil((booking.totalDuration || 60) / 60);
-        const bookingEndHour = bookingHour + bookingDuration;
-
-        // Check if time slots overlap
-        return (
-          (requestedHour >= bookingHour && requestedHour < bookingEndHour) ||
-          (requestedEndHour > bookingHour && requestedEndHour <= bookingEndHour) ||
-          (requestedHour <= bookingHour && requestedEndHour >= bookingEndHour)
-        );
+    if (stylistId && hasConflict) {
+      return res.status(409).json({
+        success: false,
+        message: 'This time slot is already booked for the selected stylist. Please choose a different time or stylist.'
       });
+    }
 
-      if (hasConflict) {
-        return res.status(409).json({
+    // If no stylist selected, check if ANY staff is available
+    if (!stylistId) {
+      // Get all active stylists
+      const User = require('../models/User');
+      const allStylists = await User.find({
+        tenantId: req.tenantId,
+        role: 'stylist',
+        status: 'active'
+      }).select('_id');
+
+      if (allStylists.length === 0) {
+        return res.status(400).json({
           success: false,
-          message: 'This time slot is already booked for the selected stylist. Please choose a different time or stylist.'
+          message: 'No staff available. Please contact the salon.'
         });
       }
+
+      // Group bookings by stylist to find who's available
+      const stylistBookings = {};
+      existingBookings.forEach(booking => {
+        const staffId = (booking.assignedTo || booking.stylistId)?.toString();
+        if (staffId) {
+          if (!stylistBookings[staffId]) {
+            stylistBookings[staffId] = [];
+          }
+          stylistBookings[staffId].push(booking);
+        }
+      });
+
+      // Find an available stylist
+      let availableStylist = null;
+      for (const stylist of allStylists) {
+        const currentStylistId = stylist._id.toString();
+        const bookings = stylistBookings[currentStylistId] || [];
+        
+        const isAvailable = !bookings.some(booking => {
+          const bookingHour = new Date(booking.scheduledDate).getHours();
+          const bookingDuration = Math.ceil((booking.totalDuration || 60) / 60);
+          const bookingEndHour = bookingHour + bookingDuration;
+
+          return (
+            (requestedHour >= bookingHour && requestedHour < bookingEndHour) ||
+            (requestedEndHour > bookingHour && requestedEndHour <= bookingEndHour) ||
+            (requestedHour <= bookingHour && requestedEndHour >= bookingEndHour)
+          );
+        });
+
+        if (isAvailable) {
+          availableStylist = stylist._id;
+          break;
+        }
+      }
+
+      if (!availableStylist) {
+        return res.status(409).json({
+          success: false,
+          message: 'This time slot is fully booked. All staff are busy. Please choose a different time.'
+        });
+      }
+
+      // Auto-assign to available stylist
+      stylistId = availableStylist;
+      logger.info(`Auto-assigned booking to stylist: ${stylistId}`);
     }
-    // If no stylist selected, skip conflict check - system will auto-assign to available stylist
 
     const booking = await Booking.create({
       tenantId: req.tenantId,
@@ -166,8 +233,8 @@ router.post('/bookings', async (req, res) => {
       type: 'reserved',
       scheduledDate: new Date(scheduledDate),
       services,
-      stylistId: stylistId || null,
-      assignedTo: stylistId || null,
+      stylistId: stylistId,
+      assignedTo: stylistId,
       customerInstructions,
       totalPrice,
       totalDuration,
@@ -716,10 +783,10 @@ router.put('/bookings/:id/instructions', async (req, res) => {
   }
 });
 
-// @desc    Cancel booking
-// @route   PUT /api/v1/client/bookings/:id/cancel
+// @desc    Reactivate cancelled booking (undo cancellation)
+// @route   PUT /api/v1/client/bookings/:id/reactivate
 // @access  Private (Client)
-router.put('/bookings/:id/cancel', async (req, res) => {
+router.put('/bookings/:id/reactivate', async (req, res) => {
   try {
     const booking = await Booking.findOne({
       _id: req.params.id,
@@ -734,34 +801,42 @@ router.put('/bookings/:id/cancel', async (req, res) => {
       });
     }
 
-    // Check if booking can be cancelled
-    if (booking.status === 'completed' || booking.status === 'cancelled') {
+    // Only allow reactivating cancelled bookings
+    if (booking.status !== 'cancelled') {
       return res.status(400).json({
         success: false,
-        message: `Cannot cancel a ${booking.status} booking`
+        message: 'Only cancelled bookings can be reactivated'
       });
     }
 
-    // Check if booking is in the past
+    // Check if booking is still in the future
     if (new Date(booking.scheduledDate) < new Date()) {
       return res.status(400).json({
         success: false,
-        message: 'Cannot cancel a past booking'
+        message: 'Cannot reactivate a past booking'
       });
     }
 
-    booking.status = 'cancelled';
+    // Restore booking to pending status
+    booking.status = 'pending';
+    booking.cancellationFee = 0; // Remove any cancellation fee
+    booking.cancelledAt = null;
+    booking.cancelledBy = null;
+    
+    // Add note about reactivation
+    booking.notes = `${booking.notes || ''}\nBooking reactivated on ${new Date().toLocaleDateString()} - cancellation fee waived.`.trim();
+    
     await booking.save();
 
-    logger.info(`Booking cancelled by client: ${booking._id}`);
+    logger.info(`Booking reactivated by client: ${req.client._id}, booking: ${booking._id}`);
 
     res.json({
       success: true,
       data: booking,
-      message: 'Booking cancelled successfully'
+      message: 'Booking restored successfully. No fee charged.'
     });
   } catch (error) {
-    logger.error(`Cancel booking error: ${error.message}`);
+    logger.error(`Reactivate booking error: ${error.message}`);
     res.status(500).json({
       success: false,
       message: 'Server error'

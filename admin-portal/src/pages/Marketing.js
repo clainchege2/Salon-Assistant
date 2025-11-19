@@ -702,12 +702,14 @@ export default function Marketing() {
                   onChange={(e) => setCampaignForm(prev => ({ ...prev, targetType: e.target.value, selectedClients: [] }))}
                   className="form-control"
                 >
-                  <option value="all">All Clients</option>
-                  <option value="segment">RFM Segment</option>
-                  <option value="individual">Individual Clients</option>
-                  <option value="dayOfWeek">Day of Week Special</option>
-                  {campaignForm.type === 'special' && (
-                    <option value="occasion">Special Occasion</option>
+                  <option value="all">All Clients with Marketing Consent</option>
+                  <option value="segment">Client Segment (RFM)</option>
+                  <option value="individual">Select Individual Clients</option>
+                  {campaignForm.type === 'special' && campaignForm.occasion === 'birthday' && (
+                    <option value="occasion">Clients with Upcoming Birthdays</option>
+                  )}
+                  {campaignForm.type === 'special' && campaignForm.occasion === 'anniversary' && (
+                    <option value="occasion">Clients with Upcoming Anniversaries</option>
                   )}
                 </select>
               </div>
@@ -738,21 +740,36 @@ export default function Marketing() {
               {campaignForm.targetType === 'individual' && (
                 <div className="form-group">
                   <label>Select Clients ({campaignForm.selectedClients.length} selected)</label>
-                  <div className="client-selector">
-                    {allClients.map(client => (
-                      <div key={client._id} className="client-checkbox">
-                        <input
-                          type="checkbox"
-                          id={`client-${client._id}`}
-                          checked={campaignForm.selectedClients.some(c => c._id === client._id)}
-                          onChange={() => toggleClientSelection(client._id)}
-                        />
-                        <label htmlFor={`client-${client._id}`}>
-                          {client.firstName} {client.lastName} - {client.phone}
-                        </label>
-                      </div>
-                    ))}
-                  </div>
+                  {allClients.length === 0 ? (
+                    <div className="empty-state">
+                      <p>No clients found. Add clients first to send campaigns.</p>
+                    </div>
+                  ) : (
+                    <div className="client-selector">
+                      {[...allClients]
+                        .sort((a, b) => {
+                          const nameA = `${a.firstName} ${a.lastName}`.toLowerCase();
+                          const nameB = `${b.firstName} ${b.lastName}`.toLowerCase();
+                          return nameA.localeCompare(nameB);
+                        })
+                        .map(client => (
+                          <div key={client._id} className="client-checkbox">
+                            <input
+                              type="checkbox"
+                              id={`client-${client._id}`}
+                              checked={campaignForm.selectedClients.some(c => c._id === client._id)}
+                              onChange={() => toggleClientSelection(client._id)}
+                            />
+                            <label htmlFor={`client-${client._id}`}>
+                              {client.firstName} {client.lastName} - {client.phone}
+                            </label>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+                  <small className="form-hint">
+                    Select specific clients to receive this campaign
+                  </small>
                 </div>
               )}
 

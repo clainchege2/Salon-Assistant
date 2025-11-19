@@ -67,6 +67,7 @@
   cursor: pointer;
   transition: all 0.3s;
   margin-bottom: -2px;
+  position: relative;
 }
 
 .tab:hover {
@@ -76,6 +77,38 @@
 .tab.active {
   color: #6B46C1;
   border-bottom-color: #6B46C1;
+}
+
+.tab-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+  animation: badgePulse 2s infinite;
+}
+
+@keyframes badgePulse {
+  0%, 100% {
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+  }
+  50% {
+    box-shadow: 0 2px 12px rgba(239, 68, 68, 0.6);
+  }
 }
 
 .messages-list,

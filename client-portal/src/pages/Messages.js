@@ -10,6 +10,8 @@ export default function Messages() {
   const [activeTab, setActiveTab] = useState(() => {
     return localStorage.getItem('messagesActiveTab') || 'messages';
   });
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+  const [newCampaignsCount, setNewCampaignsCount] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,7 +21,38 @@ export default function Messages() {
 
   useEffect(() => {
     localStorage.setItem('messagesActiveTab', activeTab);
-  }, [activeTab]);
+    
+    // Mark items as read/viewed when switching tabs
+    if (activeTab === 'messages' && unreadMessagesCount > 0) {
+      const markMessagesAsRead = async () => {
+        try {
+          const token = localStorage.getItem('clientToken');
+          const unreadMessages = messages.filter(m => !m.readAt);
+          if (unreadMessages.length > 0) {
+            await Promise.all(
+              unreadMessages.map(msg =>
+                axios.put(
+                  `${process.env.REACT_APP_API_URL}/api/v1/client/messages/${msg._id}/read`,
+                  {},
+                  { headers: { Authorization: `Bearer ${token}` } }
+                ).catch(err => console.error('Error marking message as read:', err))
+              )
+            );
+            setUnreadMessagesCount(0);
+          }
+        } catch (err) {
+          console.error('Error marking messages as read:', err);
+        }
+      };
+      markMessagesAsRead();
+    } else if (activeTab === 'campaigns' && newCampaignsCount > 0) {
+      const viewedCampaigns = JSON.parse(localStorage.getItem('viewedCampaigns') || '[]');
+      const campaignIds = campaigns.map(c => c._id);
+      const updatedViewed = [...new Set([...viewedCampaigns, ...campaignIds])];
+      localStorage.setItem('viewedCampaigns', JSON.stringify(updatedViewed));
+      setNewCampaignsCount(0);
+    }
+  }, [activeTab, messages, campaigns, unreadMessagesCount, newCampaignsCount]);
 
   const fetchMessages = async () => {
     try {
@@ -28,20 +61,29 @@ export default function Messages() {
         `${process.env.REACT_APP_API_URL}/api/v1/client/messages`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setMessages(response.data.data || []);
+      const messagesData = response.data.data || [];
+      setMessages(messagesData);
       
-      // Mark all unread messages as read
-      const unreadMessages = response.data.data.filter(m => !m.readAt);
-      if (unreadMessages.length > 0) {
-        await Promise.all(
-          unreadMessages.map(msg =>
-            axios.put(
-              `${process.env.REACT_APP_API_URL}/api/v1/client/messages/${msg._id}/read`,
-              {},
-              { headers: { Authorization: `Bearer ${token}` } }
-            ).catch(err => console.error('Error marking message as read:', err))
-          )
-        );
+      // Count unread messages before marking as read
+      const unreadCount = messagesData.filter(m => !m.readAt).length;
+      setUnreadMessagesCount(unreadCount);
+      
+      // Mark all unread messages as read only when viewing messages tab
+      if (activeTab === 'messages') {
+        const unreadMessages = messagesData.filter(m => !m.readAt);
+        if (unreadMessages.length > 0) {
+          await Promise.all(
+            unreadMessages.map(msg =>
+              axios.put(
+                `${process.env.REACT_APP_API_URL}/api/v1/client/messages/${msg._id}/read`,
+                {},
+                { headers: { Authorization: `Bearer ${token}` } }
+              ).catch(err => console.error('Error marking message as read:', err))
+            )
+          );
+          // Clear the badge after marking as read
+          setUnreadMessagesCount(0);
+        }
       }
     } catch (err) {
       console.error('Error fetching messages:', err);
@@ -57,13 +99,22 @@ export default function Messages() {
         `${process.env.REACT_APP_API_URL}/api/v1/client/campaigns`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setCampaigns(response.data.data || []);
+      const campaignsData = response.data.data || [];
+      setCampaigns(campaignsData);
       
-      // Mark all campaigns as viewed in localStorage
-      const campaignIds = (response.data.data || []).map(c => c._id);
+      // Count new campaigns before marking as viewed
       const viewedCampaigns = JSON.parse(localStorage.getItem('viewedCampaigns') || '[]');
-      const updatedViewed = [...new Set([...viewedCampaigns, ...campaignIds])];
-      localStorage.setItem('viewedCampaigns', JSON.stringify(updatedViewed));
+      const unviewedCount = campaignsData.filter(c => !viewedCampaigns.includes(c._id)).length;
+      setNewCampaignsCount(unviewedCount);
+      
+      // Mark all campaigns as viewed in localStorage only when viewing campaigns tab
+      if (activeTab === 'campaigns') {
+        const campaignIds = campaignsData.map(c => c._id);
+        const updatedViewed = [...new Set([...viewedCampaigns, ...campaignIds])];
+        localStorage.setItem('viewedCampaigns', JSON.stringify(updatedViewed));
+        // Clear the badge after marking as viewed
+        setNewCampaignsCount(0);
+      }
     } catch (err) {
       console.error('Error fetching campaigns:', err);
     }
@@ -98,13 +149,23 @@ export default function Messages() {
             className={`tab ${activeTab === 'messages' ? 'active' : ''}`}
             onClick={() => setActiveTab('messages')}
           >
-            💬 Messages ({messages.length})
+            <span className="tab-content">
+              💬 Messages ({messages.length})
+              {unreadMessagesCount > 0 && (
+                <span className="tab-badge">{unreadMessagesCount}</span>
+              )}
+            </span>
           </button>
           <button
             className={`tab ${activeTab === 'campaigns' ? 'active' : ''}`}
             onClick={() => setActiveTab('campaigns')}
           >
-            🎁 Offers & Promotions ({campaigns.length})
+            <span className="tab-content">
+              🎁 Offers & Promotions ({campaigns.length})
+              {newCampaignsCount > 0 && (
+                <span className="tab-badge">{newCampaignsCount}</span>
+              )}
+            </span>
           </button>
         </div>
 
