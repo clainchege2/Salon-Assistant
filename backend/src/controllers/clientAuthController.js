@@ -174,7 +174,7 @@ exports.register = async (req, res) => {
 // @access  Public
 exports.login = async (req, res) => {
   try {
-    const { phone, password, tenantSlug } = req.body;
+    const { phone, password, tenantSlug, twoFactorCode, twoFactorId } = req.body;
 
     // Validation
     if (!phone || !password) {
@@ -228,6 +228,70 @@ exports.login = async (req, res) => {
         message: 'Invalid credentials'
       });
     }
+
+    // Check if account is pending verification
+    if (client.accountStatus === 'pending-verification') {
+      return res.status(403).json({
+        success: false,
+        error: 'PENDING_VERIFICATION',
+        message: 'Please verify your account first',
+        clientId: client._id
+      });
+    }
+
+    if (client.accountStatus === 'suspended') {
+      return res.status(403).json({
+        success: false,
+        message: 'Your account has been suspended. Please contact the salon.'
+      });
+    }
+
+    // Check if 2FA is enabled (skip in development for testing)
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    const skipTwoFactor = isDevelopment && req.body.skipTwoFactor === true;
+    
+    if (client.twoFactorEnabled && !skipTwoFactor) {
+      // If 2FA code provided, verify it
+      if (twoFactorCode && twoFactorId) {
+        const twoFactorService = require('../services/twoFactorService');
+        const verifyResult = await twoFactorService.verifyCode(twoFactorId, twoFactorCode);
+
+        if (!verifyResult.success) {
+          return res.status(400).json(verifyResult);
+        }
+
+        // 2FA verified, proceed with login
+      } else {
+        // Send 2FA code
+        const twoFactorService = require('../services/twoFactorService');
+        const contact = client.twoFactorMethod === 'email' ? client.email : client.phone;
+        
+        const twoFactorResult = await twoFactorService.sendCode({
+          userId: client._id,
+          userModel: 'Client',
+          tenantId: tenant._id,
+          method: client.twoFactorMethod,
+          contact,
+          purpose: 'login',
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent')
+        });
+
+        return res.json({
+          success: true,
+          requires2FA: true,
+          twoFactorId: twoFactorResult.twoFactorId,
+          method: twoFactorResult.method,
+          sentTo: twoFactorResult.sentTo,
+          expiresAt: twoFactorResult.expiresAt,
+          message: 'Verification code sent. Please check your ' + (client.twoFactorMethod === 'email' ? 'email' : 'phone')
+        });
+      }
+    }
+
+    // Update last login
+    client.lastVisit = Date.now();
+    await client.save();
 
     // Generate token
     const token = generateToken(client._id);

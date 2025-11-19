@@ -172,6 +172,25 @@ export default function Profile() {
                   <strong>Member Since:</strong>
                   <span>{new Date(client.createdAt).toLocaleDateString()}</span>
                 </div>
+                <div className="stat-item">
+                  <strong>Two-Factor Auth:</strong>
+                  <span>{client.twoFactorEnabled ? '✅ Enabled' : '❌ Disabled'}</span>
+                </div>
+                <div className="stat-item">
+                  <strong>2FA Method:</strong>
+                  <span>{client.twoFactorMethod === 'email' ? '📧 Email' : '📱 SMS'}</span>
+                </div>
+              </div>
+
+              <div style={{marginTop: '24px', padding: '16px', background: '#f9fafb', borderRadius: '12px'}}>
+                <h4 style={{margin: '0 0 12px 0', fontSize: '16px'}}>Security Settings</h4>
+                <p style={{fontSize: '14px', color: '#6b7280', margin: '0 0 12px 0'}}>
+                  Two-factor authentication adds an extra layer of security to your account.
+                  {client.twoFactorEnabled ? ' You can disable it below.' : ' Enable it for better security.'}
+                </p>
+                <p style={{fontSize: '13px', color: '#9ca3af', fontStyle: 'italic'}}>
+                  Note: 2FA is currently bypassed in development mode for easier testing.
+                </p>
               </div>
             </>
           ) : (
