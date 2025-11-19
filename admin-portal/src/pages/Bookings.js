@@ -363,12 +363,23 @@ export default function Bookings() {
                         <div className="status-dropdown">
                           <button 
                             className="btn-action status-toggle" 
-                            onClick={() => setOpenDropdown(openDropdown === booking._id ? null : booking._id)}
+                            onClick={(e) => {
+                              setOpenDropdown(openDropdown === booking._id ? null : booking._id);
+                              e.stopPropagation();
+                            }}
                           >
                             Update Status ▾
                           </button>
                           {openDropdown === booking._id && (
-                            <div className="dropdown-menu">
+                            <div 
+                              className="dropdown-menu"
+                              style={{
+                                position: 'absolute',
+                                top: '100%',
+                                left: '0',
+                                marginTop: '4px'
+                              }}
+                            >
                               <button 
                                 className="dropdown-item complete"
                                 onClick={() => {
