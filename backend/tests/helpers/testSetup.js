@@ -172,11 +172,17 @@ class TestSetup {
     const bookingData = {
       tenantId,
       clientId,
-      serviceId,
-      startTime: new Date(Date.now() + 24 * 60 * 60 * 1000),
-      endTime: new Date(Date.now() + 25 * 60 * 60 * 1000),
+      type: 'reserved',
+      scheduledDate: new Date(Date.now() + 24 * 60 * 60 * 1000),
       status: 'confirmed',
+      services: [{
+        serviceId,
+        serviceName: 'Test Service',
+        price: 1000,
+        duration: 60
+      }],
       totalPrice: 1000,
+      totalDuration: 60,
       ...overrides
     };
 
