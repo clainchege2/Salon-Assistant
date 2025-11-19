@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const tenantIsolationPlugin = require('../plugins/tenantIsolation');
 
 const campaignSchema = new mongoose.Schema({
   tenantId: {
@@ -70,5 +71,8 @@ const campaignSchema = new mongoose.Schema({
 
 // Index for faster queries
 campaignSchema.index({ tenantId: 1, status: 1, startDate: 1, endDate: 1 });
+
+// Apply tenant isolation plugin
+campaignSchema.plugin(tenantIsolationPlugin);
 
 module.exports = mongoose.model('Campaign', campaignSchema);

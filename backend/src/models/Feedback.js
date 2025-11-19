@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const tenantIsolationPlugin = require('../plugins/tenantIsolation');
 
 const feedbackSchema = new mongoose.Schema({
   clientId: {
@@ -101,5 +102,8 @@ feedbackSchema.pre('save', function(next) {
 feedbackSchema.index({ tenantId: 1, status: 1 });
 feedbackSchema.index({ tenantId: 1, overallRating: 1 });
 feedbackSchema.index({ tenantId: 1, requiresAction: 1 });
+
+// Apply tenant isolation plugin
+feedbackSchema.plugin(tenantIsolationPlugin);
 
 module.exports = mongoose.model('Feedback', feedbackSchema);

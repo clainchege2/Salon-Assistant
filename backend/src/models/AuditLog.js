@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const tenantIsolationPlugin = require('../plugins/tenantIsolation');
 
 const auditLogSchema = new mongoose.Schema({
   tenantId: {
@@ -111,5 +112,8 @@ auditLogSchema.statics.getResourceHistory = async function(tenantId, resource, r
     .populate('userId', 'firstName lastName email')
     .limit(50);
 };
+
+// Apply tenant isolation plugin
+auditLogSchema.plugin(tenantIsolationPlugin);
 
 module.exports = mongoose.model('AuditLog', auditLogSchema);

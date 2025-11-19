@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const tenantIsolationPlugin = require('../plugins/tenantIsolation');
 
 const clientSchema = new mongoose.Schema({
   tenantId: {
@@ -269,5 +270,8 @@ clientSchema.methods.updateCategory = function() {
     this.category = 'usual';
   }
 };
+
+// Apply tenant isolation plugin
+clientSchema.plugin(tenantIsolationPlugin);
 
 module.exports = mongoose.model('Client', clientSchema);

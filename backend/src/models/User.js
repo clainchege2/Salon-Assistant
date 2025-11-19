@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const tenantIsolationPlugin = require('../plugins/tenantIsolation');
 
 const userSchema = new mongoose.Schema({
   tenantId: {
@@ -133,5 +134,8 @@ userSchema.pre('save', async function(next) {
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
+
+// Apply tenant isolation plugin
+userSchema.plugin(tenantIsolationPlugin);
 
 module.exports = mongoose.model('User', userSchema);

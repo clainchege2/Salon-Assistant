@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const tenantIsolationPlugin = require('../plugins/tenantIsolation');
 
 const materialItemSchema = new mongoose.Schema({
   materialId: {
@@ -101,5 +102,8 @@ materialItemSchema.pre('save', function(next) {
   }
   next();
 });
+
+// Apply tenant isolation plugin
+materialItemSchema.plugin(tenantIsolationPlugin);
 
 module.exports = mongoose.model('MaterialItem', materialItemSchema);

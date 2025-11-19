@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const tenantIsolationPlugin = require('../plugins/tenantIsolation');
 
 const bookingSchema = new mongoose.Schema({
   tenantId: {
@@ -110,5 +111,8 @@ bookingSchema.index({ tenantId: 1, scheduledDate: 1 });
 bookingSchema.index({ tenantId: 1, clientId: 1 });
 bookingSchema.index({ tenantId: 1, status: 1 });
 bookingSchema.index({ tenantId: 1, stylistId: 1, scheduledDate: 1 });
+
+// Apply tenant isolation plugin
+bookingSchema.plugin(tenantIsolationPlugin);
 
 module.exports = mongoose.model('Booking', bookingSchema);

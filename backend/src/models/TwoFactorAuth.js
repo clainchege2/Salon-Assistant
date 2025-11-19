@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const crypto = require('crypto');
+const tenantIsolationPlugin = require('../plugins/tenantIsolation');
 
 const twoFactorAuthSchema = new mongoose.Schema({
   userId: {
@@ -130,5 +131,8 @@ twoFactorAuthSchema.statics.maskEmail = function(email) {
   const maskedLocal = local.slice(0, 2) + '****' + local.slice(-1);
   return `${maskedLocal}@${domain}`;
 };
+
+// Apply tenant isolation plugin
+twoFactorAuthSchema.plugin(tenantIsolationPlugin);
 
 module.exports = mongoose.model('TwoFactorAuth', twoFactorAuthSchema);

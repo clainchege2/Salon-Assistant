@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const tenantIsolationPlugin = require('../plugins/tenantIsolation');
 
 const clientUpdateRequestSchema = new mongoose.Schema({
   tenantId: {
@@ -31,5 +32,8 @@ const clientUpdateRequestSchema = new mongoose.Schema({
 }, {
   timestamps: true
 });
+
+// Apply tenant isolation plugin
+clientUpdateRequestSchema.plugin(tenantIsolationPlugin);
 
 module.exports = mongoose.model('ClientUpdateRequest', clientUpdateRequestSchema);

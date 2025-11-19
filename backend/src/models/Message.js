@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const tenantIsolationPlugin = require('../plugins/tenantIsolation');
 
 const messageSchema = new mongoose.Schema({
   tenantId: {
@@ -56,5 +57,8 @@ const messageSchema = new mongoose.Schema({
 // Index for faster queries
 messageSchema.index({ tenantId: 1, recipientId: 1, createdAt: -1 });
 messageSchema.index({ tenantId: 1, recipientType: 1, createdAt: -1 });
+
+// Apply tenant isolation plugin
+messageSchema.plugin(tenantIsolationPlugin);
 
 module.exports = mongoose.model('Message', messageSchema);

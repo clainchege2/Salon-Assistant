@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const tenantIsolationPlugin = require('../plugins/tenantIsolation');
 
 const serviceSchema = new mongoose.Schema({
   tenantId: {
@@ -62,5 +63,8 @@ const serviceSchema = new mongoose.Schema({
 
 serviceSchema.index({ tenantId: 1, isActive: 1 });
 serviceSchema.index({ tenantId: 1, category: 1 });
+
+// Apply tenant isolation plugin
+serviceSchema.plugin(tenantIsolationPlugin);
 
 module.exports = mongoose.model('Service', serviceSchema);

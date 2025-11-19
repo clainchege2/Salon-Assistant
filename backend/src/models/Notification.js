@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const tenantIsolationPlugin = require('../plugins/tenantIsolation');
 
 const notificationSchema = new mongoose.Schema({
   tenantId: {
@@ -48,5 +49,8 @@ const notificationSchema = new mongoose.Schema({
 
 // Index for faster queries
 notificationSchema.index({ tenantId: 1, recipientId: 1, isRead: 1, createdAt: -1 });
+
+// Apply tenant isolation plugin
+notificationSchema.plugin(tenantIsolationPlugin);
 
 module.exports = mongoose.model('Notification', notificationSchema);
