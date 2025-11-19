@@ -24,7 +24,8 @@ const twoFactorAuthSchema = new mongoose.Schema({
   // Verification Code
   code: {
     type: String,
-    required: true
+    required: false, // Not required - we store the hash instead
+    select: false // Don't return in queries for security
   },
   codeHash: {
     type: String,

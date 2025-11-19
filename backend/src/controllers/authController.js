@@ -201,8 +201,11 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Check if 2FA is enabled
-    if (user.twoFactorEnabled) {
+    // Check if 2FA is enabled (skip in development for seed accounts)
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    const skipTwoFactor = isDevelopment && req.body.skipTwoFactor === true;
+    
+    if (user.twoFactorEnabled && !skipTwoFactor) {
       // If 2FA code provided, verify it
       if (twoFactorCode && twoFactorId) {
         const twoFactorService = require('../services/twoFactorService');

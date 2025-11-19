@@ -9,6 +9,9 @@ export default function Login() {
   const [tenantSlug, setTenantSlug] = useState(localStorage.getItem('lastTenantSlug') || '');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showTwoFactor, setShowTwoFactor] = useState(false);
+  const [twoFactorCode, setTwoFactorCode] = useState('');
+  const [tempUserId, setTempUserId] = useState(null);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -22,24 +25,34 @@ export default function Login() {
       const response = await axios.post('http://localhost:5000/api/v1/auth/login', {
         email,
         password,
-        tenantSlug
+        tenantSlug,
+        skipTwoFactor: true // Skip 2FA in development
       });
 
       console.log('Login response:', response.data);
 
+      // Check if 2FA is required
+      if (response.data.requires2FA) {
+        setShowTwoFactor(true);
+        setTempUserId(response.data.userId);
+        setError('');
+        setLoading(false);
+        return;
+      }
+
       if (response.data.success) {
         // Save tenant slug for next time
         localStorage.setItem('lastTenantSlug', tenantSlug);
-        
+
         // Set new data
         localStorage.setItem('adminToken', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
-        
+
         // Store tenant data for localization
         if (response.data.tenant) {
           localStorage.setItem('tenant', JSON.stringify(response.data.tenant));
         }
-        
+
         console.log('Navigating to dashboard...');
         navigate('/dashboard');
       } else {
@@ -52,16 +65,87 @@ export default function Login() {
     }
   };
 
+  const handleVerify2FA = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      const response = await axios.post('http://localhost:5000/api/v1/auth/verify-2fa', {
+        userId: tempUserId,
+        code: twoFactorCode,
+        purpose: 'login'
+      });
+
+      if (response.data.success) {
+        // Save tenant slug for next time
+        localStorage.setItem('lastTenantSlug', tenantSlug);
+
+        // Set new data
+        localStorage.setItem('adminToken', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+
+        // Store tenant data for localization
+        if (response.data.tenant) {
+          localStorage.setItem('tenant', JSON.stringify(response.data.tenant));
+        }
+
+        console.log('Navigating to dashboard...');
+        navigate('/dashboard');
+      }
+    } catch (err) {
+      console.error('2FA verification error:', err);
+      setError(err.response?.data?.message || 'Verification failed');
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="login-container">
       <div className="login-box">
         <div className="brand-logo">HairVia</div>
         <h1>Welcome Back</h1>
         <p className="subtitle">Your Salon, Elevated</p>
-        
+
         {error && <div className="error-message">{error}</div>}
-        
-        <form onSubmit={handleLogin}>
+
+        {showTwoFactor ? (
+          <form onSubmit={handleVerify2FA}>
+            <div className="form-group">
+              <label>Verification Code</label>
+              <input
+                type="text"
+                value={twoFactorCode}
+                onChange={(e) => setTwoFactorCode(e.target.value)}
+                placeholder="Enter 6-digit code"
+                maxLength="6"
+                required
+                autoFocus
+                style={{ fontSize: '24px', textAlign: 'center', letterSpacing: '8px' }}
+              />
+              <small style={{ color: '#666', fontSize: '12px', marginTop: '8px', display: 'block' }}>
+                Check your SMS/Email for the verification code
+              </small>
+            </div>
+
+            <button type="submit" disabled={loading}>
+              {loading ? 'Verifying...' : 'Verify Code'}
+            </button>
+
+            <button 
+              type="button" 
+              onClick={() => {
+                setShowTwoFactor(false);
+                setTwoFactorCode('');
+                setError('');
+              }}
+              style={{ marginTop: '10px', background: '#6b7280' }}
+            >
+              Back to Login
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleLogin}>
           <div className="form-group">
             <label>Email</label>
             <input
@@ -98,15 +182,17 @@ export default function Login() {
             </small>
           </div>
 
-          <button type="submit" disabled={loading}>
-            {loading ? 'Signing in...' : 'Sign In'}
-          </button>
-        </form>
+            <button type="submit" disabled={loading}>
+              {loading ? 'Signing in...' : 'Sign In'}
+            </button>
+          </form>
+        )}
 
-        <div className="quick-login" style={{ marginTop: '20px', padding: '15px', background: '#f5f5f5', borderRadius: '8px' }}>
+        {!showTwoFactor && (
+          <div className="quick-login" style={{ marginTop: '20px', padding: '15px', background: '#f5f5f5', borderRadius: '8px' }}>
           <p style={{ fontSize: '12px', color: '#666', marginBottom: '10px' }}>Quick Test Login:</p>
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-            <button 
+            <button
               type="button"
               onClick={() => {
                 setEmail('owner@luxuryhair.com');
@@ -117,7 +203,7 @@ export default function Login() {
             >
               Premium
             </button>
-            <button 
+            <button
               type="button"
               onClick={() => {
                 setEmail('owner@elitestyles.com');
@@ -128,7 +214,7 @@ export default function Login() {
             >
               Pro
             </button>
-            <button 
+            <button
               type="button"
               onClick={() => {
                 setEmail('owner@basicbeauty.com');
@@ -140,7 +226,11 @@ export default function Login() {
               Free
             </button>
           </div>
+          <p style={{ fontSize: '11px', color: '#999', marginTop: '8px' }}>
+            Note: 2FA code will be logged to console in development
+          </p>
         </div>
+        )}
 
         <div className="register-link">
           <p>Don't have an account? Register your salon first via API</p>
