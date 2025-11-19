@@ -28,6 +28,34 @@ const clientSchema = new mongoose.Schema({
     type: String,
     select: false  // Don't include password in queries by default
   },
+  
+  // Account Status & Verification
+  accountStatus: {
+    type: String,
+    enum: ['active', 'pending-verification', 'suspended'],
+    default: 'pending-verification'
+  },
+  phoneVerified: {
+    type: Boolean,
+    default: false
+  },
+  emailVerified: {
+    type: Boolean,
+    default: false
+  },
+  verifiedAt: Date,
+  
+  // Two-Factor Authentication
+  twoFactorEnabled: {
+    type: Boolean,
+    default: true
+  },
+  twoFactorMethod: {
+    type: String,
+    enum: ['sms', 'email', 'whatsapp'],
+    default: 'sms'
+  },
+  
   category: {
     type: String,
     enum: ['new', 'vip', 'usual', 'longtime-no-see'],

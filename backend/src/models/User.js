@@ -48,9 +48,30 @@ const userSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['active', 'blocked', 'inactive'],
-    default: 'active'
+    enum: ['active', 'blocked', 'inactive', 'pending-verification'],
+    default: 'pending-verification'
   },
+  
+  // Two-Factor Authentication
+  twoFactorEnabled: {
+    type: Boolean,
+    default: true // Enabled by default for security
+  },
+  twoFactorMethod: {
+    type: String,
+    enum: ['sms', 'email', 'whatsapp'],
+    default: 'sms'
+  },
+  phoneVerified: {
+    type: Boolean,
+    default: false
+  },
+  emailVerified: {
+    type: Boolean,
+    default: false
+  },
+  verifiedAt: Date,
+  
   lastLogin: Date,
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,

@@ -18,7 +18,7 @@ const generateRefreshToken = (id) => {
 
 exports.register = async (req, res) => {
   try {
-    const { businessName, email, phone, password, firstName, lastName, country, tenantSlug, role } = req.body;
+    const { businessName, email, phone, password, firstName, lastName, country, tenantSlug, role, twoFactorMethod } = req.body;
 
     let tenant;
     let isNewTenant = false;
@@ -53,7 +53,16 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Create user
+    // Check if user already exists
+    const existingUser = await User.findOne({ email, tenantId: tenant._id });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'User with this email already exists'
+      });
+    }
+
+    // Create user with pending verification status
     const user = await User.create({
       tenantId: tenant._id,
       email,
@@ -61,29 +70,52 @@ exports.register = async (req, res) => {
       password,
       firstName,
       lastName,
-      role: role || (isNewTenant ? 'owner' : 'stylist')
+      role: role || (isNewTenant ? 'owner' : 'stylist'),
+      status: 'pending-verification',
+      twoFactorEnabled: true,
+      twoFactorMethod: twoFactorMethod || 'sms'
     });
 
-    const token = generateToken(user._id);
-    const refreshToken = generateRefreshToken(user._id);
+    // Send 2FA code
+    const twoFactorService = require('../services/twoFactorService');
+    const contact = twoFactorMethod === 'email' ? email : phone;
+    
+    const twoFactorResult = await twoFactorService.sendCode({
+      userId: user._id,
+      userModel: 'User',
+      tenantId: tenant._id,
+      method: twoFactorMethod || 'sms',
+      contact,
+      purpose: 'registration',
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent')
+    });
 
     if (isNewTenant) {
-      logger.info(`New tenant registered: ${tenant.businessName}`);
+      logger.info(`New tenant registered: ${tenant.businessName} - Verification pending`);
     } else {
-      logger.info(`New staff member added to ${tenant.businessName}: ${firstName} ${lastName}`);
+      logger.info(`New staff member added to ${tenant.businessName}: ${firstName} ${lastName} - Verification pending`);
     }
 
     res.status(201).json({
       success: true,
-      token,
-      refreshToken,
+      requiresVerification: true,
+      twoFactorId: twoFactorResult.twoFactorId,
+      method: twoFactorResult.method,
+      sentTo: twoFactorResult.sentTo,
+      expiresAt: twoFactorResult.expiresAt,
       user: {
         id: user._id,
         email: user.email,
+        phone: user.phone,
+        firstName: user.firstName,
+        lastName: user.lastName,
         role: user.role,
+        status: user.status,
         tenantId: tenant._id,
         businessName: tenant.businessName
-      }
+      },
+      message: 'Registration successful. Please verify your account with the code sent to your ' + (twoFactorMethod === 'email' ? 'email' : 'phone')
     });
   } catch (error) {
     logger.error(`Registration error: ${error.message}`);
@@ -96,9 +128,9 @@ exports.register = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
-    const { email, password, tenantSlug } = req.body;
+    const { email, password, tenantSlug, twoFactorCode, twoFactorId } = req.body;
 
-    console.log('Login attempt:', { email, tenantSlug });
+    console.log('Login attempt:', { email, tenantSlug, has2FA: !!twoFactorCode });
 
     if (!email || !password) {
       return res.status(400).json({
@@ -152,18 +184,71 @@ exports.login = async (req, res) => {
       });
     }
 
-    if (user.status !== 'active') {
+    // Check if account is pending verification
+    if (user.status === 'pending-verification') {
+      return res.status(403).json({
+        success: false,
+        error: 'PENDING_VERIFICATION',
+        message: 'Please verify your account first',
+        userId: user._id
+      });
+    }
+
+    if (user.status === 'blocked' || user.status === 'inactive') {
       return res.status(403).json({
         success: false,
         message: 'Your account has been blocked. Contact your administrator.'
       });
     }
 
+    // Check if 2FA is enabled
+    if (user.twoFactorEnabled) {
+      // If 2FA code provided, verify it
+      if (twoFactorCode && twoFactorId) {
+        const twoFactorService = require('../services/twoFactorService');
+        const verifyResult = await twoFactorService.verifyCode(twoFactorId, twoFactorCode);
+
+        if (!verifyResult.success) {
+          return res.status(400).json(verifyResult);
+        }
+
+        // 2FA verified, proceed with login
+      } else {
+        // Send 2FA code
+        const twoFactorService = require('../services/twoFactorService');
+        const contact = user.twoFactorMethod === 'email' ? user.email : user.phone;
+        
+        const twoFactorResult = await twoFactorService.sendCode({
+          userId: user._id,
+          userModel: 'User',
+          tenantId: tenant._id,
+          method: user.twoFactorMethod,
+          contact,
+          purpose: 'login',
+          ipAddress: req.ip,
+          userAgent: req.get('user-agent')
+        });
+
+        return res.json({
+          success: true,
+          requires2FA: true,
+          twoFactorId: twoFactorResult.twoFactorId,
+          method: twoFactorResult.method,
+          sentTo: twoFactorResult.sentTo,
+          expiresAt: twoFactorResult.expiresAt,
+          message: 'Verification code sent. Please check your ' + (user.twoFactorMethod === 'email' ? 'email' : 'phone')
+        });
+      }
+    }
+
+    // Update last login
     user.lastLogin = Date.now();
     await user.save();
 
     const token = generateToken(user._id);
     const refreshToken = generateRefreshToken(user._id);
+
+    logger.info(`User logged in: ${user.email}`);
 
     res.json({
       success: true,
@@ -180,7 +265,9 @@ exports.login = async (req, res) => {
         tenantId: tenant._id,
         tenantSlug: tenant.slug,
         businessName: tenant.businessName,
-        subscriptionTier: tenant.subscriptionTier
+        subscriptionTier: tenant.subscriptionTier,
+        twoFactorEnabled: user.twoFactorEnabled,
+        twoFactorMethod: user.twoFactorMethod
       },
       tenant: {
         id: tenant._id,

@@ -39,7 +39,7 @@ exports.getSalons = async (req, res) => {
 // @access  Public
 exports.register = async (req, res) => {
   try {
-    const { firstName, lastName, phone, email, dateOfBirth, password, tenantSlug } = req.body;
+    const { firstName, lastName, phone, email, dateOfBirth, password, tenantSlug, twoFactorMethod } = req.body;
 
     // Validation
     if (!firstName || !lastName || !phone || !password) {
@@ -79,7 +79,7 @@ exports.register = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Create client
+    // Create client with pending verification
     const client = await Client.create({
       tenantId: tenant._id,
       firstName,
@@ -88,10 +88,13 @@ exports.register = async (req, res) => {
       email: email || undefined,
       dateOfBirth: dateOfBirth || undefined,
       password: hashedPassword,
+      accountStatus: 'pending-verification',
       category: 'new',
       totalVisits: 0,
       totalSpent: 0,
       loyaltyPoints: 0,
+      twoFactorEnabled: true,
+      twoFactorMethod: twoFactorMethod || (email ? 'email' : 'sms'),
       marketingConsent: {
         sms: true,
         email: !!email,
@@ -99,19 +102,37 @@ exports.register = async (req, res) => {
       }
     });
 
-    // Generate token
-    const token = generateToken(client._id);
+    // Send 2FA code
+    const twoFactorService = require('../services/twoFactorService');
+    const contact = (twoFactorMethod === 'email' || (!twoFactorMethod && email)) ? email : phone;
+    const method = (twoFactorMethod === 'email' || (!twoFactorMethod && email)) ? 'email' : 'sms';
+    
+    const twoFactorResult = await twoFactorService.sendCode({
+      userId: client._id,
+      userModel: 'Client',
+      tenantId: tenant._id,
+      method,
+      contact,
+      purpose: 'registration',
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent')
+    });
 
     // Remove password from response
     const clientData = client.toObject();
     delete clientData.password;
 
-    logger.info(`New client registered: ${client.phone}`);
+    logger.info(`New client registered: ${client.phone} - Verification pending`);
 
     res.status(201).json({
       success: true,
-      token,
-      data: clientData
+      requiresVerification: true,
+      twoFactorId: twoFactorResult.twoFactorId,
+      method: twoFactorResult.method,
+      sentTo: twoFactorResult.sentTo,
+      expiresAt: twoFactorResult.expiresAt,
+      data: clientData,
+      message: 'Registration successful. Please verify your account with the code sent to your ' + (method === 'email' ? 'email' : 'phone')
     });
   } catch (error) {
     logger.error(`Client registration error: ${error.message}`);
