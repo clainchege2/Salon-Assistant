@@ -25,7 +25,7 @@ describe('Authorization Security Tests', () => {
     tenant = await testSetup.createTestTenant();
 
     // Create users with different roles
-    adminUser = await testSetup.createTestUser(tenant._id, { role: 'admin' });
+    adminUser = await testSetup.createTestUser(tenant._id, { role: 'owner' });
     
     managerUser = await testSetup.createTestUser(tenant._id, {
       role: 'manager',
@@ -60,7 +60,7 @@ describe('Authorization Security Tests', () => {
   });
 
   describe('Role-Based Access Control', () => {
-    test('Admin should access all resources', async () => {
+    test('Owner should access all resources', async () => {
       const endpoints = [
         '/api/v1/users',
         '/api/v1/clients',
@@ -86,7 +86,7 @@ describe('Authorization Security Tests', () => {
       expect(response.status).toBe(403);
     });
 
-    test('Staff should NOT manage bookings', async () => {
+    test('Stylist should NOT manage bookings', async () => {
       const response = await request(app)
         .post('/api/v1/bookings')
         .set('Authorization', `Bearer ${staffToken}`)
@@ -187,11 +187,11 @@ describe('Authorization Security Tests', () => {
   });
 
   describe('Privilege Escalation Prevention', () => {
-    test('Staff cannot promote themselves to admin', async () => {
+    test('Stylist cannot promote themselves to owner', async () => {
       const response = await request(app)
         .put(`/api/v1/users/${staffUser._id}/role`)
         .set('Authorization', `Bearer ${staffToken}`)
-        .send({ role: 'admin' });
+        .send({ role: 'owner' });
 
       expect(response.status).toBe(403);
     });
@@ -218,7 +218,7 @@ describe('Authorization Security Tests', () => {
   });
 
   describe('Delete Operations Authorization', () => {
-    test('Admin can delete users', async () => {
+    test('Owner can delete users', async () => {
       const response = await request(app)
         .delete(`/api/v1/users/${staffUser._id}`)
         .set('Authorization', `Bearer ${adminToken}`);
@@ -242,7 +242,7 @@ describe('Authorization Security Tests', () => {
       expect(response.status).toBe(200);
     });
 
-    test('Staff cannot delete anything', async () => {
+    test('Stylist cannot delete anything', async () => {
       const deleteEndpoints = [
         `/api/v1/clients/${client._id}`,
         `/api/v1/bookings/${booking._id}`,
@@ -260,7 +260,7 @@ describe('Authorization Security Tests', () => {
   });
 
   describe('Report Access Control', () => {
-    test('Admin can access all reports', async () => {
+    test('Owner can access all reports', async () => {
       const response = await request(app)
         .get('/api/v1/reports/financial')
         .set('Authorization', `Bearer ${adminToken}`);
@@ -276,7 +276,7 @@ describe('Authorization Security Tests', () => {
       expect(response.status).toBe(200);
     });
 
-    test('Staff without view_reports cannot access reports', async () => {
+    test('Stylist without view_reports cannot access reports', async () => {
       const response = await request(app)
         .get('/api/v1/reports/dashboard')
         .set('Authorization', `Bearer ${staffToken}`);
@@ -296,7 +296,7 @@ describe('Authorization Security Tests', () => {
   });
 
   describe('Data Export Authorization', () => {
-    test('Admin can export data', async () => {
+    test('Owner can export data', async () => {
       const response = await request(app)
         .get('/api/v1/reports/bookings/export')
         .set('Authorization', `Bearer ${adminToken}`);
@@ -312,7 +312,7 @@ describe('Authorization Security Tests', () => {
       expect(response.status).toBe(200);
     });
 
-    test('Staff cannot export data', async () => {
+    test('Stylist cannot export data', async () => {
       const response = await request(app)
         .get('/api/v1/reports/bookings/export')
         .set('Authorization', `Bearer ${staffToken}`);

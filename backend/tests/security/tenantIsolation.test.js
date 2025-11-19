@@ -26,8 +26,8 @@ describe('Tenant Isolation Security Tests', () => {
     await testSetup.cleanup();
 
     // Create two separate tenants
-    tenant1 = await testSetup.createTestTenant({ name: 'Salon 1' });
-    tenant2 = await testSetup.createTestTenant({ name: 'Salon 2' });
+    tenant1 = await testSetup.createTestTenant({ businessName: 'Salon 1' });
+    tenant2 = await testSetup.createTestTenant({ businessName: 'Salon 2' });
 
     // Create users for each tenant
     user1 = await testSetup.createTestUser(tenant1._id);

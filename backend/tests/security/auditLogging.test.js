@@ -154,7 +154,7 @@ describe('Audit Logging Security Tests', () => {
 
   describe('Sensitive Operations Logging', () => {
     test('Should log user deletion with CRITICAL risk', async () => {
-      const staffUser = await testSetup.createTestUser(tenant._id, { role: 'staff' });
+      const staffUser = await testSetup.createTestUser(tenant._id, { role: 'stylist' });
 
       await request(app)
         .delete(`/api/v1/users/${staffUser._id}`)
@@ -172,7 +172,7 @@ describe('Audit Logging Security Tests', () => {
     });
 
     test('Should log permission changes', async () => {
-      const staffUser = await testSetup.createTestUser(tenant._id, { role: 'staff' });
+      const staffUser = await testSetup.createTestUser(tenant._id, { role: 'stylist' });
 
       await request(app)
         .put(`/api/v1/users/${staffUser._id}/permissions`)
@@ -193,7 +193,7 @@ describe('Audit Logging Security Tests', () => {
     });
 
     test('Should log role changes', async () => {
-      const staffUser = await testSetup.createTestUser(tenant._id, { role: 'staff' });
+      const staffUser = await testSetup.createTestUser(tenant._id, { role: 'stylist' });
 
       await request(app)
         .put(`/api/v1/users/${staffUser._id}/role`)
