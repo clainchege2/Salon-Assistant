@@ -52,6 +52,7 @@ app.use('/api/v1/messages', require('./routes/messages'));
 app.use('/api/v1/tenants', require('./routes/tenants'));
 app.use('/api/v1/admin', require('./routes/admin'));
 app.use('/api/v1/reports', require('./routes/reports'));
+// app.use('/api/v1/audit-logs', require('./routes/auditLogs')); // Temporarily disabled for testing
 app.use('/api/analytics', require('./routes/analytics'));
 
 // Root route - API info

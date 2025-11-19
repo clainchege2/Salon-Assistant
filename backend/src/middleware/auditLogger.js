@@ -292,3 +292,11 @@ exports.getResourceHistory = async (req, res) => {
     });
   }
 };
+
+
+// Simple wrapper for backward compatibility
+const auditLogger = (action, details = {}) => {
+  return exports.auditLog(action, details);
+};
+
+module.exports = auditLogger;

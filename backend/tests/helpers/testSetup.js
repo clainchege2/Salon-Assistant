@@ -65,10 +65,10 @@ class TestSetup {
    */
   async createTestTenant(overrides = {}) {
     const tenantData = {
-      name: 'Test Salon',
+      businessName: 'Test Salon',
       slug: `test-salon-${Date.now()}`,
-      email: 'test@testsalon.com',
-      phone: '+254700000000',
+      contactEmail: 'test@testsalon.com',
+      contactPhone: '+254700000000',
       address: {
         street: '123 Test Street',
         city: 'Test City',
@@ -100,7 +100,7 @@ class TestSetup {
       email: `testuser${Date.now()}@test.com`,
       password: await bcrypt.hash('password123', 10),
       phone: '+254700000001',
-      role: 'admin',
+      role: 'owner',
       permissions: {
         view_bookings: true,
         manage_bookings: true,
@@ -220,7 +220,7 @@ class TestSetup {
    */
   async createLimitedUser(tenantId, permissions = {}) {
     return this.createTestUser(tenantId, {
-      role: 'staff',
+      role: 'stylist',
       permissions: {
         view_bookings: false,
         manage_bookings: false,
