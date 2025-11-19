@@ -188,8 +188,8 @@ exports.updateBooking = async (req, res) => {
     if (updates.status === 'completed') {
       updates.completedAt = Date.now();
       
-      // Update client stats
-      const client = await Client.findById(booking.clientId);
+      // Update client stats (with tenant isolation)
+      const client = await Client.findOne({ _id: booking.clientId, tenantId: req.tenantId });
       if (client) {
         client.totalVisits += 1;
         client.lastVisit = new Date();

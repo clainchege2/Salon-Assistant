@@ -8,11 +8,12 @@ const {
   getSalons
 } = require('../controllers/clientAuthController');
 const { protectClient } = require('../middleware/clientAuth');
+const { readLimiter } = require('../middleware/security');
 
 const router = express.Router();
 
-// Public routes
-router.get('/salons', getSalons);
+// Public routes with rate limiting
+router.get('/salons', readLimiter, getSalons); // Add rate limiting
 router.post('/register', register);
 router.post('/login', login);
 

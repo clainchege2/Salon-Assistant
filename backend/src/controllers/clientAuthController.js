@@ -16,13 +16,39 @@ const generateToken = (id) => {
 // @access  Public
 exports.getSalons = async (req, res) => {
   try {
-    const salons = await Tenant.find({ status: 'active' })
-      .select('businessName slug address phone email')
-      .sort({ businessName: 1 });
+    const { search, limit = 20, page = 1 } = req.query;
+    
+    // Build query
+    const query = { status: 'active' };
+    
+    // Add search filter if provided
+    if (search && search.length >= 2) {
+      query.$or = [
+        { businessName: { $regex: search, $options: 'i' } },
+        { slug: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    // Pagination
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const maxLimit = Math.min(parseInt(limit), 50); // Cap at 50
+    
+    // Get salons with minimal info
+    const salons = await Tenant.find(query)
+      .select('businessName slug') // Only essential fields
+      .sort({ businessName: 1 })
+      .limit(maxLimit)
+      .skip(skip);
+
+    // Get total count for pagination
+    const total = await Tenant.countDocuments(query);
 
     res.json({
       success: true,
       count: salons.length,
+      total,
+      page: parseInt(page),
+      pages: Math.ceil(total / maxLimit),
       data: salons
     });
   } catch (error) {

@@ -84,9 +84,16 @@ exports.createCommunication = async (req, res) => {
   try {
     const { clientId, messageType, type, channel, message, template, templateData, relatedBookingId, subject } = req.body;
     
-    // Check if client is blocked
-    const client = await Client.findById(clientId);
-    if (client?.communicationStatus?.blocked) {
+    // Check if client is blocked (with tenant isolation)
+    const client = await Client.findOne({ _id: clientId, tenantId: req.tenantId });
+    if (!client) {
+      return res.status(404).json({
+        success: false,
+        message: 'Client not found'
+      });
+    }
+    
+    if (client.communicationStatus?.blocked) {
       return res.status(403).json({
         success: false,
         message: 'Cannot send message to blocked client'
