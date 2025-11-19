@@ -22,6 +22,21 @@ export default function Bookings() {
 
   useEffect(() => {
     fetchBookings();
+    
+    // Check if there's a booking to highlight from URL params
+    const params = new URLSearchParams(window.location.search);
+    const highlightId = params.get('highlight');
+    if (highlightId) {
+      // Wait for bookings to load, then scroll to and highlight the booking
+      setTimeout(() => {
+        const element = document.getElementById(`booking-${highlightId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          element.classList.add('highlight-booking');
+          setTimeout(() => element.classList.remove('highlight-booking'), 3000);
+        }
+      }, 500);
+    }
   }, []);
 
   useEffect(() => {
@@ -145,6 +160,22 @@ export default function Bookings() {
         { status: 'confirmed' },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      
+      // Auto-resolve related communication if pending
+      const pendingCommId = localStorage.getItem('pendingResolveCommId');
+      if (pendingCommId) {
+        try {
+          await axios.put(
+            `http://localhost:5000/api/v1/communications/${pendingCommId}/resolve`,
+            {},
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          localStorage.removeItem('pendingResolveCommId');
+        } catch (err) {
+          console.error('Failed to auto-resolve communication:', err);
+        }
+      }
+      
       fetchBookings();
       setConfirmModal({ show: false, booking: null });
       setSuccessMessage('✅ Booking confirmed successfully!');
@@ -321,7 +352,7 @@ export default function Bookings() {
             </thead>
             <tbody>
               {filteredBookings.map(booking => (
-                <tr key={booking._id}>
+                <tr key={booking._id} id={`booking-${booking._id}`}>
                   <td>
                     <div className="client-cell">
                       <strong>{booking.clientId?.firstName} {booking.clientId?.lastName}</strong>

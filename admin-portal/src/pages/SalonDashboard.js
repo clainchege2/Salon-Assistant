@@ -16,6 +16,7 @@ export default function SalonDashboard() {
   const [pendingSuggestionsCount, setPendingSuggestionsCount] = useState(0);
   const [lowStockCount, setLowStockCount] = useState(0);
   const [pendingBookingsCount, setPendingBookingsCount] = useState(0);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const [unreadFeedbackCount, setUnreadFeedbackCount] = useState(0);
   const [upcomingBirthdaysCount, setUpcomingBirthdaysCount] = useState(0);
   const [messageModal, setMessageModal] = useState({
@@ -166,9 +167,15 @@ export default function SalonDashboard() {
       const pendingBookings = bookingsRes.data.data?.filter(b => b.status === 'pending') || [];
       setPendingBookingsCount(pendingBookings.length);
 
-      // Fetch unread feedback count and upcoming birthdays for communications
+      // Fetch unread messages, feedback count and upcoming birthdays for communications
       if (user?.role === 'owner' || user?.permissions?.canViewCommunications) {
         try {
+          // Fetch unread messages
+          const messagesRes = await axios.get('http://localhost:5000/api/v1/communications', config);
+          const unreadMessages = messagesRes.data.data?.filter(m => !m.readAt || m.status === 'pending') || [];
+          setUnreadMessagesCount(unreadMessages.length);
+
+          // Fetch unread feedback
           const feedbackRes = await axios.get('http://localhost:5000/api/v1/communications/feedback', config);
           const unreadCount = feedbackRes.data.data?.filter(f => f.requiresAction && !f.response?.text).length || 0;
           setUnreadFeedbackCount(unreadCount);
@@ -471,14 +478,15 @@ export default function SalonDashboard() {
           <button
             className="quick-action-btn"
             onClick={() => {
-              setUnreadFeedbackCount(0); // Clear badge immediately
+              setUnreadMessagesCount(0); // Clear messages badge
+              setUnreadFeedbackCount(0); // Clear feedback badge
               setUpcomingBirthdaysCount(0); // Clear birthday badge
               navigate('/communications');
             }}
           >
             <span className="btn-emoji">💬</span> Comms
-            {(unreadFeedbackCount + upcomingBirthdaysCount) > 0 && (
-              <span className="notification-badge">{unreadFeedbackCount + upcomingBirthdaysCount}</span>
+            {(unreadMessagesCount + unreadFeedbackCount + upcomingBirthdaysCount) > 0 && (
+              <span className="notification-badge">{unreadMessagesCount + unreadFeedbackCount + upcomingBirthdaysCount}</span>
             )}
           </button>
         ) : user?.role === 'owner' && subscriptionTier === 'free' && (

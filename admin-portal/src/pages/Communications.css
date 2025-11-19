@@ -306,6 +306,24 @@
   background: #d97706;
 }
 
+.btn-booking {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-booking:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
 .btn-danger {
   background: #ef4444;
   color: white;
@@ -694,6 +712,10 @@
 
 .toast-error {
   background: #ef4444;
+}
+
+.toast-info {
+  background: #3b82f6;
 }
 
 @keyframes slideIn {

@@ -198,6 +198,15 @@ export default function Communications() {
 
   const handleResolve = async (commId) => {
     try {
+      const comm = communications.find(c => c._id === commId);
+      
+      // Check if reply is needed for incoming messages
+      if (comm && comm.direction === 'incoming' && !comm.status.includes('replied')) {
+        showToast('Please reply to this message before resolving', 'error');
+        setSelectedComm(commId);
+        return;
+      }
+
       const token = localStorage.getItem('adminToken');
       await axios.put(
         `http://localhost:5000/api/v1/communications/${commId}/resolve`,
@@ -598,12 +607,51 @@ export default function Communications() {
                       )}
 
                       {comm.requiresAction && (
-                        <button 
-                          className="btn-success"
-                          onClick={() => handleResolve(comm._id)}
-                        >
-                          Resolve
-                        </button>
+                        <>
+                          {(comm.bookingId || 
+                            comm.messageType === 'confirmation' || 
+                            comm.type === 'confirmation' || 
+                            comm.message?.toLowerCase().includes('pending confirmation') ||
+                            comm.message?.toLowerCase().includes('status: pending') ||
+                            comm.message?.toLowerCase().includes('booking') ||
+                            comm.message?.toLowerCase().includes('appointment')) ? (
+                            <button 
+                              className="btn-booking"
+                              onClick={() => {
+                                // Store the communication ID to auto-resolve after booking confirmation
+                                localStorage.setItem('pendingResolveCommId', comm._id);
+                                const bookingId = comm.bookingId?._id || comm.bookingId;
+                                if (bookingId) {
+                                  navigate(`/bookings?highlight=${bookingId}`);
+                                } else {
+                                  navigate('/bookings');
+                                }
+                              }}
+                              title="Confirm booking to resolve"
+                            >
+                              ✓ Confirm Booking to Resolve
+                            </button>
+                          ) : comm.direction === 'incoming' && !comm.status.includes('replied') ? (
+                            <button 
+                              className="btn-warning"
+                              onClick={() => {
+                                setSelectedComm(comm._id);
+                                showToast('Please reply to this message before resolving', 'info');
+                              }}
+                              title="Reply required before resolving"
+                            >
+                              💬 Reply to Resolve
+                            </button>
+                          ) : (
+                            <button 
+                              className="btn-success"
+                              onClick={() => handleResolve(comm._id)}
+                              title="Mark as resolved"
+                            >
+                              ✓ Resolve
+                            </button>
+                          )}
+                        </>
                       )}
 
                       {comm.direction === 'incoming' && comm.messageType === 'complaint' && (
