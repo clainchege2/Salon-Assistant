@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "jest --coverage"
+    "test": "jest --coverage --runInBand",
+    "test:security": "jest tests/security --runInBand",
+    "test:watch": "jest --watch"
   },
   "dependencies": {
     "express": "^4.18.2",
