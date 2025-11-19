@@ -34,7 +34,8 @@ describe('Authentication Security Tests', () => {
         .post('/api/v1/auth/login')
         .send({
           email: user.email,
-          password: 'password123'
+          password: 'password123',
+          tenantSlug: tenant.slug
         });
 
       expect(response.status).toBe(200);
@@ -47,7 +48,8 @@ describe('Authentication Security Tests', () => {
         .post('/api/v1/auth/login')
         .send({
           email: 'wrong@email.com',
-          password: 'password123'
+          password: 'password123',
+          tenantSlug: tenant.slug
         });
 
       expect(response.status).toBe(401);
@@ -58,7 +60,8 @@ describe('Authentication Security Tests', () => {
         .post('/api/v1/auth/login')
         .send({
           email: user.email,
-          password: 'wrongpassword'
+          password: 'wrongpassword',
+          tenantSlug: tenant.slug
         });
 
       expect(response.status).toBe(401);
@@ -71,7 +74,8 @@ describe('Authentication Security Tests', () => {
         .post('/api/v1/auth/login')
         .send({
           email: user.email,
-          password: 'password123'
+          password: 'password123',
+          tenantSlug: tenant.slug
         });
 
       expect(response.status).toBe(403);
@@ -84,7 +88,8 @@ describe('Authentication Security Tests', () => {
           .post('/api/v1/auth/login')
           .send({
             email: user.email,
-            password: 'wrongpassword'
+            password: 'wrongpassword',
+            tenantSlug: tenant.slug
           });
       }
 
@@ -99,7 +104,8 @@ describe('Authentication Security Tests', () => {
           .post('/api/v1/auth/login')
           .send({
             email: user.email,
-            password: 'wrongpassword'
+            password: 'wrongpassword',
+            tenantSlug: tenant.slug
           });
       }
 
@@ -107,7 +113,8 @@ describe('Authentication Security Tests', () => {
         .post('/api/v1/auth/login')
         .send({
           email: user.email,
-          password: 'password123'
+          password: 'password123',
+          tenantSlug: tenant.slug
         });
 
       expect(response.status).toBe(403);
@@ -207,7 +214,8 @@ describe('Authentication Security Tests', () => {
         .post('/api/v1/auth/login')
         .send({
           email: user.email,
-          password: 'password123'
+          password: 'password123',
+          tenantSlug: tenant.slug
         });
 
       expect(response.status).toBe(200);
@@ -221,7 +229,8 @@ describe('Authentication Security Tests', () => {
         .post('/api/v1/auth/login')
         .send({
           email: user.email,
-          password: 'password123'
+          password: 'password123',
+          tenantSlug: tenant.slug
         });
 
       const response = await request(app)
@@ -311,7 +320,8 @@ describe('Authentication Security Tests', () => {
             .post('/api/v1/auth/login')
             .send({
               email: user.email,
-              password: 'wrongpassword'
+              password: 'wrongpassword',
+              tenantSlug: tenant.slug
             })
         );
       }
