@@ -19,6 +19,7 @@ router.post('/login', login);
 
 // Protected routes
 router.get('/me', protectClient, getMe);
+router.get('/profile', protectClient, getMe); // Alias for /me
 router.put('/profile', protectClient, updateProfile);
 router.put('/change-password', protectClient, changePassword);
 

@@ -29,16 +29,43 @@ export default function Profile() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const clientData = JSON.parse(localStorage.getItem('clientData'));
-    setClient(clientData);
-    setFormData({
-      firstName: clientData.firstName || '',
-      lastName: clientData.lastName || '',
-      email: clientData.email || '',
-      dateOfBirth: clientData.dateOfBirth ? clientData.dateOfBirth.split('T')[0] : '',
-      gender: clientData.gender || ''
-    });
+    fetchClientProfile();
   }, []);
+
+  const fetchClientProfile = async () => {
+    try {
+      const token = localStorage.getItem('clientToken');
+      const response = await axios.get(
+        `${process.env.REACT_APP_API_URL}/api/v1/client-auth/profile`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      const clientData = response.data.data;
+      localStorage.setItem('clientData', JSON.stringify(clientData));
+      setClient(clientData);
+      setFormData({
+        firstName: clientData.firstName || '',
+        lastName: clientData.lastName || '',
+        email: clientData.email || '',
+        dateOfBirth: clientData.dateOfBirth ? clientData.dateOfBirth.split('T')[0] : '',
+        gender: clientData.gender || ''
+      });
+    } catch (err) {
+      console.error('Error fetching profile:', err);
+      // Fallback to localStorage if API fails
+      const clientData = JSON.parse(localStorage.getItem('clientData'));
+      if (clientData) {
+        setClient(clientData);
+        setFormData({
+          firstName: clientData.firstName || '',
+          lastName: clientData.lastName || '',
+          email: clientData.email || '',
+          dateOfBirth: clientData.dateOfBirth ? clientData.dateOfBirth.split('T')[0] : '',
+          gender: clientData.gender || ''
+        });
+      }
+    }
+  };
 
   useEffect(() => {
     const fetchSalonInfo = async () => {
