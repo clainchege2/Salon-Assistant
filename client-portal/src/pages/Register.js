@@ -5,6 +5,7 @@ import SalonSelector from '../components/SalonSelector';
 import './Register.css';
 
 export default function Register() {
+  const [step, setStep] = useState(1); // 1: registration, 2: verification
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -14,6 +15,12 @@ export default function Register() {
     password: '',
     confirmPassword: '',
     tenantSlug: ''
+  });
+  const [verificationData, setVerificationData] = useState({
+    twoFactorId: '',
+    code: '',
+    sentTo: '',
+    method: ''
   });
   const [salons, setSalons] = useState([]);
   const [error, setError] = useState('');
@@ -67,11 +74,66 @@ export default function Register() {
         tenantSlug: formData.tenantSlug
       });
 
-      localStorage.setItem('clientToken', response.data.token);
-      localStorage.setItem('clientData', JSON.stringify(response.data.data));
-      navigate('/dashboard');
+      // Check if verification is required
+      if (response.data.requiresVerification) {
+        setVerificationData({
+          twoFactorId: response.data.twoFactorId,
+          code: '',
+          sentTo: response.data.sentTo,
+          method: response.data.method
+        });
+        setStep(2);
+        setLoading(false);
+      } else {
+        // Direct login (fallback)
+        localStorage.setItem('clientToken', response.data.token);
+        localStorage.setItem('clientData', JSON.stringify(response.data.data));
+        navigate('/dashboard');
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      setLoading(false);
+    }
+  };
+
+  const handleVerification = async (e) => {
+    e.preventDefault();
+    setError(''); // Clear any previous errors
+    setLoading(true);
+
+    try {
+      const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/v1/client-auth/verify`, {
+        twoFactorId: verificationData.twoFactorId,
+        code: verificationData.code
+      });
+
+      // Clear error on success
+      setError('');
+      
+      localStorage.setItem('clientToken', response.data.token);
+      localStorage.setItem('clientData', JSON.stringify(response.data.data));
+      
+      // Small delay to ensure state updates, then redirect
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 100);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Invalid verification code. Please try again.');
+      setLoading(false);
+    }
+  };
+
+  const resendCode = async () => {
+    setError('');
+    setLoading(true);
+
+    try {
+      await axios.post(`${process.env.REACT_APP_API_URL}/api/v1/client-auth/resend`, {
+        twoFactorId: verificationData.twoFactorId
+      });
+      alert('Verification code resent successfully!');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to resend code');
     } finally {
       setLoading(false);
     }
@@ -83,16 +145,23 @@ export default function Register() {
         <div className="register-card">
           <div className="register-header">
             <div className="brand-logo">HairVia</div>
-            <h1>Join Us</h1>
-            <p>Create your account to start booking</p>
+            <h1>{step === 1 ? 'Join Us' : 'Verify Your Account'}</h1>
+            <p>{step === 1 ? 'Create your account to start booking' : `Code sent to ${verificationData.sentTo}`}</p>
           </div>
 
-          {error && <div className="error-message">{error}</div>}
+          {error && (
+            <div className={`error-message ${step === 2 ? 'small' : ''}`}>
+              {error.includes('attempts remaining') 
+                ? error.replace('Invalid code.', '❌').replace('attempts remaining', 'tries left')
+                : error}
+            </div>
+          )}
 
-          {loadingSalons ? (
-            <div className="loading">Loading salons...</div>
-          ) : (
-            <form onSubmit={handleSubmit}>
+          {step === 1 ? (
+            loadingSalons ? (
+              <div className="loading">Loading salons...</div>
+            ) : (
+              <form onSubmit={handleSubmit}>
               <div className="form-group">
                 <label>Select Salon *</label>
                 <SalonSelector
@@ -187,6 +256,44 @@ export default function Register() {
               <button type="submit" className="btn btn-primary" disabled={loading}>
                 {loading ? 'Creating Account...' : '✨ Create Account'}
               </button>
+            </form>
+            )
+          ) : (
+            <form onSubmit={handleVerification}>
+              <div className="form-group">
+                <label>Verification Code *</label>
+                <input
+                  type="text"
+                  value={verificationData.code}
+                  onChange={(e) => {
+                    setVerificationData({
+                      ...verificationData,
+                      code: e.target.value
+                    });
+                    // Clear error when user starts typing
+                    if (error) setError('');
+                  }}
+                  placeholder="Enter 6-digit code"
+                  maxLength="6"
+                  required
+                  autoFocus
+                  style={{ textAlign: 'center', fontSize: '1.5rem', letterSpacing: '0.5rem' }}
+                />
+              </div>
+
+              <button type="submit" className="btn btn-primary" disabled={loading}>
+                {loading ? 'Verifying...' : '✓ Verify & Continue'}
+              </button>
+
+              <div style={{ textAlign: 'center', marginTop: '20px' }}>
+                <p style={{ color: '#6b7280', fontSize: '0.9rem' }}>Didn't receive the code?</p>
+                <button type="button" onClick={resendCode} className="btn-link" disabled={loading}>
+                  Resend Code
+                </button>
+                <button type="button" onClick={() => setStep(1)} className="btn-link">
+                  Change Information
+                </button>
+              </div>
             </form>
           )}
 

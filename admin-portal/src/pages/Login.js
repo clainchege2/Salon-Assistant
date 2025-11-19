@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Toast from '../components/Toast';
 import './Login.css';
 
 export default function Login() {
@@ -12,6 +13,7 @@ export default function Login() {
   const [showTwoFactor, setShowTwoFactor] = useState(false);
   const [twoFactorCode, setTwoFactorCode] = useState('');
   const [tempUserId, setTempUserId] = useState(null);
+  const [toast, setToast] = useState(null);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -25,8 +27,7 @@ export default function Login() {
       const response = await axios.post('http://localhost:5000/api/v1/auth/login', {
         email,
         password,
-        tenantSlug,
-        skipTwoFactor: true // Skip 2FA in development
+        tenantSlug
       });
 
       console.log('Login response:', response.data);
@@ -34,7 +35,7 @@ export default function Login() {
       // Check if 2FA is required
       if (response.data.requires2FA) {
         setShowTwoFactor(true);
-        setTempUserId(response.data.userId);
+        setTempUserId(response.data.twoFactorId); // Use twoFactorId, not userId
         setError('');
         setLoading(false);
         return;
@@ -71,10 +72,13 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/v1/auth/verify-2fa', {
-        userId: tempUserId,
-        code: twoFactorCode,
-        purpose: 'login'
+      // Re-submit login with 2FA code
+      const response = await axios.post('http://localhost:5000/api/v1/auth/login', {
+        email,
+        password,
+        tenantSlug,
+        twoFactorCode,
+        twoFactorId: tempUserId
       });
 
       if (response.data.success) {
@@ -102,6 +106,13 @@ export default function Login() {
 
   return (
     <div className="login-container">
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       <div className="login-box">
         <div className="brand-logo">HairVia</div>
         <h1>Welcome Back</h1>
@@ -233,7 +244,7 @@ export default function Login() {
         )}
 
         <div className="register-link">
-          <p>Don't have an account? Register your salon first via API</p>
+          <p>Don't have an account? <a href="/signup">Sign up here</a></p>
         </div>
       </div>
     </div>

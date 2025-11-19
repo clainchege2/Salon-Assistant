@@ -44,8 +44,7 @@ export default function Login() {
       const response = await axios.post(`${process.env.REACT_APP_API_URL}/api/v1/client-auth/login`, {
         phone,
         password,
-        tenantSlug,
-        skipTwoFactor: true // Skip 2FA in development
+        tenantSlug
       });
 
       // Check if 2FA is required

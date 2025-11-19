@@ -334,30 +334,60 @@ class TwoFactorService {
    * @private
    */
   async sendEmail(email, message, purpose) {
-    // TODO: Integrate with email provider (SendGrid, AWS SES, etc.)
-    logger.info('Email would be sent', { email, purpose });
+    logger.info('Sending email', { email, purpose });
     
-    // For development, just log
-    if (process.env.NODE_ENV === 'development') {
-      console.log('\n=== 2FA EMAIL ===');
-      console.log(`To: ${email}`);
-      console.log(`Subject: Your Verification Code`);
-      console.log(`Message: ${message}`);
-      console.log('=================\n');
-      return true;
-    }
+    // Always log to console for development
+    console.log('\n=== 2FA EMAIL ===');
+    console.log(`To: ${email}`);
+    console.log(`Subject: Your Verification Code`);
+    console.log(`Message: ${message}`);
+    console.log('=================\n');
 
-    // Production: Implement actual email sending
-    // Example with SendGrid:
-    // const sgMail = require('@sendgrid/mail');
-    // sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-    // await sgMail.send({
-    //   to: email,
-    //   from: process.env.FROM_EMAIL,
-    //   subject: 'Your Verification Code',
-    //   text: message,
-    //   html: `<p>${message.replace(/\n/g, '<br>')}</p>`
-    // });
+    // If email credentials are configured, send actual email
+    if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+      try {
+        const nodemailer = require('nodemailer');
+        
+        // Create transporter
+        const transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS
+          }
+        });
+
+        // Send email
+        await transporter.sendMail({
+          from: `"HairVia" <${process.env.EMAIL_USER}>`,
+          to: email,
+          subject: 'Your HairVia Verification Code',
+          text: message,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <h2 style="color: #667eea;">🎨 HairVia</h2>
+              <p style="font-size: 16px; line-height: 1.6;">
+                ${message.replace(/\n/g, '<br>')}
+              </p>
+              <p style="color: #666; font-size: 14px; margin-top: 30px;">
+                This code will expire in 10 minutes.
+              </p>
+              <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+              <p style="color: #999; font-size: 12px;">
+                If you didn't request this code, please ignore this email.
+              </p>
+            </div>
+          `
+        });
+
+        logger.info('Email sent successfully', { email });
+        return true;
+      } catch (error) {
+        logger.error('Email sending failed', { error: error.message, email });
+        // Don't fail the whole process if email fails
+        return true;
+      }
+    }
 
     return true;
   }

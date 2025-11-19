@@ -2,6 +2,7 @@ import React, { useState, createContext, useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import SalonDashboard from './pages/SalonDashboard';
 import Login from './pages/Login';
+import Signup from './pages/Signup';
 import AddBooking from './pages/AddBooking';
 import AddClient from './pages/AddClient';
 import Bookings from './pages/Bookings';
@@ -118,6 +119,7 @@ function App() {
       <Router>
         <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
         <Route 
           path="/dashboard" 
           element={

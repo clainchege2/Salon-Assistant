@@ -47,6 +47,7 @@ export default function SalonDashboard() {
     error: '',
     success: ''
   });
+  const [showWelcomeNudge, setShowWelcomeNudge] = useState(false);
   const [notification, setNotification] = useState({
     show: false,
     message: ''
@@ -68,6 +69,13 @@ export default function SalonDashboard() {
   useEffect(() => {
     fetchFreshUserData(); // Fetch fresh user data from backend
     fetchTenantInfo();
+    
+    // Check if this is a new signup
+    const isNewSignup = localStorage.getItem('isNewSignup');
+    if (isNewSignup === 'true') {
+      setShowWelcomeNudge(true);
+      localStorage.removeItem('isNewSignup'); // Clear the flag
+    }
   }, []);
 
   // Fetch data when user is loaded

@@ -18,7 +18,7 @@ const generateRefreshToken = (id) => {
 
 exports.register = async (req, res) => {
   try {
-    const { businessName, email, phone, password, firstName, lastName, country, tenantSlug, role, twoFactorMethod } = req.body;
+    const { businessName, email, phone, password, firstName, lastName, country, tenantSlug, role, twoFactorMethod, subscriptionTier } = req.body;
 
     let tenant;
     let isNewTenant = false;
@@ -36,6 +36,11 @@ exports.register = async (req, res) => {
     } else if (businessName) {
       // Creating new tenant
       const slug = businessName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+      
+      // Validate subscription tier
+      const validTiers = ['free', 'pro', 'premium'];
+      const selectedTier = subscriptionTier && validTiers.includes(subscriptionTier) ? subscriptionTier : 'free';
+      
       tenant = await Tenant.create({
         businessName,
         slug: `${slug}-${Date.now()}`,
@@ -43,7 +48,7 @@ exports.register = async (req, res) => {
         contactPhone: phone,
         country: country || 'Kenya',
         status: 'active',
-        subscriptionTier: 'free'
+        subscriptionTier: selectedTier
       });
       isNewTenant = true;
     } else {
@@ -92,7 +97,12 @@ exports.register = async (req, res) => {
     });
 
     if (isNewTenant) {
-      logger.info(`New tenant registered: ${tenant.businessName} - Verification pending`);
+      logger.info(`New tenant registered: ${tenant.businessName} (${tenant.slug}) - Verification pending`);
+      console.log(`\n🎉 NEW TENANT CREATED`);
+      console.log(`Business: ${tenant.businessName}`);
+      console.log(`Slug: ${tenant.slug}`);
+      console.log(`Owner: ${firstName} ${lastName}`);
+      console.log(`Email: ${email}\n`);
     } else {
       logger.info(`New staff member added to ${tenant.businessName}: ${firstName} ${lastName} - Verification pending`);
     }
@@ -104,6 +114,7 @@ exports.register = async (req, res) => {
       method: twoFactorResult.method,
       sentTo: twoFactorResult.sentTo,
       expiresAt: twoFactorResult.expiresAt,
+      tenantSlug: tenant.slug, // Include slug in response
       user: {
         id: user._id,
         email: user.email,
