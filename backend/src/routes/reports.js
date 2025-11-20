@@ -48,7 +48,7 @@ router.get('/financial',
 // @access  Private (Admin/Manager)
 router.get('/bookings/export', 
   checkPermission('canViewReports'),
-  auditLogger('EXPORT_BOOKINGS_REPORT', { sensitive: true, logReads: true }),
+  auditLog('Report', { sensitive: true, logReads: true }),
   reportController.exportBookingsReport
 );
 
@@ -57,7 +57,7 @@ router.get('/bookings/export',
 // @access  Private (Admin/Manager)
 router.get('/clients/export', 
   checkPermission('canViewReports'),
-  auditLogger('EXPORT_CLIENTS_REPORT', { sensitive: true, logReads: true }),
+  auditLog('Report', { sensitive: true, logReads: true }),
   reportController.exportClientsReport
 );
 
@@ -66,7 +66,7 @@ router.get('/clients/export',
 // @access  Private (Admin/Manager)
 router.get('/financial/export', 
   checkPermission('canViewReports'),
-  auditLogger('EXPORT_FINANCIAL_REPORT', { sensitive: true, logReads: true }),
+  auditLog('Report', { sensitive: true, logReads: true }),
   reportController.exportFinancialReport
 );
 
