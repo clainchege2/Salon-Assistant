@@ -182,6 +182,14 @@ exports.login = async (req, res) => {
       });
     }
 
+    // Check if account is locked
+    if (user.accountLockedUntil && user.accountLockedUntil > Date.now()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Account is temporarily locked due to multiple failed login attempts. Please try again later.'
+      });
+    }
+
     // Compare password - use bcrypt directly for compatibility
     console.log('Comparing password...');
     const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -189,10 +197,35 @@ exports.login = async (req, res) => {
     
     if (!isPasswordValid) {
       console.log('Password mismatch');
+      
+      // Track failed login attempt
+      user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
+      user.lastFailedLogin = Date.now();
+      
+      // Lock account after 5 failed attempts
+      if (user.failedLoginAttempts >= 5) {
+        user.accountLockedUntil = Date.now() + 15 * 60 * 1000; // Lock for 15 minutes
+        await user.save();
+        
+        return res.status(403).json({
+          success: false,
+          message: 'Account locked due to multiple failed login attempts. Please try again in 15 minutes.'
+        });
+      }
+      
+      await user.save();
+      
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
       });
+    }
+    
+    // Reset failed login attempts on successful login
+    if (user.failedLoginAttempts > 0) {
+      user.failedLoginAttempts = 0;
+      user.accountLockedUntil = null;
+      user.lastFailedLogin = null;
     }
 
     // Check if account is pending verification
@@ -387,6 +420,26 @@ exports.refreshToken = async (req, res) => {
   }
 };
 
+
+// Logout user
+exports.logout = async (req, res) => {
+  try {
+    // In a stateless JWT system, logout is handled client-side by removing the token
+    // But we can log the event for audit purposes
+    logger.info(`User logged out: ${req.user.email}`);
+    
+    res.json({
+      success: true,
+      message: 'Logged out successfully'
+    });
+  } catch (error) {
+    logger.error(`Logout error: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
 
 // Get current logged in user
 exports.getMe = async (req, res) => {

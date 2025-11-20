@@ -98,7 +98,7 @@ class TestSetup {
       firstName: 'Test',
       lastName: 'User',
       email: `testuser${Date.now()}@test.com`,
-      password: await bcrypt.hash('password123', 10),
+      password: 'password123', // Don't pre-hash - let model handle it
       phone: '+254700000001',
       role: 'owner',
       permissions: {
@@ -133,7 +133,7 @@ class TestSetup {
       lastName: 'Client',
       phone: `+25470000${Date.now().toString().slice(-4)}`,
       email: `testclient${Date.now()}@test.com`,
-      password: await bcrypt.hash('password123', 10),
+      password: 'password123', // Don't pre-hash - let model handle it
       dateOfBirth: new Date('1990-01-01'),
       accountStatus: 'active',
       twoFactorEnabled: false,

@@ -1,30 +1,158 @@
 const express = require('express');
 const router = express.Router();
 const { protect, checkPermission } = require('../middleware/auth');
-const auditLogger = require('../middleware/auditLogger');
+const { auditLog } = require('../middleware/auditLogger');
 
-// Placeholder controller - implement as needed
+const User = require('../models/User');
+const logger = require('../config/logger');
+
+// User controller with tenant isolation
 const userController = {
   getUsers: async (req, res) => {
-    res.status(200).json({ success: true, data: [] });
+    try {
+      const users = await User.find({ tenantId: req.tenantId })
+        .select('-password')
+        .sort({ createdAt: -1 });
+      
+      res.status(200).json({ success: true, data: users });
+    } catch (error) {
+      logger.error('Get users error:', error);
+      res.status(500).json({ success: false, message: 'Server error' });
+    }
   },
+  
   getUser: async (req, res) => {
-    res.status(200).json({ success: true, data: {} });
+    try {
+      const user = await User.findOne({ 
+        _id: req.params.id, 
+        tenantId: req.tenantId 
+      }).select('-password');
+      
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+      
+      res.status(200).json({ success: true, data: user });
+    } catch (error) {
+      logger.error('Get user error:', error);
+      res.status(500).json({ success: false, message: 'Server error' });
+    }
   },
+  
   createUser: async (req, res) => {
-    res.status(201).json({ success: true, data: {} });
+    try {
+      const userData = {
+        ...req.body,
+        tenantId: req.tenantId
+      };
+      
+      const user = await User.create(userData);
+      const userResponse = user.toObject();
+      delete userResponse.password;
+      
+      res.status(201).json({ success: true, data: userResponse });
+    } catch (error) {
+      logger.error('Create user error:', error);
+      res.status(400).json({ success: false, message: error.message });
+    }
   },
+  
   updateUser: async (req, res) => {
-    res.status(200).json({ success: true, data: {} });
+    try {
+      const user = await User.findOne({ 
+        _id: req.params.id, 
+        tenantId: req.tenantId 
+      });
+      
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+      
+      // Update allowed fields
+      const allowedFields = ['firstName', 'lastName', 'email', 'phone', 'status'];
+      allowedFields.forEach(field => {
+        if (req.body[field] !== undefined) {
+          user[field] = req.body[field];
+        }
+      });
+      
+      await user.save();
+      const userResponse = user.toObject();
+      delete userResponse.password;
+      
+      res.status(200).json({ success: true, data: userResponse });
+    } catch (error) {
+      logger.error('Update user error:', error);
+      res.status(400).json({ success: false, message: error.message });
+    }
   },
+  
   updateUserRole: async (req, res) => {
-    res.status(200).json({ success: true, data: {} });
+    try {
+      const user = await User.findOne({ 
+        _id: req.params.id, 
+        tenantId: req.tenantId 
+      });
+      
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+      
+      user.role = req.body.role;
+      await user.save();
+      
+      const userResponse = user.toObject();
+      delete userResponse.password;
+      
+      res.status(200).json({ success: true, data: userResponse });
+    } catch (error) {
+      logger.error('Update user role error:', error);
+      res.status(400).json({ success: false, message: error.message });
+    }
   },
+  
   updateUserPermissions: async (req, res) => {
-    res.status(200).json({ success: true, data: {} });
+    try {
+      const user = await User.findOne({ 
+        _id: req.params.id, 
+        tenantId: req.tenantId 
+      });
+      
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+      
+      user.permissions = { ...user.permissions, ...req.body.permissions };
+      await user.save();
+      
+      const userResponse = user.toObject();
+      delete userResponse.password;
+      
+      res.status(200).json({ success: true, data: userResponse });
+    } catch (error) {
+      logger.error('Update user permissions error:', error);
+      res.status(400).json({ success: false, message: error.message });
+    }
   },
+  
   deleteUser: async (req, res) => {
-    res.status(200).json({ success: true, message: 'User deleted' });
+    try {
+      const user = await User.findOne({ 
+        _id: req.params.id, 
+        tenantId: req.tenantId 
+      });
+      
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+      
+      await user.deleteOne();
+      
+      res.status(200).json({ success: true, message: 'User deleted successfully' });
+    } catch (error) {
+      logger.error('Delete user error:', error);
+      res.status(500).json({ success: false, message: 'Server error' });
+    }
   }
 };
 
@@ -52,7 +180,7 @@ router.get('/:id',
 router.post('/', 
   protect,
   checkPermission('manage_users'),
-  auditLogger('CREATE_USER', { sensitive: true }),
+  auditLog('User', { sensitive: true }),
   userController.createUser
 );
 
@@ -62,7 +190,7 @@ router.post('/',
 router.put('/:id', 
   protect,
   checkPermission('manage_users'),
-  auditLogger('UPDATE_USER', { sensitive: true }),
+  auditLog('User', { sensitive: true }),
   userController.updateUser
 );
 
@@ -72,7 +200,7 @@ router.put('/:id',
 router.put('/:id/role', 
   protect,
   checkPermission('manage_permissions'),
-  auditLogger('UPDATE_USER_ROLE', { sensitive: true, critical: true }),
+  auditLog('User', { sensitive: true, critical: true }),
   userController.updateUserRole
 );
 
@@ -82,7 +210,7 @@ router.put('/:id/role',
 router.put('/:id/permissions', 
   protect,
   checkPermission('manage_permissions'),
-  auditLogger('UPDATE_USER_PERMISSIONS', { sensitive: true, critical: true }),
+  auditLog('User', { sensitive: true, critical: true }),
   userController.updateUserPermissions
 );
 
@@ -92,7 +220,7 @@ router.put('/:id/permissions',
 router.delete('/:id', 
   protect,
   checkPermission('manage_users'),
-  auditLogger('DELETE_USER', { sensitive: true, critical: true }),
+  auditLog('User', { sensitive: true, critical: true }),
   userController.deleteUser
 );
 

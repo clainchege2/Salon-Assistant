@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { protect, checkPermission } = require('../middleware/auth');
 const { enforceTenantIsolation } = require('../middleware/tenantIsolation');
-const auditLogger = require('../middleware/auditLogger');
+const { auditLog } = require('../middleware/auditLogger');
 
 // Apply middleware to all routes
 router.use(protect);

@@ -1,12 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { protect, authorize } = require('../middleware/auth');
-const {
-  getAuditLogs,
-  getAuditSummary,
-  getUserActivity,
-  getResourceHistory
-} = require('../middleware/auditLogger');
+const auditLogger = require('../middleware/auditLogger');
 
 // All audit log routes require authentication
 router.use(protect);
@@ -15,15 +10,15 @@ router.use(protect);
 router.use(authorize('owner', 'manager'));
 
 // Get audit logs with filters
-router.get('/', getAuditLogs);
+router.get('/', auditLogger.getAuditLogs);
 
 // Get audit summary/statistics
-router.get('/summary', getAuditSummary);
+router.get('/summary', auditLogger.getAuditSummary);
 
 // Get specific user's activity
-router.get('/user/:userId', getUserActivity);
+router.get('/user/:userId', auditLogger.getUserActivity);
 
 // Get history for a specific resource
-router.get('/resource/:resource/:resourceId', getResourceHistory);
+router.get('/resource/:resource/:resourceId', auditLogger.getResourceHistory);
 
 module.exports = router;

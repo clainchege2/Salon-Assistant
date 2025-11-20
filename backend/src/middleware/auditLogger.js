@@ -294,9 +294,12 @@ exports.getResourceHistory = async (req, res) => {
 };
 
 
-// Simple wrapper for backward compatibility
-const auditLogger = (action, details = {}) => {
-  return exports.auditLog(action, details);
+// Export all functions
+module.exports = {
+  auditLog: exports.auditLog,
+  auditAuth: exports.auditAuth,
+  getAuditLogs: exports.getAuditLogs,
+  getAuditSummary: exports.getAuditSummary,
+  getUserActivity: exports.getUserActivity,
+  getResourceHistory: exports.getResourceHistory
 };
-
-module.exports = auditLogger;

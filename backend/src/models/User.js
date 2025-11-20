@@ -73,6 +73,14 @@ const userSchema = new mongoose.Schema({
   },
   verifiedAt: Date,
   
+  // Security tracking
+  failedLoginAttempts: {
+    type: Number,
+    default: 0
+  },
+  accountLockedUntil: Date,
+  lastFailedLogin: Date,
+  
   lastLogin: Date,
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,

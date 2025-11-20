@@ -40,7 +40,16 @@ exports.authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
   skipSuccessfulRequests: true,
-  message: 'Too many login attempts, please try again later'
+  message: 'Too many login attempts, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    logger.warn(`Auth rate limit exceeded for IP: ${req.ip}`);
+    res.status(429).json({
+      success: false,
+      message: 'Too many login attempts, please try again later'
+    });
+  }
 });
 
 // Security headers
