@@ -46,3 +46,30 @@ web-build/
 .cache/
 temp/
 tmp/
+
+# Security Testing - DO NOT COMMIT
+seed*.js
+*seed*.js
+test-*.js
+test-*.html
+test-*.ps1
+verify-*.js
+check-*.js
+debug-*.js
+fix-*.js
+migrate-*.js
+create-*.js
+clear-*.js
+cleanup-*.js
+diagnose-*.js
+list-*.js
+register-*.js
+setup.js
+query
+*.backup.js
+temp-*.js
+
+# Exclude test utilities (keep only test suites)
+!backend/tests/**/*.js
+!**/jest.config.js
+!**/test-api.http
