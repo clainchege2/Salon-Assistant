@@ -8,6 +8,7 @@ const {
 } = require('../controllers/bookingController');
 const { protect, checkPermission } = require('../middleware/auth');
 const { enforceTenantIsolation } = require('../middleware/tenantIsolation');
+const { auditLog } = require('../middleware/auditLogger');
 
 const router = express.Router();
 
@@ -18,10 +19,10 @@ router.get('/availability', getAvailableSlots);
 
 router.route('/')
   .get(getBookings)
-  .post(createBooking); // Anyone authenticated can create bookings
+  .post(auditLog('Booking'), createBooking);
 
 router.route('/:id')
-  .put(updateBooking) // Anyone authenticated can update bookings
-  .delete(checkPermission('canDeleteBookings'), deleteBooking);
+  .put(auditLog('Booking'), updateBooking)
+  .delete(checkPermission('canDeleteBookings'), auditLog('Booking', { sensitive: true }), deleteBooking);
 
 module.exports = router;

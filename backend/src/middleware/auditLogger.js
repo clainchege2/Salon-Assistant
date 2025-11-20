@@ -10,6 +10,51 @@ const ACTION_MAP = {
   DELETE: 'DELETE'
 };
 
+// Generate specific action name based on method and resource
+const generateActionName = (method, resource, endpoint) => {
+  const baseAction = ACTION_MAP[method] || method;
+  
+  // Special cases for auth endpoints
+  if (resource === 'Auth') {
+    if (endpoint.includes('/login')) return 'LOGIN_ATTEMPT';
+    if (endpoint.includes('/logout')) return 'LOGOUT';
+    if (endpoint.includes('/register')) return 'REGISTER';
+    if (endpoint.includes('/refresh')) return 'REFRESH_TOKEN';
+    if (endpoint.includes('/permission')) return 'UPDATE_USER_PERMISSIONS';
+    return baseAction;
+  }
+  
+  // Special cases for client auth endpoints
+  if (resource === 'ClientAuth') {
+    if (endpoint.includes('/login')) return 'CLIENT_LOGIN_ATTEMPT';
+    if (endpoint.includes('/register')) return 'CLIENT_REGISTER';
+    if (endpoint.includes('/profile')) return 'UPDATE_CLIENT_PROFILE';
+    if (endpoint.includes('/password')) return 'CHANGE_CLIENT_PASSWORD';
+    return baseAction;
+  }
+  
+  // Special cases for reports
+  if (resource === 'Report' && endpoint.includes('/export')) {
+    if (endpoint.includes('/bookings')) return 'EXPORT_BOOKINGS_REPORT';
+    if (endpoint.includes('/clients')) return 'EXPORT_CLIENTS_REPORT';
+    if (endpoint.includes('/financial')) return 'EXPORT_FINANCIAL_REPORT';
+    return 'EXPORT_REPORT';
+  }
+  
+  // Special cases for user management
+  if (resource === 'User') {
+    if (endpoint.includes('/role')) return 'UPDATE_USER_ROLE';
+    if (endpoint.includes('/permission')) return 'UPDATE_USER_PERMISSIONS';
+    if (method === 'DELETE') return 'DELETE_USER';
+    if (method === 'PUT' || method === 'PATCH') return 'UPDATE_USER';
+    if (method === 'POST') return 'CREATE_USER';
+    return baseAction;
+  }
+  
+  // Generate action name like CREATE_CLIENT, UPDATE_BOOKING, DELETE_SERVICE
+  return `${baseAction}_${resource.toUpperCase()}`;
+};
+
 /**
  * Audit logging middleware
  * Logs all data access and modifications for compliance
@@ -53,12 +98,32 @@ exports.auditLog = (resource, options = {}) => {
         if (!responseSent) return;
         
         const duration = Date.now() - startTime;
-        const action = ACTION_MAP[req.method] || req.method;
+        const endpoint = req.originalUrl || req.url;
+        const action = generateActionName(req.method, resource, endpoint);
         
         // Determine resource ID
         let resourceId = req.params.id;
         if (!resourceId && responseData?.data?._id) {
           resourceId = responseData.data._id;
+        }
+        
+        // Determine risk level based on action and status
+        let riskLevel = 'LOW';
+        let severity = 'LOW';
+        
+        if (res.statusCode >= 400) {
+          riskLevel = 'HIGH';
+          severity = 'HIGH';
+        }
+        
+        if (action === 'DELETE' || options.sensitive) {
+          riskLevel = 'HIGH';
+          severity = 'HIGH';
+        }
+        
+        if (options.critical || resource === 'User' && (action === 'DELETE' || req.url.includes('permission') || req.url.includes('role'))) {
+          riskLevel = 'CRITICAL';
+          severity = 'CRITICAL';
         }
         
         // Prepare audit log entry
@@ -68,6 +133,19 @@ exports.auditLog = (resource, options = {}) => {
           action,
           resource,
           resourceId,
+          riskLevel,
+          severity,
+          statusCode: res.statusCode,
+          ipAddress: req.ip || req.connection?.remoteAddress,
+          userAgent: req.get('user-agent'),
+          responseTime: duration,
+          details: {
+            method: req.method,
+            endpoint: req.originalUrl || req.url,
+            correlationId: req.headers['x-correlation-id'] || `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            resourceId: resourceId, // Also include in details for test compatibility
+            body: req.method !== 'GET' && req.body ? { ...req.body } : undefined
+          },
           metadata: {
             method: req.method,
             endpoint: req.originalUrl || req.url,
@@ -77,6 +155,16 @@ exports.auditLog = (resource, options = {}) => {
             statusCode: res.statusCode
           }
         };
+        
+        // Sanitize sensitive data in details.body
+        if (auditEntry.details.body) {
+          if (auditEntry.details.body.password) {
+            auditEntry.details.body.password = '[REDACTED]';
+          }
+          if (auditEntry.details.body.token) {
+            auditEntry.details.body.token = '[REDACTED]';
+          }
+        }
         
         // Add changes for non-GET requests
         if (req.method !== 'GET' && req.body) {

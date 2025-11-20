@@ -16,30 +16,61 @@ const auditLogSchema = new mongoose.Schema({
   action: {
     type: String,
     required: true,
-    enum: ['CREATE', 'READ', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT', 'EXPORT', 'IMPORT', 'BULK_DELETE', 'BULK_UPDATE'],
     index: true
+    // Dynamic actions like CREATE_CLIENT, UPDATE_BOOKING, DELETE_USER, LOGIN_ATTEMPT, etc.
+    // No enum to allow flexibility
   },
   resource: {
     type: String,
     required: true,
     index: true
-    // e.g., 'Client', 'Booking', 'User', 'Service'
+    // e.g., 'Client', 'Booking', 'User', 'Service', 'Auth'
   },
   resourceId: {
     type: String,
     index: true
     // ID of the resource being accessed
   },
+  // Risk and severity levels
+  riskLevel: {
+    type: String,
+    enum: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'],
+    default: 'LOW',
+    index: true
+  },
+  severity: {
+    type: String,
+    enum: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'],
+    default: 'LOW'
+  },
+  // HTTP response status
+  statusCode: {
+    type: Number,
+    index: true
+  },
+  // Request details
+  ipAddress: String,
+  userAgent: String,
+  responseTime: Number, // Duration in ms
+  // Detailed information
+  details: {
+    method: String,
+    endpoint: String,
+    correlationId: String,
+    body: mongoose.Schema.Types.Mixed,
+    resourceId: String
+  },
   changes: {
     type: mongoose.Schema.Types.Mixed
     // What changed (for UPDATE actions)
   },
+  // Legacy metadata field (for backward compatibility)
   metadata: {
-    method: String, // HTTP method
-    endpoint: String, // API endpoint
+    method: String,
+    endpoint: String,
     userAgent: String,
     ip: String,
-    duration: Number, // Request duration in ms
+    duration: Number,
     statusCode: Number
   },
   errorMessage: String,
@@ -59,6 +90,7 @@ auditLogSchema.index({ tenantId: 1, userId: 1, timestamp: -1 });
 auditLogSchema.index({ tenantId: 1, resource: 1, timestamp: -1 });
 auditLogSchema.index({ tenantId: 1, action: 1, timestamp: -1 });
 auditLogSchema.index({ tenantId: 1, resourceId: 1, timestamp: -1 });
+auditLogSchema.index({ tenantId: 1, riskLevel: 1, timestamp: -1 });
 
 // TTL index for automatic deletion
 auditLogSchema.index({ timestamp: 1 }, { expireAfterSeconds: 7776000 }); // 90 days

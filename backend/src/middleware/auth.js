@@ -18,6 +18,7 @@ exports.protect = async (req, res, next) => {
       });
     }
 
+    // Verify token - this will throw an error if expired or invalid
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const user = await User.findById(decoded.id);
@@ -26,6 +27,15 @@ exports.protect = async (req, res, next) => {
       return res.status(401).json({
         success: false,
         message: 'User not found or inactive'
+      });
+    }
+
+    // Validate that token's tenantId matches user's actual tenantId (prevent token manipulation)
+    if (decoded.tenantId && decoded.tenantId.toString() !== user.tenantId.toString()) {
+      logger.warn(`Token manipulation detected: User ${user._id} token has tenantId ${decoded.tenantId} but user belongs to ${user.tenantId}`);
+      return res.status(403).json({
+        success: false,
+        message: 'Token validation failed'
       });
     }
 
@@ -43,6 +53,25 @@ exports.protect = async (req, res, next) => {
     
     next();
   } catch (error) {
+    // Handle specific JWT errors
+    if (error.name === 'TokenExpiredError') {
+      logger.warn(`Expired token attempt: ${error.message}`);
+      return res.status(401).json({
+        success: false,
+        message: 'Token has expired. Please login again.',
+        error: 'TOKEN_EXPIRED'
+      });
+    }
+    
+    if (error.name === 'JsonWebTokenError') {
+      logger.warn(`Invalid token attempt: ${error.message}`);
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token. Please login again.',
+        error: 'INVALID_TOKEN'
+      });
+    }
+    
     logger.error(`Auth error: ${error.message}`);
     return res.status(401).json({
       success: false,
@@ -64,7 +93,7 @@ exports.authorize = (...roles) => {
 };
 
 exports.checkPermission = (permission) => {
-  return (req, res, next) => {
+  return async (req, res, next) => {
     // Owner has all permissions
     if (req.user.role === 'owner') {
       return next();
@@ -73,6 +102,32 @@ exports.checkPermission = (permission) => {
     // Check if user has the specific permission set to true
     if (req.user.permissions && req.user.permissions[permission] === true) {
       return next();
+    }
+    
+    // Log forbidden access attempt
+    try {
+      const AuditLog = require('../models/AuditLog');
+      await AuditLog.create({
+        tenantId: req.tenantId,
+        userId: req.user._id,
+        action: `${req.method}_${permission}`,
+        resource: 'Permission',
+        riskLevel: 'HIGH',
+        severity: 'HIGH',
+        statusCode: 403,
+        ipAddress: req.ip || req.connection?.remoteAddress,
+        userAgent: req.get('user-agent'),
+        details: {
+          method: req.method,
+          endpoint: req.originalUrl || req.url,
+          correlationId: req.headers['x-correlation-id'] || `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          permission: permission,
+          userRole: req.user.role
+        },
+        errorMessage: 'Permission denied'
+      });
+    } catch (auditError) {
+      console.error('Failed to create audit log:', auditError);
     }
     
     return res.status(403).json({

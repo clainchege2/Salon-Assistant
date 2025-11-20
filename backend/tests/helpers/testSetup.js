@@ -194,7 +194,7 @@ class TestSetup {
   /**
    * Generate JWT token for user
    */
-  generateUserToken(user) {
+  generateUserToken(user, options = {}) {
     return jwt.sign(
       { 
         id: user._id,
@@ -202,7 +202,7 @@ class TestSetup {
         role: user.role
       },
       process.env.JWT_SECRET || 'test-secret',
-      { expiresIn: '1h' }
+      { expiresIn: options.expiresIn || '1h' }
     );
   }
 

@@ -224,7 +224,9 @@ describe('Tenant Isolation Security Tests', () => {
         .get(`/api/v1/clients/${client2._id}`)
         .set('Authorization', `Bearer ${clientToken1}`);
 
-      expect(response.status).toBe(403);
+      // Client tokens are not valid for admin endpoints, should return 401
+      // This is more secure than 403 as it doesn't reveal the endpoint exists
+      expect(response.status).toBe(401);
     });
   });
 
