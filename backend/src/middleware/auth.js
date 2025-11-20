@@ -18,6 +18,7 @@ exports.protect = async (req, res, next) => {
       });
     }
 
+    // Verify token - this will throw an error if expired or invalid
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     const user = await User.findById(decoded.id);
@@ -26,6 +27,15 @@ exports.protect = async (req, res, next) => {
       return res.status(401).json({
         success: false,
         message: 'User not found or inactive'
+      });
+    }
+
+    // Validate that token's tenantId matches user's actual tenantId (prevent token manipulation)
+    if (decoded.tenantId && decoded.tenantId.toString() !== user.tenantId.toString()) {
+      logger.warn(`Token manipulation detected: User ${user._id} token has tenantId ${decoded.tenantId} but user belongs to ${user.tenantId}`);
+      return res.status(403).json({
+        success: false,
+        message: 'Token validation failed'
       });
     }
 
@@ -43,6 +53,25 @@ exports.protect = async (req, res, next) => {
     
     next();
   } catch (error) {
+    // Handle specific JWT errors
+    if (error.name === 'TokenExpiredError') {
+      logger.warn(`Expired token attempt: ${error.message}`);
+      return res.status(401).json({
+        success: false,
+        message: 'Token has expired. Please login again.',
+        error: 'TOKEN_EXPIRED'
+      });
+    }
+    
+    if (error.name === 'JsonWebTokenError') {
+      logger.warn(`Invalid token attempt: ${error.message}`);
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token. Please login again.',
+        error: 'INVALID_TOKEN'
+      });
+    }
+    
     logger.error(`Auth error: ${error.message}`);
     return res.status(401).json({
       success: false,

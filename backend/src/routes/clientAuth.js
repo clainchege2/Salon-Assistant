@@ -8,19 +8,20 @@ const {
   getSalons
 } = require('../controllers/clientAuthController');
 const { protectClient } = require('../middleware/clientAuth');
-const { readLimiter } = require('../middleware/security');
+const { readLimiter, authLimiter } = require('../middleware/security');
+const { auditLog } = require('../middleware/auditLogger');
 
 const router = express.Router();
 
-// Public routes with rate limiting
-router.get('/salons', readLimiter, getSalons); // Add rate limiting
-router.post('/register', register);
-router.post('/login', login);
+// Public routes with rate limiting and audit logging
+router.get('/salons', readLimiter, getSalons);
+router.post('/register', authLimiter, auditLog('ClientAuth'), register);
+router.post('/login', authLimiter, auditLog('ClientAuth'), login);
 
 // Protected routes
 router.get('/me', protectClient, getMe);
 router.get('/profile', protectClient, getMe); // Alias for /me
-router.put('/profile', protectClient, updateProfile);
-router.put('/change-password', protectClient, changePassword);
+router.put('/profile', protectClient, auditLog('ClientAuth'), updateProfile);
+router.put('/change-password', protectClient, auditLog('ClientAuth', { sensitive: true }), changePassword);
 
 module.exports = router;

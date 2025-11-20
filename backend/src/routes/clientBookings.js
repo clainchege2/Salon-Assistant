@@ -10,7 +10,7 @@ const router = express.Router();
 router.use(protectClient);
 
 // @desc    Get services for client's salon
-// @route   GET /api/v1/client/services
+// @route   GET /api/v1/client-bookings/services
 // @access  Private (Client)
 router.get('/services', async (req, res) => {
   try {
@@ -33,9 +33,9 @@ router.get('/services', async (req, res) => {
 });
 
 // @desc    Get client's bookings
-// @route   GET /api/v1/client/bookings
+// @route   GET /api/v1/client-bookings
 // @access  Private (Client)
-router.get('/bookings', async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const bookings = await Booking.find({
       clientId: req.client._id,
@@ -60,9 +60,9 @@ router.get('/bookings', async (req, res) => {
 });
 
 // @desc    Get single booking
-// @route   GET /api/v1/client/bookings/:id
+// @route   GET /api/v1/client-bookings/:id
 // @access  Private (Client)
-router.get('/bookings/:id', async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const booking = await Booking.findOne({
       _id: req.params.id,

@@ -9,10 +9,6 @@ exports.apiLimiter = rateLimit({
   message: 'Too many requests from this IP, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => {
-    // Skip rate limiting in development mode
-    return process.env.NODE_ENV === 'development';
-  },
   handler: (req, res) => {
     logger.warn(`Rate limit exceeded for IP: ${req.ip}, Path: ${req.path}`);
     res.status(429).json({
@@ -28,11 +24,7 @@ exports.readLimiter = rateLimit({
   max: 500, // 500 requests per minute (very lenient)
   message: 'Too many requests, please try again later',
   standardHeaders: true,
-  legacyHeaders: false,
-  skip: (req) => {
-    // Skip rate limiting in development mode
-    return process.env.NODE_ENV === 'development';
-  }
+  legacyHeaders: false
 });
 
 // Stricter rate limiting for auth endpoints

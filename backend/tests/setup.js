@@ -6,7 +6,7 @@
 // Set test environment variables
 process.env.NODE_ENV = 'test';
 process.env.JWT_SECRET = 'test-jwt-secret-key-for-testing-only';
-process.env.MONGO_URI_TEST = process.env.MONGO_URI_TEST || 'mongodb://localhost:27017/salon-test';
+process.env.MONGODB_URI_TEST = process.env.MONGODB_URI_TEST || 'mongodb://localhost:27017/hairvia-test';
 
 // Increase timeout for database operations
 jest.setTimeout(10000);
