@@ -93,7 +93,7 @@ exports.authorize = (...roles) => {
 };
 
 exports.checkPermission = (permission) => {
-  return (req, res, next) => {
+  return async (req, res, next) => {
     // Owner has all permissions
     if (req.user.role === 'owner') {
       return next();
@@ -102,6 +102,32 @@ exports.checkPermission = (permission) => {
     // Check if user has the specific permission set to true
     if (req.user.permissions && req.user.permissions[permission] === true) {
       return next();
+    }
+    
+    // Log forbidden access attempt
+    try {
+      const AuditLog = require('../models/AuditLog');
+      await AuditLog.create({
+        tenantId: req.tenantId,
+        userId: req.user._id,
+        action: `${req.method}_${permission}`,
+        resource: 'Permission',
+        riskLevel: 'HIGH',
+        severity: 'HIGH',
+        statusCode: 403,
+        ipAddress: req.ip || req.connection?.remoteAddress,
+        userAgent: req.get('user-agent'),
+        details: {
+          method: req.method,
+          endpoint: req.originalUrl || req.url,
+          correlationId: req.headers['x-correlation-id'] || `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          permission: permission,
+          userRole: req.user.role
+        },
+        errorMessage: 'Permission denied'
+      });
+    } catch (auditError) {
+      console.error('Failed to create audit log:', auditError);
     }
     
     return res.status(403).json({

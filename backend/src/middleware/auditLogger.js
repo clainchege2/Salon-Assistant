@@ -143,6 +143,7 @@ exports.auditLog = (resource, options = {}) => {
             method: req.method,
             endpoint: req.originalUrl || req.url,
             correlationId: req.headers['x-correlation-id'] || `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            resourceId: resourceId, // Also include in details for test compatibility
             body: req.method !== 'GET' && req.body ? { ...req.body } : undefined
           },
           metadata: {

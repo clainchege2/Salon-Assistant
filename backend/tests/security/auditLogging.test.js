@@ -37,11 +37,16 @@ describe('Audit Logging Security Tests', () => {
 
   describe('Authentication Logging', () => {
     test('Should log successful login', async () => {
+      // Disable 2FA for this test to get a complete login
+      user.twoFactorEnabled = false;
+      await user.save();
+      
       await request(app)
         .post('/api/v1/auth/login')
         .send({
           email: user.email,
-          password: 'password123'
+          password: 'password123',
+          tenantSlug: tenant.slug
         });
 
       await testSetup.wait(100);
@@ -60,7 +65,8 @@ describe('Audit Logging Security Tests', () => {
         .post('/api/v1/auth/login')
         .send({
           email: user.email,
-          password: 'wrongpassword'
+          password: 'wrongpassword',
+          tenantSlug: tenant.slug
         });
 
       await testSetup.wait(100);
@@ -76,11 +82,16 @@ describe('Audit Logging Security Tests', () => {
     });
 
     test('Should log client login', async () => {
+      // Disable 2FA for this test to get a complete login
+      client.twoFactorEnabled = false;
+      await client.save();
+      
       await request(app)
         .post('/api/v1/client-auth/login')
         .send({
           phone: client.phone,
-          password: 'password123'
+          password: 'password123',
+          tenantSlug: tenant.slug
         });
 
       await testSetup.wait(100);
@@ -281,11 +292,16 @@ describe('Audit Logging Security Tests', () => {
     });
 
     test('Should NOT log sensitive data', async () => {
+      // Disable 2FA for this test to get a complete login
+      user.twoFactorEnabled = false;
+      await user.save();
+      
       await request(app)
         .post('/api/v1/auth/login')
         .send({
           email: user.email,
-          password: 'password123'
+          password: 'password123',
+          tenantSlug: tenant.slug
         });
 
       await testSetup.wait(100);

@@ -16,11 +16,11 @@ router.use(protect);
 router.use(enforceTenantIsolation);
 
 router.route('/')
-  .get(getClients)
+  .get(auditLog('Client'), getClients)
   .post(auditLog('Client'), createClient);
 
 router.route('/:id')
-  .get(getClient)
+  .get(auditLog('Client'), getClient)
   .put(auditLog('Client'), updateClient)
   .delete(checkPermission('canDeleteClients'), auditLog('Client', { sensitive: true }), deleteClient);
 

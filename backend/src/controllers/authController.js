@@ -150,32 +150,53 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Find tenant
-    const tenant = await Tenant.findOne({ slug: tenantSlug });
-    console.log('Tenant found:', !!tenant);
-    if (!tenant) {
+    // Find user first (to get tenantId for audit logging even if tenant lookup fails)
+    let user;
+    let tenant;
+    
+    if (tenantSlug) {
+      // Find tenant
+      tenant = await Tenant.findOne({ slug: tenantSlug });
+      console.log('Tenant found:', !!tenant);
+      if (!tenant) {
+        return res.status(401).json({
+          success: false,
+          message: 'Invalid credentials'
+        });
+      }
+
+      if (tenant.status === 'delisted' || tenant.status === 'suspended') {
+        return res.status(403).json({
+          success: false,
+          message: 'Account is not active. Please contact support.'
+        });
+      }
+
+      // Find user for this tenant
+      user = await User.findOne({ 
+        email, 
+        tenantId: tenant._id 
+      }).select('+password');
+    } else {
+      // No tenant slug provided - try to find user by email alone
+      user = await User.findOne({ email }).select('+password');
+      
+      if (user) {
+        // Get the user's tenant
+        tenant = await Tenant.findById(user.tenantId);
+      }
+    }
+
+    console.log('User found:', !!user);
+    if (!user) {
+      console.log('User not found for email:', email);
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
       });
     }
-
-    if (tenant.status === 'delisted' || tenant.status === 'suspended') {
-      return res.status(403).json({
-        success: false,
-        message: 'Account is not active. Please contact support.'
-      });
-    }
-
-    // Find user
-    const user = await User.findOne({ 
-      email, 
-      tenantId: tenant._id 
-    }).select('+password');
-
-    console.log('User found:', !!user);
-    if (!user) {
-      console.log('User not found for email:', email);
+    
+    if (!tenant) {
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
@@ -201,6 +222,34 @@ exports.login = async (req, res) => {
       // Track failed login attempt
       user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
       user.lastFailedLogin = Date.now();
+      
+      // Log failed login attempt for audit
+      try {
+        const AuditLog = require('../models/AuditLog');
+        await AuditLog.create({
+          tenantId: user.tenantId,
+          userId: user._id,
+          action: 'LOGIN_ATTEMPT',
+          resource: 'Auth',
+          riskLevel: 'HIGH',
+          severity: 'HIGH',
+          statusCode: 401,
+          ipAddress: req.ip || req.connection?.remoteAddress,
+          userAgent: req.get('user-agent'),
+          details: {
+            method: req.method,
+            endpoint: req.originalUrl || req.url,
+            correlationId: req.headers['x-correlation-id'] || `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            body: {
+              email: email,
+              password: '[REDACTED]'
+            }
+          },
+          errorMessage: 'Invalid credentials'
+        });
+      } catch (auditError) {
+        console.error('Failed to create audit log:', auditError);
+      }
       
       // Lock account after 5 failed attempts
       if (user.failedLoginAttempts >= 5) {
@@ -293,6 +342,33 @@ exports.login = async (req, res) => {
 
     const token = generateToken(user._id);
     const refreshToken = generateRefreshToken(user._id);
+
+    // Log successful login for audit
+    try {
+      const AuditLog = require('../models/AuditLog');
+      await AuditLog.create({
+        tenantId: user.tenantId,
+        userId: user._id,
+        action: 'LOGIN_ATTEMPT',
+        resource: 'Auth',
+        riskLevel: 'LOW',
+        severity: 'LOW',
+        statusCode: 200,
+        ipAddress: req.ip || req.connection?.remoteAddress,
+        userAgent: req.get('user-agent'),
+        details: {
+          method: req.method,
+          endpoint: req.originalUrl || req.url,
+          correlationId: req.headers['x-correlation-id'] || `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          body: {
+            email: email,
+            password: '[REDACTED]'
+          }
+        }
+      });
+    } catch (auditError) {
+      console.error('Failed to create audit log:', auditError);
+    }
 
     logger.info(`User logged in: ${user.email}`);
 

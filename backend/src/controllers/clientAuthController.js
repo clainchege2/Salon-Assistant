@@ -223,6 +223,34 @@ exports.login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, client.password);
     
     if (!isMatch) {
+      // Log failed login attempt for audit
+      try {
+        const AuditLog = require('../models/AuditLog');
+        await AuditLog.create({
+          tenantId: client.tenantId,
+          userId: client._id,
+          action: 'CLIENT_LOGIN_ATTEMPT',
+          resource: 'ClientAuth',
+          riskLevel: 'HIGH',
+          severity: 'HIGH',
+          statusCode: 401,
+          ipAddress: req.ip || req.connection?.remoteAddress,
+          userAgent: req.get('user-agent'),
+          details: {
+            method: req.method,
+            endpoint: req.originalUrl || req.url,
+            correlationId: req.headers['x-correlation-id'] || `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            body: {
+              phone: phone,
+              password: '[REDACTED]'
+            }
+          },
+          errorMessage: 'Invalid credentials'
+        });
+      } catch (auditError) {
+        console.error('Failed to create audit log:', auditError);
+      }
+      
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials'
@@ -295,6 +323,33 @@ exports.login = async (req, res) => {
 
     // Generate token
     const token = generateToken(client._id);
+
+    // Log successful login for audit
+    try {
+      const AuditLog = require('../models/AuditLog');
+      await AuditLog.create({
+        tenantId: client.tenantId,
+        userId: client._id,
+        action: 'CLIENT_LOGIN_ATTEMPT',
+        resource: 'ClientAuth',
+        riskLevel: 'LOW',
+        severity: 'LOW',
+        statusCode: 200,
+        ipAddress: req.ip || req.connection?.remoteAddress,
+        userAgent: req.get('user-agent'),
+        details: {
+          method: req.method,
+          endpoint: req.originalUrl || req.url,
+          correlationId: req.headers['x-correlation-id'] || `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          body: {
+            phone: phone,
+            password: '[REDACTED]'
+          }
+        }
+      });
+    } catch (auditError) {
+      console.error('Failed to create audit log:', auditError);
+    }
 
     // Remove password from response
     const clientData = client.toObject();

@@ -140,7 +140,7 @@ describe('Authorization Security Tests', () => {
 
     test('Client can view own profile', async () => {
       const response = await request(app)
-        .get('/api/v1/client/profile')
+        .get('/api/v1/client-auth/profile')
         .set('Authorization', `Bearer ${clientToken}`);
 
       expect(response.status).toBe(200);
@@ -149,7 +149,7 @@ describe('Authorization Security Tests', () => {
 
     test('Client can view own bookings', async () => {
       const response = await request(app)
-        .get('/api/v1/client/bookings')
+        .get('/api/v1/client-bookings')
         .set('Authorization', `Bearer ${clientToken}`);
 
       expect(response.status).toBe(200);
