@@ -97,6 +97,18 @@ export default function Clients() {
         headers: { Authorization: `Bearer ${token}` }
       });
       setClients(response.data.data || []);
+      
+      // Mark all new client notifications as read when viewing this page
+      try {
+        await axios.put(
+          'http://localhost:5000/api/v1/notifications/read-all',
+          { type: 'new_client' },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      } catch (notifError) {
+        console.error('Error marking notifications as read:', notifError);
+        // Don't fail the whole page if notification update fails
+      }
     } catch (error) {
       console.error('Error fetching clients:', error);
     } finally {

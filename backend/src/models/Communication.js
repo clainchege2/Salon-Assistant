@@ -120,7 +120,37 @@ const communicationSchema = new mongoose.Schema({
     ref: 'User'
   },
   resolvedAt: Date,
-  errorMessage: String
+  errorMessage: String,
+  
+  // Communication blocking/monitoring
+  isBlocked: {
+    type: Boolean,
+    default: false
+  },
+  blockedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  blockedAt: Date,
+  blockReason: String,
+  
+  // Track staff-client communication
+  staffId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  
+  // Flags for monitoring
+  flagged: {
+    type: Boolean,
+    default: false
+  },
+  flaggedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  flaggedAt: Date,
+  flagReason: String
 }, {
   timestamps: true
 });

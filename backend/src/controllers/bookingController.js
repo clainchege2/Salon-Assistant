@@ -122,7 +122,10 @@ exports.getBookings = async (req, res) => {
     
     // IMPORTANT: Stylists can only see bookings assigned to them
     if (req.user.role === 'stylist') {
-      filter.assignedTo = req.user._id;
+      filter.$or = [
+        { assignedTo: req.user._id },
+        { stylistId: req.user._id }
+      ];
     }
     
     if (status) filter.status = status;
@@ -134,8 +137,13 @@ exports.getBookings = async (req, res) => {
       if (endDate) filter.scheduledDate.$lte = new Date(endDate);
     }
 
+    // Hide client contact info from staff (only show name)
+    const clientFields = req.user.role === 'owner' || req.user.role === 'manager'
+      ? 'firstName lastName phone email'
+      : 'firstName lastName'; // Staff only see names
+    
     const bookings = await Booking.find(filter)
-      .populate('clientId', 'firstName lastName phone')
+      .populate('clientId', clientFields)
       .populate('stylistId', 'firstName lastName')
       .populate('assignedTo', 'firstName lastName')
       .sort({ scheduledDate: -1 });
@@ -166,6 +174,17 @@ exports.updateBooking = async (req, res) => {
         success: false,
         message: 'Booking not found'
       });
+    }
+
+    // Check permission for completing bookings
+    if (req.body.status === 'completed') {
+      const hasPermission = req.user.role === 'owner' || req.user.permissions?.canCompleteBookings;
+      if (!hasPermission) {
+        return res.status(403).json({
+          success: false,
+          message: 'You do not have permission to complete bookings'
+        });
+      }
     }
 
     const allowedUpdates = ['status', 'services', 'customerInstructions', 'materialsUsed', 'followUpRequired', 'followUpNote', 'cancellationReason'];
@@ -269,6 +288,24 @@ exports.updateBooking = async (req, res) => {
       }
 
       if (messageText) {
+        // Update existing communications for this booking to mark as no longer requiring action
+        if (updates.status === 'completed' || updates.status === 'confirmed' || updates.status === 'cancelled') {
+          await Communication.updateMany(
+            { 
+              tenantId: req.tenantId,
+              clientId: updatedBooking.clientId._id,
+              subject: { $in: ['New Booking Created', 'Booking Confirmation'] },
+              requiresAction: true
+            },
+            { 
+              requiresAction: false,
+              $push: {
+                notes: `Status updated to ${updates.status} on ${new Date().toLocaleDateString()}`
+              }
+            }
+          );
+        }
+
         // Message to client
         await Message.create({
           tenantId: req.tenantId,

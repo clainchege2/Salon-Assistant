@@ -15,7 +15,16 @@ const serviceSchema = new mongoose.Schema({
   description: String,
   category: {
     type: String,
-    enum: ['braids', 'weaves', 'natural-hair', 'coloring', 'treatment', 'styling', 'other'],
+    enum: [
+      'braids', 'Braids',
+      'weaves', 'Weaves', 
+      'natural-hair', 'Natural Hair',
+      'coloring', 'Coloring',
+      'treatment', 'Treatments',
+      'styling', 'Styling',
+      'locs', 'Locs',
+      'other', 'Other'
+    ],
     required: true
   },
   price: {

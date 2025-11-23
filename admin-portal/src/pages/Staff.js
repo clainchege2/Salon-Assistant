@@ -25,6 +25,16 @@ export default function Staff() {
     staffId: null,
     staffName: ''
   });
+  const [deleteModal, setDeleteModal] = useState({
+    show: false,
+    staffId: null,
+    staffName: ''
+  });
+  const [resendEmailModal, setResendEmailModal] = useState({
+    show: false,
+    staffId: null,
+    staffName: ''
+  });
   const [permissionsModal, setPermissionsModal] = useState({
     show: false,
     staff: null,
@@ -37,11 +47,24 @@ export default function Staff() {
       canViewReports: false
     }
   });
+  const [openDropdown, setOpenDropdown] = useState(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchStaff();
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (openDropdown && !event.target.closest('.actions-dropdown')) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [openDropdown]);
 
   const fetchStaff = async () => {
     try {
@@ -65,32 +88,39 @@ export default function Staff() {
   };
 
   const handleAddStaff = async () => {
-    if (!newStaff.firstName || !newStaff.lastName || !newStaff.email || !newStaff.password) {
+    if (!newStaff.firstName || !newStaff.lastName || !newStaff.email) {
       setError('Please fill in all required fields');
-      setTimeout(() => setError(''), 3000);
+      setTimeout(() => setError(''), 5000);
       return;
     }
 
     try {
       const token = localStorage.getItem('adminToken');
-      const user = JSON.parse(localStorage.getItem('user'));
       
-      await axios.post('http://localhost:5000/api/v1/auth/register', {
-        ...newStaff,
-        tenantSlug: user.tenantSlug
+      const response = await axios.post('http://localhost:5000/api/v1/admin/staff', {
+        firstName: newStaff.firstName,
+        lastName: newStaff.lastName,
+        email: newStaff.email,
+        phone: newStaff.phone,
+        role: newStaff.role
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
       setShowAddModal(false);
       setNewStaff({ firstName: '', lastName: '', email: '', password: '', phone: '', role: 'stylist' });
-      setSuccessMessage('✓ Staff member added successfully!');
-      setTimeout(() => setSuccessMessage(''), 3000);
+      
+      if (response.data.emailSent) {
+        setSuccessMessage('✓ Staff member added! Welcome email sent with login credentials.');
+      } else {
+        setSuccessMessage('✓ Staff member added! Email failed - share credentials manually.');
+      }
+      setTimeout(() => setSuccessMessage(''), 5000);
       fetchStaff();
     } catch (error) {
       console.error('Error adding staff:', error);
       setError(error.response?.data?.message || 'Failed to add staff member');
-      setTimeout(() => setError(''), 3000);
+      setTimeout(() => setError(''), 5000);
     }
   };
 
@@ -143,8 +173,85 @@ export default function Staff() {
     } catch (error) {
       console.error(`Error ${type === 'revoke' ? 'revoking' : 'restoring'} access:`, error);
       setError(`Failed to ${type === 'revoke' ? 'revoke' : 'restore'} access`);
-      setTimeout(() => setError(''), 3000);
+      setTimeout(() => setError(''), 5000);
       setConfirmModal({ show: false, type: '', staffId: null, staffName: '' });
+    }
+  };
+
+  const handleDropdownToggle = (event, memberId) => {
+    if (openDropdown === memberId) {
+      setOpenDropdown(null);
+    } else {
+      const rect = event.currentTarget.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.right + window.scrollX - 180 // 180px is min-width of dropdown
+      });
+      setOpenDropdown(memberId);
+    }
+  };
+
+  const handleDeleteClick = (staffId, staffName) => {
+    setDeleteModal({
+      show: true,
+      staffId,
+      staffName
+    });
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      await axios.delete(
+        `http://localhost:5000/api/v1/admin/staff/${deleteModal.staffId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setDeleteModal({ show: false, staffId: null, staffName: '' });
+      setSuccessMessage('✓ Staff member deleted successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      fetchStaff();
+    } catch (error) {
+      console.error('Error deleting staff:', error);
+      setError(error.response?.data?.message || 'Failed to delete staff member');
+      setTimeout(() => setError(''), 5000);
+      setDeleteModal({ show: false, staffId: null, staffName: '' });
+    }
+  };
+
+  const handleResendEmailClick = (staffId, staffName) => {
+    setResendEmailModal({
+      show: true,
+      staffId,
+      staffName
+    });
+  };
+
+  const handleConfirmResendEmail = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await axios.post(
+        `http://localhost:5000/api/v1/admin/staff/${resendEmailModal.staffId}/resend-welcome`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setResendEmailModal({ show: false, staffId: null, staffName: '' });
+      
+      if (response.data.emailSent) {
+        setSuccessMessage('✓ Welcome email sent successfully!');
+      } else {
+        setError('Failed to send email. Temporary password: ' + response.data.tempPassword);
+      }
+      setTimeout(() => {
+        setSuccessMessage('');
+        setError('');
+      }, 5000);
+    } catch (error) {
+      console.error('Error resending welcome email:', error);
+      setError(error.response?.data?.message || 'Failed to resend welcome email');
+      setTimeout(() => setError(''), 5000);
+      setResendEmailModal({ show: false, staffId: null, staffName: '' });
     }
   };
 
@@ -180,7 +287,7 @@ export default function Staff() {
     } catch (error) {
       console.error('Error updating permissions:', error);
       setError('Failed to update permissions');
-      setTimeout(() => setError(''), 3000);
+      setTimeout(() => setError(''), 5000);
     }
   };
 
@@ -197,7 +304,7 @@ export default function Staff() {
   const handleUpdateStaff = async () => {
     if (!editingStaff.firstName || !editingStaff.lastName || !editingStaff.email) {
       setError('Please fill in all required fields');
-      setTimeout(() => setError(''), 3000);
+      setTimeout(() => setError(''), 5000);
       return;
     }
 
@@ -226,7 +333,7 @@ export default function Staff() {
     } catch (error) {
       console.error('Error updating staff:', error);
       setError(error.response?.data?.message || 'Failed to update staff member');
-      setTimeout(() => setError(''), 3000);
+      setTimeout(() => setError(''), 5000);
     }
   };
 
@@ -365,41 +472,97 @@ export default function Staff() {
                             </td>
                             <td>
                               <div className="table-actions">
-                                <button 
-                                  className="action-btn edit-btn-small"
-                                  onClick={() => handleEditClick(member)}
-                                  title="Edit staff information"
-                                >
-                                  ✏️ Edit
-                                </button>
-                                
-                                {member.role !== 'owner' && (
+                                <div className="actions-dropdown">
                                   <button 
-                                    className="action-btn permissions-btn-small"
-                                    onClick={() => handleOpenPermissions(member)}
-                                    title="Manage permissions"
+                                    className="actions-menu-btn"
+                                    onClick={(e) => handleDropdownToggle(e, member._id)}
+                                    title="Actions"
                                   >
-                                    🔐 Permissions
+                                    ⋮
                                   </button>
-                                )}
-                                
-                                {member.status !== 'inactive' ? (
-                                  <button 
-                                    className="action-btn revoke-btn-small"
-                                    onClick={() => handleRevokeAccess(member._id, `${member.firstName} ${member.lastName}`)}
-                                    title="Revoke access"
-                                  >
-                                    🚫 Revoke
-                                  </button>
-                                ) : (
-                                  <button 
-                                    className="action-btn restore-btn-small"
-                                    onClick={() => handleRestoreAccess(member._id, `${member.firstName} ${member.lastName}`)}
-                                    title="Restore access"
-                                  >
-                                    ✅ Restore
-                                  </button>
-                                )}
+                                  
+                                  {openDropdown === member._id && (
+                                    <div 
+                                      className="actions-dropdown-menu"
+                                      style={{
+                                        top: `${dropdownPosition.top}px`,
+                                        left: `${dropdownPosition.left}px`
+                                      }}
+                                    >
+                                      <button 
+                                        className="dropdown-item"
+                                        onClick={() => {
+                                          handleEditClick(member);
+                                          setOpenDropdown(null);
+                                        }}
+                                      >
+                                        <span className="dropdown-icon">✏️</span>
+                                        Edit
+                                      </button>
+                                      
+                                      {member.role !== 'owner' && (
+                                        <button 
+                                          className="dropdown-item"
+                                          onClick={() => {
+                                            handleOpenPermissions(member);
+                                            setOpenDropdown(null);
+                                          }}
+                                        >
+                                          <span className="dropdown-icon">🔐</span>
+                                          Permissions
+                                        </button>
+                                      )}
+                                      
+                                      <button 
+                                        className="dropdown-item"
+                                        onClick={() => {
+                                          handleResendEmailClick(member._id, `${member.firstName} ${member.lastName}`);
+                                          setOpenDropdown(null);
+                                        }}
+                                      >
+                                        <span className="dropdown-icon">📧</span>
+                                        Resend Email
+                                      </button>
+                                      
+                                      <div className="dropdown-divider"></div>
+                                      
+                                      {member.status !== 'inactive' ? (
+                                        <button 
+                                          className="dropdown-item warning"
+                                          onClick={() => {
+                                            handleRevokeAccess(member._id, `${member.firstName} ${member.lastName}`);
+                                            setOpenDropdown(null);
+                                          }}
+                                        >
+                                          <span className="dropdown-icon">🚫</span>
+                                          Revoke Access
+                                        </button>
+                                      ) : (
+                                        <button 
+                                          className="dropdown-item success"
+                                          onClick={() => {
+                                            handleRestoreAccess(member._id, `${member.firstName} ${member.lastName}`);
+                                            setOpenDropdown(null);
+                                          }}
+                                        >
+                                          <span className="dropdown-icon">✅</span>
+                                          Restore Access
+                                        </button>
+                                      )}
+                                      
+                                      <button 
+                                        className="dropdown-item danger"
+                                        onClick={() => {
+                                          handleDeleteClick(member._id, `${member.firstName} ${member.lastName}`);
+                                          setOpenDropdown(null);
+                                        }}
+                                      >
+                                        <span className="dropdown-icon">🗑️</span>
+                                        Delete
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             </td>
                           </tr>
@@ -450,41 +613,97 @@ export default function Staff() {
                             </td>
                             <td>
                               <div className="table-actions">
-                                <button 
-                                  className="action-btn edit-btn-small"
-                                  onClick={() => handleEditClick(member)}
-                                  title="Edit staff information"
-                                >
-                                  ✏️ Edit
-                                </button>
-                                
-                                {member.role !== 'owner' && (
+                                <div className="actions-dropdown">
                                   <button 
-                                    className="action-btn permissions-btn-small"
-                                    onClick={() => handleOpenPermissions(member)}
-                                    title="Manage permissions"
+                                    className="actions-menu-btn"
+                                    onClick={(e) => handleDropdownToggle(e, member._id)}
+                                    title="Actions"
                                   >
-                                    🔐 Permissions
+                                    ⋮
                                   </button>
-                                )}
-                                
-                                {member.status !== 'inactive' ? (
-                                  <button 
-                                    className="action-btn revoke-btn-small"
-                                    onClick={() => handleRevokeAccess(member._id, `${member.firstName} ${member.lastName}`)}
-                                    title="Revoke access"
-                                  >
-                                    🚫 Revoke
-                                  </button>
-                                ) : (
-                                  <button 
-                                    className="action-btn restore-btn-small"
-                                    onClick={() => handleRestoreAccess(member._id, `${member.firstName} ${member.lastName}`)}
-                                    title="Restore access"
-                                  >
-                                    ✅ Restore
-                                  </button>
-                                )}
+                                  
+                                  {openDropdown === member._id && (
+                                    <div 
+                                      className="actions-dropdown-menu"
+                                      style={{
+                                        top: `${dropdownPosition.top}px`,
+                                        left: `${dropdownPosition.left}px`
+                                      }}
+                                    >
+                                      <button 
+                                        className="dropdown-item"
+                                        onClick={() => {
+                                          handleEditClick(member);
+                                          setOpenDropdown(null);
+                                        }}
+                                      >
+                                        <span className="dropdown-icon">✏️</span>
+                                        Edit
+                                      </button>
+                                      
+                                      {member.role !== 'owner' && (
+                                        <button 
+                                          className="dropdown-item"
+                                          onClick={() => {
+                                            handleOpenPermissions(member);
+                                            setOpenDropdown(null);
+                                          }}
+                                        >
+                                          <span className="dropdown-icon">🔐</span>
+                                          Permissions
+                                        </button>
+                                      )}
+                                      
+                                      <button 
+                                        className="dropdown-item"
+                                        onClick={() => {
+                                          handleResendEmailClick(member._id, `${member.firstName} ${member.lastName}`);
+                                          setOpenDropdown(null);
+                                        }}
+                                      >
+                                        <span className="dropdown-icon">📧</span>
+                                        Resend Email
+                                      </button>
+                                      
+                                      <div className="dropdown-divider"></div>
+                                      
+                                      {member.status !== 'inactive' ? (
+                                        <button 
+                                          className="dropdown-item warning"
+                                          onClick={() => {
+                                            handleRevokeAccess(member._id, `${member.firstName} ${member.lastName}`);
+                                            setOpenDropdown(null);
+                                          }}
+                                        >
+                                          <span className="dropdown-icon">🚫</span>
+                                          Revoke Access
+                                        </button>
+                                      ) : (
+                                        <button 
+                                          className="dropdown-item success"
+                                          onClick={() => {
+                                            handleRestoreAccess(member._id, `${member.firstName} ${member.lastName}`);
+                                            setOpenDropdown(null);
+                                          }}
+                                        >
+                                          <span className="dropdown-icon">✅</span>
+                                          Restore Access
+                                        </button>
+                                      )}
+                                      
+                                      <button 
+                                        className="dropdown-item danger"
+                                        onClick={() => {
+                                          handleDeleteClick(member._id, `${member.firstName} ${member.lastName}`);
+                                          setOpenDropdown(null);
+                                        }}
+                                      >
+                                        <span className="dropdown-icon">🗑️</span>
+                                        Delete
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             </td>
                           </tr>
@@ -626,14 +845,8 @@ export default function Staff() {
               />
             </div>
 
-            <div className="form-group">
-              <label>Password *</label>
-              <input
-                type="password"
-                value={newStaff.password}
-                onChange={(e) => setNewStaff({ ...newStaff, password: e.target.value })}
-                placeholder="Minimum 6 characters"
-              />
+            <div className="info-box">
+              <p>📧 A welcome email with login credentials will be sent to the staff member's email address.</p>
             </div>
 
             <div className="form-group">
@@ -814,6 +1027,58 @@ export default function Staff() {
                 onClick={confirmAction}
               >
                 {confirmModal.type === 'revoke' ? '🚫 Revoke Access' : '✅ Restore Access'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteModal.show && (
+        <div className="modal-overlay">
+          <div className="modal-content confirm-modal">
+            <h2>Delete {deleteModal.staffName}?</h2>
+            <p className="warning-text">
+              This action cannot be undone. All data associated with this staff member will be permanently deleted.
+            </p>
+            <div className="modal-actions">
+              <button 
+                className="btn-cancel" 
+                onClick={() => setDeleteModal({ show: false, staffId: null, staffName: '' })}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn-delete-confirm"
+                onClick={handleConfirmDelete}
+              >
+                🗑️ Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Resend Email Confirmation Modal */}
+      {resendEmailModal.show && (
+        <div className="modal-overlay">
+          <div className="modal-content confirm-modal">
+            <h2>Resend welcome email to {resendEmailModal.staffName}?</h2>
+            <p className="info-text">
+              This will generate a new temporary password and send it to their email.
+            </p>
+            <div className="modal-actions">
+              <button 
+                className="btn-cancel" 
+                onClick={() => setResendEmailModal({ show: false, staffId: null, staffName: '' })}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn-primary"
+                onClick={handleConfirmResendEmail}
+              >
+                📧 Send Email
               </button>
             </div>
           </div>

@@ -8,6 +8,7 @@ import MyBookings from './pages/MyBookings';
 import Profile from './pages/Profile';
 import Feedback from './pages/Feedback';
 import Messages from './pages/Messages';
+import SessionTimeout from './components/SessionTimeout';
 import './App.css';
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
   return (
     <Router>
       <div className="app">
+        {isAuthenticated() && <SessionTimeout />}
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

@@ -73,8 +73,8 @@ const twoFactorAuthSchema = new mongoose.Schema({
   // Expiration
   expiresAt: {
     type: Date,
-    required: true,
-    index: true
+    required: true
+    // Index defined separately below to avoid duplicate
   },
   
   // Security

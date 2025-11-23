@@ -189,7 +189,7 @@ exports.approveSuggestion = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Suggestion not found' });
     }
     
-    service.status = 'approved';
+    service.status = 'active';
     service.isActive = true;
     service.approvedBy = req.user._id;
     await service.save();

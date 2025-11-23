@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import Toast from '../components/Toast';
 import './Signup.css';
 
 export default function Signup() {
@@ -25,15 +24,24 @@ export default function Signup() {
     method: ''
   });
   const [error, setError] = useState('');
+  const [errorExiting, setErrorExiting] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState(null);
+
+  const clearError = () => {
+    setErrorExiting(true);
+    setTimeout(() => {
+      setError('');
+      setErrorExiting(false);
+    }, 300);
+  };
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
-    setError('');
+    // Clear error when user starts typing
+    if (error) clearError();
   };
 
   const handleSignup = async (e) => {
@@ -83,7 +91,36 @@ export default function Signup() {
       setStep(2);
     } catch (err) {
       console.error('Signup error:', err);
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      
+      // Parse error message - handle both API errors and network errors
+      let errorMessage = 'Registration failed. Please try again.';
+      
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      // Clean up MongoDB error messages
+      if (errorMessage.includes('E11000') || errorMessage.includes('duplicate key')) {
+        if (errorMessage.includes('contactEmail') || errorMessage.includes('email')) {
+          errorMessage = 'This email address is already registered';
+        } else if (errorMessage.includes('contactPhone') || errorMessage.includes('phone')) {
+          errorMessage = 'This phone number is already registered';
+        } else if (errorMessage.includes('slug')) {
+          errorMessage = 'This business name is already taken';
+        } else {
+          errorMessage = 'This information is already registered';
+        }
+      }
+      
+      setError(errorMessage);
+      setErrorExiting(false);
+      
+      // Auto-clear inline error after 5 seconds
+      setTimeout(() => {
+        clearError();
+      }, 5000);
     } finally {
       setLoading(false);
     }
@@ -115,25 +152,24 @@ export default function Signup() {
         localStorage.setItem('lastTenantSlug', verificationData.tenantSlug);
       }
       
-      // Show success toast with slug
-      setToast({
-        message: `Account verified! Your tenant slug is: ${verificationData.tenantSlug}. Redirecting to login...`,
-        type: 'success'
-      });
-      
       // Mark as new signup for welcome nudge
       localStorage.setItem('isNewSignup', 'true');
 
-      // Redirect to login page after a short delay
-      setTimeout(() => {
-        navigate('/login');
-      }, 3000);
+      // Redirect to login page immediately
+      navigate('/login');
     } catch (err) {
       console.error('Verification error:', err);
       console.error('Error response:', err.response?.data);
       console.error('Error status:', err.response?.status);
-      setError(err.response?.data?.message || 'Invalid verification code. Please try again.');
+      const errorMsg = err.response?.data?.message || 'Invalid verification code. Please try again.';
+      setError(errorMsg);
+      setErrorExiting(false);
       setLoading(false);
+      
+      // Auto-clear after 5 seconds
+      setTimeout(() => {
+        clearError();
+      }, 5000);
     }
   };
 
@@ -145,12 +181,13 @@ export default function Signup() {
       await axios.post('http://localhost:5000/api/v1/auth/2fa/resend', {
         twoFactorId: verificationData.twoFactorId
       });
-      setToast({
-        message: 'Verification code resent successfully!',
-        type: 'success'
-      });
+      setError('New code sent! Check your ' + (verificationData.method === 'email' ? 'email' : 'phone'));
+      setErrorExiting(false);
+      setTimeout(() => clearError(), 5000);
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to resend code');
+      setErrorExiting(false);
+      setTimeout(() => clearError(), 5000);
     } finally {
       setLoading(false);
     }
@@ -158,13 +195,6 @@ export default function Signup() {
 
   return (
     <div className="signup-container">
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
       <div className="signup-card">
         <div className="signup-header">
           <h1>🎨 HairVia</h1>
@@ -176,7 +206,19 @@ export default function Signup() {
             <h2>Create Your Salon Account</h2>
             <p className="subtitle">Start managing your salon professionally</p>
 
-            {error && <div className="error-message">{error}</div>}
+            {error && (
+              <div className={`error-message ${errorExiting ? 'error-exit' : ''}`}>
+                <span>{error}</span>
+                <button 
+                  type="button"
+                  className="error-dismiss"
+                  onClick={clearError}
+                  aria-label="Dismiss error"
+                >
+                  ×
+                </button>
+              </div>
+            )}
 
             <div className="form-section">
               <h3>Business Information</h3>
@@ -318,10 +360,18 @@ export default function Signup() {
             </p>
 
             {error && (
-              <div className="error-message small">
-                {error.includes('attempts remaining') 
+              <div className={`error-message small ${errorExiting ? 'error-exit' : ''}`}>
+                <span>{error.includes('attempts remaining') 
                   ? error.replace('Invalid code.', '❌').replace('attempts remaining', 'tries left')
-                  : error}
+                  : error}</span>
+                <button 
+                  type="button" 
+                  onClick={clearError}
+                  className="error-dismiss"
+                  title="Dismiss"
+                >
+                  ×
+                </button>
               </div>
             )}
 
@@ -336,7 +386,7 @@ export default function Signup() {
                     code: e.target.value
                   });
                   // Clear error when user starts typing
-                  if (error) setError('');
+                  if (error) clearError();
                 }}
                 placeholder="Enter 6-digit code"
                 maxLength="6"
@@ -354,7 +404,7 @@ export default function Signup() {
               <button type="button" onClick={resendCode} className="btn-link" disabled={loading}>
                 Resend Code
               </button>
-              <button type="button" onClick={() => setStep(1)} className="btn-link">
+              <button type="button" onClick={() => { setStep(1); setError(''); }} className="btn-link">
                 Change Information
               </button>
             </div>

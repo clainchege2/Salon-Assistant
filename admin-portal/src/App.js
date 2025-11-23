@@ -1,8 +1,9 @@
-import React, { useState, createContext, useContext } from 'react';
+import React, { useState, createContext, useContext, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import SalonDashboard from './pages/SalonDashboard';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import ChangePassword from './pages/ChangePassword';
 import AddBooking from './pages/AddBooking';
 import AddClient from './pages/AddClient';
 import Bookings from './pages/Bookings';
@@ -16,6 +17,7 @@ import Staff from './pages/Staff';
 import Reports from './pages/Reports';
 import Analytics from './pages/Analytics';
 import AccessDeniedModal from './components/AccessDeniedModal';
+import sessionManager from './utils/sessionManager';
 import './App.css';
 import './styles/global-improvements.css';
 
@@ -98,6 +100,19 @@ function App() {
     details: {}
   });
 
+  // Initialize session manager on mount
+  useEffect(() => {
+    const token = localStorage.getItem('adminToken');
+    if (token) {
+      sessionManager.start();
+    }
+
+    // Cleanup on unmount
+    return () => {
+      sessionManager.stop();
+    };
+  }, []);
+
   const showAccessDenied = (type, details) => {
     setAccessDenialModal({
       show: true,
@@ -120,6 +135,7 @@ function App() {
         <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/change-password" element={<ChangePassword />} />
         <Route 
           path="/dashboard" 
           element={

@@ -125,19 +125,96 @@
 }
 
 .error-message {
-  background: #fee;
-  border: 1px solid #fcc;
-  color: #c33;
-  padding: 8px 12px;
-  border-radius: 6px;
-  margin-bottom: 15px;
-  font-size: 0.85rem;
+  background: #fee2e2;
+  border: 2px solid #ef4444;
+  border-left: 4px solid #ef4444;
+  color: #991b1b;
+  padding: 12px 40px 12px 16px;
+  border-radius: 8px;
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50%;
+  min-width: 300px;
+  max-width: 600px;
+  font-size: 0.9rem;
+  font-weight: 500;
   text-align: center;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  z-index: 10000;
+  animation: zoomIn 0.3s ease-out;
+  transform-origin: center center;
+}
+
+.error-message.error-exit {
+  animation: zoomOut 0.3s ease-in forwards;
 }
 
 .error-message.small {
   font-size: 0.8rem;
-  padding: 6px 10px;
+  padding: 8px 32px 8px 12px;
+  width: 50%;
+  min-width: 280px;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .error-message {
+    width: 90%;
+    min-width: auto;
+  }
+  
+  .error-message.small {
+    width: 90%;
+  }
+}
+
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes zoomOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+
+.error-dismiss {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #991b1b;
+  width: 24px;
+  height: 24px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  line-height: 1;
+  opacity: 0.8;
+}
+
+.error-dismiss:hover {
+  opacity: 1;
 }
 
 .btn-primary {

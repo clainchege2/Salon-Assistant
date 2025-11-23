@@ -1,20 +1,15 @@
 const mongoose = require('mongoose');
-const tenantIsolationPlugin = require('../plugins/tenantIsolation');
 
 const notificationSchema = new mongoose.Schema({
   tenantId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Tenant',
-    required: true
-  },
-  recipientId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+    required: true,
+    index: true
   },
   type: {
     type: String,
-    enum: ['booking_created', 'booking_cancelled', 'booking_confirmed', 'booking_completed', 'feedback_received', 'low_stock', 'service_suggestion'],
+    enum: ['new_client', 'new_booking', 'cancellation', 'birthday', 'low_stock', 'system'],
     required: true
   },
   title: {
@@ -25,32 +20,51 @@ const notificationSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  relatedBooking: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Booking'
+  priority: {
+    type: String,
+    enum: ['low', 'medium', 'high'],
+    default: 'medium'
+  },
+  actionUrl: {
+    type: String
+  },
+  actionLabel: {
+    type: String
   },
   relatedClient: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Client'
   },
-  isRead: {
+  relatedBooking: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Booking'
+  },
+  read: {
     type: Boolean,
     default: false
   },
-  readAt: Date,
-  priority: {
-    type: String,
-    enum: ['low', 'medium', 'high'],
-    default: 'medium'
+  readAt: {
+    type: Date
+  },
+  readBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
   }
 }, {
   timestamps: true
 });
 
-// Index for faster queries
-notificationSchema.index({ tenantId: 1, recipientId: 1, isRead: 1, createdAt: -1 });
+// Index for efficient queries
+notificationSchema.index({ tenantId: 1, read: 1, createdAt: -1 });
+notificationSchema.index({ tenantId: 1, type: 1, createdAt: -1 });
 
-// Apply tenant isolation plugin
-notificationSchema.plugin(tenantIsolationPlugin);
+// Auto-delete read notifications after 30 days
+notificationSchema.index(
+  { readAt: 1 },
+  { 
+    expireAfterSeconds: 30 * 24 * 60 * 60, // 30 days
+    partialFilterExpression: { read: true }
+  }
+);
 
 module.exports = mongoose.model('Notification', notificationSchema);

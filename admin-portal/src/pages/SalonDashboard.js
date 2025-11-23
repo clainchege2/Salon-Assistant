@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { formatDate, formatTime, formatCurrency } from '../utils/formatters';
+import NotificationBell from '../components/NotificationBell';
 import './SalonDashboard.css';
 
 export default function SalonDashboard() {
@@ -19,6 +20,7 @@ export default function SalonDashboard() {
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const [unreadFeedbackCount, setUnreadFeedbackCount] = useState(0);
   const [upcomingBirthdaysCount, setUpcomingBirthdaysCount] = useState(0);
+  const [newClientsCount, setNewClientsCount] = useState(0);
   const [messageModal, setMessageModal] = useState({
     show: false,
     booking: null,
@@ -65,6 +67,11 @@ export default function SalonDashboard() {
     newValue: '',
     pendingChanges: null
   });
+  const [successModal, setSuccessModal] = useState({
+    show: false,
+    message: '',
+    icon: '✅'
+  });
 
   useEffect(() => {
     fetchFreshUserData(); // Fetch fresh user data from backend
@@ -83,6 +90,17 @@ export default function SalonDashboard() {
     if (user) {
       fetchData();
     }
+  }, [user]);
+
+  // Auto-refresh data every 30 seconds for real-time updates
+  useEffect(() => {
+    if (!user) return;
+    
+    const refreshInterval = setInterval(() => {
+      fetchData();
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(refreshInterval);
   }, [user]);
 
   // Fetch fresh user data from backend to get latest permissions
@@ -136,19 +154,39 @@ export default function SalonDashboard() {
         headers: { Authorization: `Bearer ${token}` }
       };
 
-      const [bookingsRes, clientsRes, servicesRes] = await Promise.all([
-        axios.get('http://localhost:5000/api/v1/bookings', config),
-        axios.get('http://localhost:5000/api/v1/clients', config),
-        axios.get('http://localhost:5000/api/v1/services', config)
-      ]);
+      // Stylists have limited access
+      const isStylist = user?.role === 'stylist';
+      
+      if (isStylist) {
+        // Stylists only fetch their bookings and services
+        const [bookingsRes, servicesRes] = await Promise.all([
+          axios.get('http://localhost:5000/api/v1/bookings', config),
+          axios.get('http://localhost:5000/api/v1/services', config)
+        ]);
 
-      setStats({
-        bookings: bookingsRes.data.count || 0,
-        clients: clientsRes.data.count || 0,
-        services: servicesRes.data.count || 0
-      });
+        setStats({
+          bookings: bookingsRes.data.count || 0,
+          clients: 0, // Stylists don't see client count
+          services: servicesRes.data.count || 0
+        });
 
-      setBookings(bookingsRes.data.data || []);
+        setBookings(bookingsRes.data.data || []);
+      } else {
+        // Owners/Managers fetch everything
+        const [bookingsRes, clientsRes, servicesRes] = await Promise.all([
+          axios.get('http://localhost:5000/api/v1/bookings', config),
+          axios.get('http://localhost:5000/api/v1/clients', config),
+          axios.get('http://localhost:5000/api/v1/services', config)
+        ]);
+
+        setStats({
+          bookings: bookingsRes.data.count || 0,
+          clients: clientsRes.data.count || 0,
+          services: servicesRes.data.count || 0
+        });
+
+        setBookings(bookingsRes.data.data || []);
+      }
 
       // Fetch pending service suggestions count for owners/managers
       const canManageServices = user?.role === 'owner' || user?.permissions?.canManageServices;
@@ -195,6 +233,22 @@ export default function SalonDashboard() {
         } catch (error) {
           console.error('Error fetching communications data:', error);
         }
+      }
+
+      // Fetch new clients count (clients registered in last 7 days without any bookings)
+      try {
+        const clientsRes = await axios.get('http://localhost:5000/api/v1/clients', config);
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        
+        const newClients = clientsRes.data.data?.filter(client => {
+          const createdDate = new Date(client.createdAt);
+          return createdDate >= sevenDaysAgo && client.totalVisits === 0;
+        }) || [];
+        
+        setNewClientsCount(newClients.length);
+      } catch (error) {
+        console.error('Error fetching new clients count:', error);
       }
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -328,12 +382,20 @@ export default function SalonDashboard() {
       );
 
       setMessageModal({ show: false, booking: null, action: null, message: '' });
-      alert(`✅ Message sent to ${booking.clientId?.firstName}!`);
+      setSuccessModal({
+        show: true,
+        message: `Message sent to ${booking.clientId?.firstName}!`,
+        icon: '✅'
+      });
       fetchData();
     } catch (error) {
       console.error('Send message error:', error);
       setMessageModal({ show: false, booking: null, action: null, message: '' });
-      alert('✅ Message sent! (Logged for delivery)');
+      setSuccessModal({
+        show: true,
+        message: 'Message sent! (Logged for delivery)',
+        icon: '✅'
+      });
     }
   };
 
@@ -348,7 +410,11 @@ export default function SalonDashboard() {
   const handleSaveNote = async () => {
     const { booking, note } = noteModal;
     if (!note.trim()) {
-      alert('Please enter a note');
+      setSuccessModal({
+        show: true,
+        message: 'Please enter a note',
+        icon: '⚠️'
+      });
       return;
     }
 
@@ -361,11 +427,19 @@ export default function SalonDashboard() {
       );
 
       setNoteModal({ show: false, booking: null, note: '' });
-      alert(`✅ Note saved for ${booking.clientId?.firstName}!`);
+      setSuccessModal({
+        show: true,
+        message: `Note saved for ${booking.clientId?.firstName}!`,
+        icon: '✅'
+      });
     } catch (error) {
       console.error('Save note error:', error);
       setNoteModal({ show: false, booking: null, note: '' });
-      alert('✅ Note saved! (Logged for reference)');
+      setSuccessModal({
+        show: true,
+        message: 'Note saved! (Logged for reference)',
+        icon: '✅'
+      });
     }
   };
 
@@ -443,6 +517,7 @@ export default function SalonDashboard() {
             </div>
           )}
           <div className="header-actions">
+            <NotificationBell />
             {user?.role === 'owner' && subscriptionTier !== 'premium' && (
               <button onClick={() => navigate('/settings?tab=account')} className="upgrade-btn-header" title="Upgrade">
                 ✨ Upgrade to {subscriptionTier === 'free' ? 'PRO' : 'PREMIUM'}
@@ -468,8 +543,14 @@ export default function SalonDashboard() {
             <span className="notification-badge">{pendingBookingsCount}</span>
           )}
         </button>
-        <button className="quick-action-btn" onClick={() => navigate('/clients')}>
+        <button className="quick-action-btn" onClick={() => {
+          setNewClientsCount(0);
+          navigate('/clients');
+        }}>
           <span className="btn-emoji">💇🏾‍♀️</span> Clients
+          {newClientsCount > 0 && (
+            <span className="notification-badge">{newClientsCount}</span>
+          )}
         </button>
         <button className="quick-action-btn" onClick={() => {
           setPendingSuggestionsCount(0);
@@ -1224,6 +1305,61 @@ export default function SalonDashboard() {
 
       {notification.show && (
         <div className="notification-toast">{notification.message}</div>
+      )}
+
+      {/* Success Modal */}
+      {successModal.show && (
+        <div 
+          className="modal-overlay"
+          onClick={() => setSuccessModal({ show: false, message: '', icon: '✅' })}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}
+        >
+          <div 
+            className="modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'white',
+              padding: '40px',
+              borderRadius: '12px',
+              maxWidth: '400px',
+              width: '90%',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+              textAlign: 'center'
+            }}
+          >
+            <div style={{ fontSize: '48px', marginBottom: '20px' }}>{successModal.icon}</div>
+            <p style={{ color: '#1f2937', marginBottom: '30px', fontSize: '16px' }}>
+              {successModal.message}
+            </p>
+            <button
+              onClick={() => setSuccessModal({ show: false, message: '', icon: '✅' })}
+              style={{
+                width: '100%',
+                padding: '14px',
+                background: '#667eea',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '16px',
+                fontWeight: '600'
+              }}
+            >
+              OK
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

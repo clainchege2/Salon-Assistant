@@ -41,6 +41,19 @@ export default function Communications() {
     } else if (activeTab === 'birthdays') {
       fetchBirthdayClients();
     }
+    
+    // Auto-refresh every 30 seconds for real-time updates
+    const refreshInterval = setInterval(() => {
+      if (activeTab === 'messages') {
+        fetchCommunications();
+      } else if (activeTab === 'feedback') {
+        fetchFeedback();
+      } else if (activeTab === 'birthdays') {
+        fetchBirthdayClients();
+      }
+    }, 30000);
+
+    return () => clearInterval(refreshInterval);
   }, [activeTab]); // Only refetch when tab changes, filters are applied on frontend
 
   useEffect(() => {

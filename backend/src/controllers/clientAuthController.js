@@ -7,7 +7,7 @@ const logger = require('../config/logger');
 // Generate JWT Token
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: '30d'
+    expiresIn: '8h' // 8 hours - standard session timeout
   });
 };
 
@@ -92,14 +92,26 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Check if client already exists for this tenant
-    const existingClient = await Client.findOne({ phone, tenantId: tenant._id });
+    // Check if verified client already exists for this tenant
+    const existingClient = await Client.findOne({ 
+      phone, 
+      tenantId: tenant._id,
+      accountStatus: { $ne: 'pending-verification' }
+    });
+    
     if (existingClient) {
       return res.status(400).json({
         success: false,
         message: 'A client with this phone number already exists at this salon'
       });
     }
+
+    // Delete any old unverified clients with same phone (cleanup failed registrations)
+    await Client.deleteMany({
+      phone,
+      tenantId: tenant._id,
+      accountStatus: 'pending-verification'
+    });
 
     // Hash password
     const salt = await bcrypt.genSalt(10);
@@ -162,6 +174,25 @@ exports.register = async (req, res) => {
     });
   } catch (error) {
     logger.error(`Client registration error: ${error.message}`);
+    
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      let message = 'This information is already registered';
+      
+      if (field === 'email') {
+        message = 'This email address is already registered with another salon';
+      } else if (field === 'phone') {
+        message = 'This phone number is already registered with another salon';
+      }
+      
+      return res.status(400).json({
+        success: false,
+        message,
+        field
+      });
+    }
+    
     res.status(500).json({
       success: false,
       message: 'Server error during registration'
@@ -257,13 +288,32 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Check if account is pending verification
+    // Check if account is pending verification - allow re-verification
     if (client.accountStatus === 'pending-verification') {
+      // Send new 2FA code for verification
+      const twoFactorService = require('../services/twoFactorService');
+      const contact = client.twoFactorMethod === 'email' ? client.email : client.phone;
+      
+      const twoFactorResult = await twoFactorService.sendCode({
+        userId: client._id,
+        userModel: 'Client',
+        tenantId: tenant._id,
+        method: client.twoFactorMethod || 'sms',
+        contact,
+        purpose: 'registration',
+        ipAddress: req.ip,
+        userAgent: req.get('user-agent')
+      });
+
       return res.status(403).json({
         success: false,
         error: 'PENDING_VERIFICATION',
-        message: 'Please verify your account first',
-        clientId: client._id
+        message: 'Your account needs verification. A new code has been sent.',
+        requiresVerification: true,
+        twoFactorId: twoFactorResult.twoFactorId,
+        method: twoFactorResult.method,
+        sentTo: twoFactorResult.sentTo,
+        expiresAt: twoFactorResult.expiresAt
       });
     }
 
@@ -274,11 +324,20 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Check if 2FA is enabled (skip in development for testing)
+    // Check if device is trusted
+    const trustedDeviceService = require('../services/trustedDeviceService');
+    const isDeviceTrusted = await trustedDeviceService.isDeviceTrusted(
+      client._id,
+      'Client',
+      tenant._id,
+      req
+    );
+
+    // Check if 2FA is enabled (skip in development for testing or if device is trusted)
     const isDevelopment = process.env.NODE_ENV === 'development';
     const skipTwoFactor = isDevelopment && req.body.skipTwoFactor === true;
     
-    if (client.twoFactorEnabled && !skipTwoFactor) {
+    if (client.twoFactorEnabled && !skipTwoFactor && !isDeviceTrusted) {
       // If 2FA code provided, verify it
       if (twoFactorCode && twoFactorId) {
         const twoFactorService = require('../services/twoFactorService');
@@ -286,6 +345,17 @@ exports.login = async (req, res) => {
 
         if (!verifyResult.success) {
           return res.status(400).json(verifyResult);
+        }
+
+        // 2FA verified, check if user wants to trust this device
+        if (req.body.trustDevice) {
+          await trustedDeviceService.trustDevice(
+            client._id,
+            'Client',
+            tenant._id,
+            req,
+            30 // Trust for 30 days
+          );
         }
 
         // 2FA verified, proceed with login
@@ -492,6 +562,128 @@ exports.changePassword = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error'
+    });
+  }
+};
+
+
+// @desc    Verify 2FA code during registration
+// @route   POST /api/v1/client-auth/verify
+// @access  Public
+exports.verify2FA = async (req, res) => {
+  try {
+    const { twoFactorId, code } = req.body;
+
+    if (!twoFactorId || !code) {
+      return res.status(400).json({
+        success: false,
+        message: 'Two-factor ID and code are required'
+      });
+    }
+
+    // Verify the 2FA code
+    const twoFactorService = require('../services/twoFactorService');
+    const result = await twoFactorService.verifyCode(twoFactorId, code);
+
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        message: result.message || 'Invalid verification code'
+      });
+    }
+
+    // Get the client and activate account
+    const client = await Client.findById(result.userId).select('-password');
+
+    if (!client) {
+      return res.status(404).json({
+        success: false,
+        message: 'Client not found'
+      });
+    }
+
+    // Activate the account
+    const isNewClient = client.accountStatus === 'pending-verification';
+    if (isNewClient) {
+      client.accountStatus = 'active';
+      await client.save();
+
+      // Create notification for salon owner about new client
+      try {
+        const Notification = require('../models/Notification');
+        await Notification.create({
+          tenantId: client.tenantId,
+          type: 'new_client',
+          title: '🎉 New Client Registered',
+          message: `${client.firstName} ${client.lastName} just joined! Send them a warm welcome message to make a great first impression.`,
+          priority: 'high',
+          actionUrl: `/clients/${client._id}`,
+          actionLabel: 'Send Welcome Message',
+          relatedClient: client._id
+        });
+        logger.info('New client notification created', { clientId: client._id });
+      } catch (notifError) {
+        logger.error('Failed to create new client notification:', notifError);
+        // Don't fail the registration if notification fails
+      }
+    }
+
+    // Generate token
+    const token = generateToken(client._id);
+
+    logger.info('Client 2FA verification successful', { clientId: client._id });
+
+    res.json({
+      success: true,
+      token,
+      data: client
+    });
+  } catch (error) {
+    logger.error('Client 2FA verification error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during verification'
+    });
+  }
+};
+
+// @desc    Resend 2FA code
+// @route   POST /api/v1/client-auth/resend
+// @access  Public
+exports.resend2FA = async (req, res) => {
+  try {
+    const { twoFactorId } = req.body;
+
+    if (!twoFactorId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Two-factor ID is required'
+      });
+    }
+
+    // Resend the code
+    const twoFactorService = require('../services/twoFactorService');
+    const result = await twoFactorService.resendCode(twoFactorId);
+
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        message: result.message || 'Failed to resend code'
+      });
+    }
+
+    logger.info('Client 2FA code resent', { twoFactorId });
+
+    res.json({
+      success: true,
+      message: 'Verification code resent successfully',
+      expiresAt: result.expiresAt
+    });
+  } catch (error) {
+    logger.error('Client 2FA resend error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error while resending code'
     });
   }
 };

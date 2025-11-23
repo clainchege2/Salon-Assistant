@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import SalonSelector from '../components/SalonSelector';
+import Toast from '../components/Toast';
 import './Register.css';
 
 export default function Register() {
@@ -23,7 +24,7 @@ export default function Register() {
     method: ''
   });
   const [salons, setSalons] = useState([]);
-  const [error, setError] = useState('');
+  const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loadingSalons, setLoadingSalons] = useState(true);
   const navigate = useNavigate();
@@ -39,7 +40,7 @@ export default function Register() {
       setSalons(response.data.data || []);
     } catch (err) {
       console.error('Error fetching salons:', err);
-      setError('Failed to load salons. Please refresh the page.');
+      setToast({ message: 'Failed to load salons. Please refresh the page.', type: 'error' });
     } finally {
       setLoadingSalons(false);
     }
@@ -54,10 +55,10 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+    setToast(null);
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setToast({ message: 'Passwords do not match', type: 'error' });
       return;
     }
 
@@ -83,22 +84,24 @@ export default function Register() {
           method: response.data.method
         });
         setStep(2);
+        setToast({ message: response.data.message || 'Verification code sent!', type: 'success' });
         setLoading(false);
       } else {
         // Direct login (fallback)
         localStorage.setItem('clientToken', response.data.token);
         localStorage.setItem('clientData', JSON.stringify(response.data.data));
-        navigate('/dashboard');
+        setToast({ message: 'Account created successfully!', type: 'success' });
+        setTimeout(() => navigate('/dashboard'), 500);
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      setToast({ message: err.response?.data?.message || 'Registration failed. Please try again.', type: 'error' });
       setLoading(false);
     }
   };
 
   const handleVerification = async (e) => {
     e.preventDefault();
-    setError(''); // Clear any previous errors
+    setToast(null);
     setLoading(true);
 
     try {
@@ -106,34 +109,29 @@ export default function Register() {
         twoFactorId: verificationData.twoFactorId,
         code: verificationData.code
       });
-
-      // Clear error on success
-      setError('');
       
       localStorage.setItem('clientToken', response.data.token);
       localStorage.setItem('clientData', JSON.stringify(response.data.data));
       
-      // Small delay to ensure state updates, then redirect
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 100);
+      setToast({ message: 'Account verified successfully!', type: 'success' });
+      setTimeout(() => navigate('/dashboard'), 500);
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid verification code. Please try again.');
+      setToast({ message: err.response?.data?.message || 'Invalid verification code. Please try again.', type: 'error' });
       setLoading(false);
     }
   };
 
   const resendCode = async () => {
-    setError('');
+    setToast(null);
     setLoading(true);
 
     try {
       await axios.post(`${process.env.REACT_APP_API_URL}/api/v1/client-auth/resend`, {
         twoFactorId: verificationData.twoFactorId
       });
-      alert('Verification code resent successfully!');
+      setToast({ message: 'Verification code resent successfully!', type: 'success' });
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to resend code');
+      setToast({ message: err.response?.data?.message || 'Failed to resend code', type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -141,6 +139,14 @@ export default function Register() {
 
   return (
     <div className="register-page">
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+      
       <div className="register-container" style={{ maxWidth: '500px' }}>
         <div className="register-card">
           <div className="register-header">
@@ -148,14 +154,6 @@ export default function Register() {
             <h1>{step === 1 ? 'Join Us' : 'Verify Your Account'}</h1>
             <p>{step === 1 ? 'Create your account to start booking' : `Code sent to ${verificationData.sentTo}`}</p>
           </div>
-
-          {error && (
-            <div className={`error-message ${step === 2 ? 'small' : ''}`}>
-              {error.includes('attempts remaining') 
-                ? error.replace('Invalid code.', '❌').replace('attempts remaining', 'tries left')
-                : error}
-            </div>
-          )}
 
           {step === 1 ? (
             loadingSalons ? (
@@ -270,8 +268,8 @@ export default function Register() {
                       ...verificationData,
                       code: e.target.value
                     });
-                    // Clear error when user starts typing
-                    if (error) setError('');
+                    // Clear toast when user starts typing
+                    if (toast) setToast(null);
                   }}
                   placeholder="Enter 6-digit code"
                   maxLength="6"

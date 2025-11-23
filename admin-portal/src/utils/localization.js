@@ -113,16 +113,14 @@ export const formatDateLong = (date) => {
   });
 };
 
-// Format time based on tenant's region (12h for US, 24h for others)
+// Format time in 12-hour format with AM/PM (user-friendly for all regions)
 export const formatTime = (date) => {
-  const settings = getTenantSettings();
-  const use12Hour = settings.country === 'USA';
   const config = getCurrencyConfig();
   
   return new Date(date).toLocaleTimeString(config.locale, {
-    hour: '2-digit',
+    hour: 'numeric',
     minute: '2-digit',
-    hour12: use12Hour
+    hour12: true
   });
 };
 

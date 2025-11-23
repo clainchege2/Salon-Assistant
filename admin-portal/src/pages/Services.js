@@ -115,14 +115,14 @@ export default function Services() {
     } catch (error) {
       console.error('Error rejecting suggestion:', error);
       setError('Failed to reject suggestion');
-      setTimeout(() => setError(''), 3000);
+      setTimeout(() => setError(''), 5000);
     }
   };
 
   const handleAddService = async () => {
     if (!newService.name || !newService.price || !newService.duration) {
       setError('Please fill in all required fields');
-      setTimeout(() => setError(''), 3000);
+      setTimeout(() => setError(''), 5000);
       return;
     }
 
@@ -154,7 +154,7 @@ export default function Services() {
     } catch (error) {
       console.error('Error adding service:', error);
       setError(canManageServices() ? 'Failed to add service' : 'Failed to send suggestion');
-      setTimeout(() => setError(''), 3000);
+      setTimeout(() => setError(''), 5000);
     }
   };
 
@@ -173,7 +173,7 @@ export default function Services() {
   const handleUpdateService = async () => {
     if (!editingService.name || !editingService.price || !editingService.duration) {
       setError('Please fill in all required fields');
-      setTimeout(() => setError(''), 3000);
+      setTimeout(() => setError(''), 5000);
       return;
     }
 
@@ -197,7 +197,7 @@ export default function Services() {
     } catch (error) {
       console.error('Error updating service:', error);
       setError('Failed to update service');
-      setTimeout(() => setError(''), 3000);
+      setTimeout(() => setError(''), 5000);
     }
   };
 
@@ -222,7 +222,7 @@ export default function Services() {
     } catch (error) {
       console.error('Error deleting service:', error);
       setError('Failed to delete service');
-      setTimeout(() => setError(''), 3000);
+      setTimeout(() => setError(''), 5000);
       setShowDeleteModal(false);
       setServiceToDelete(null);
     }

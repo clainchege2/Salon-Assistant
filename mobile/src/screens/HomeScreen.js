@@ -15,14 +15,37 @@ export default function HomeScreen({ navigation }) {
 
   useEffect(() => {
     fetchData();
+    
+    // Auto-refresh every 30 seconds for real-time updates
+    const refreshInterval = setInterval(() => {
+      fetchData();
+    }, 30000);
+
+    return () => clearInterval(refreshInterval);
   }, []);
 
   const fetchData = async () => {
     try {
       if (isStylist) {
-        // Stylists only see their assigned bookings
-        const scheduleRes = await api.get(`/bookings?assignedTo=${user._id}&status=confirmed`);
-        setMySchedule(scheduleRes.data.data || []);
+        // Stylists see all their upcoming bookings (backend filters by role automatically)
+        const scheduleRes = await api.get('/bookings');
+        console.log('Stylist bookings response:', scheduleRes.data);
+        
+        // Filter to show only upcoming bookings (not cancelled, completed, or no-show)
+        const allBookings = scheduleRes.data.data || [];
+        console.log('Total bookings:', allBookings.length);
+        
+        const upcoming = allBookings.filter(booking => {
+          const bookingDate = new Date(booking.scheduledDate);
+          const now = new Date();
+          const isUpcoming = bookingDate > now;
+          const isNotExcluded = !['cancelled', 'completed', 'no-show'].includes(booking.status);
+          console.log(`Booking ${booking._id}: date=${bookingDate}, isUpcoming=${isUpcoming}, status=${booking.status}, isNotExcluded=${isNotExcluded}`);
+          return isUpcoming && isNotExcluded;
+        });
+        
+        console.log('Filtered upcoming bookings:', upcoming.length);
+        setMySchedule(upcoming);
       } else {
         // Owners/Managers see full stats
         const [bookingsRes, clientsRes, servicesRes] = await Promise.all([

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import Toast from '../components/Toast';
 import './Settings.css';
 
 export default function Settings() {
@@ -44,7 +45,7 @@ export default function Settings() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState({ type: '', text: '' });
+  const [toast, setToast] = useState(null);
   const [confirmChangeModal, setConfirmChangeModal] = useState({
     show: false,
     type: '',
@@ -198,8 +199,7 @@ export default function Settings() {
   };
 
   const showMessage = (type, text) => {
-    setMessage({ type, text });
-    setTimeout(() => setMessage({ type: '', text: '' }), 4000);
+    setToast({ type, message: text });
   };
 
   const handleExportData = async () => {
@@ -346,10 +346,12 @@ export default function Settings() {
         </div>
       </div>
 
-      {message.text && (
-        <div className={`message ${message.type}`}>
-          {message.text}
-        </div>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
       )}
 
       {/* Tabs */}

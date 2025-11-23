@@ -38,6 +38,7 @@ if (process.env.NODE_ENV !== 'test') {
 // Routes
 app.use('/api/v1/auth', require('./routes/auth'));
 app.use('/api/v1/auth/2fa', require('./routes/twoFactor'));
+app.use('/api/v1/slug-recovery', require('./routes/slugRecovery'));
 app.use('/api/v1/client-auth', require('./routes/clientAuth'));
 app.use('/api/v1/client-bookings', require('./routes/clientBookings'));
 app.use('/api/v1/bookings', require('./routes/bookings'));
@@ -53,6 +54,7 @@ app.use('/api/v1/tenants', require('./routes/tenants'));
 app.use('/api/v1/admin', require('./routes/admin'));
 app.use('/api/v1/reports', require('./routes/reports'));
 app.use('/api/v1/audit-logs', require('./routes/auditLogs'));
+app.use('/api/v1/notifications', require('./routes/notifications'));
 app.use('/api/analytics', require('./routes/analytics'));
 
 // Root route - API info

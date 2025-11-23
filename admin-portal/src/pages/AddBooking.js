@@ -152,7 +152,7 @@ export default function AddBooking() {
   const handleQuickAddClient = async () => {
     if (!newClient.firstName || !newClient.lastName || !newClient.phone) {
       setError('Please fill in required fields (First Name, Last Name, Phone)');
-      setTimeout(() => setError(''), 3000);
+      setTimeout(() => setError(''), 5000);
       return;
     }
 
@@ -214,7 +214,7 @@ export default function AddBooking() {
     } catch (err) {
       console.error('Add client error:', err);
       setError(err.response?.data?.message || 'Failed to add client');
-      setTimeout(() => setError(''), 4000);
+      setTimeout(() => setError(''), 5000);
     }
   };
 

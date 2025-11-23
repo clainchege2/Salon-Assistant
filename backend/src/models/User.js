@@ -12,12 +12,15 @@ const userSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
+    unique: true,
     lowercase: true,
     trim: true
   },
   phone: {
     type: String,
-    required: true
+    required: true,
+    unique: true,
+    trim: true
   },
   password: {
     type: String,
@@ -39,18 +42,30 @@ const userSchema = new mongoose.Schema({
   },
   permissions: {
     canViewCommunications: { type: Boolean, default: false },
+    canMonitorCommunications: { type: Boolean, default: false },
     canViewMarketing: { type: Boolean, default: false },
     canDeleteBookings: { type: Boolean, default: false },
     canDeleteClients: { type: Boolean, default: false },
     canManageStaff: { type: Boolean, default: false },
     canManageServices: { type: Boolean, default: false },
     canManageInventory: { type: Boolean, default: false },
-    canViewReports: { type: Boolean, default: false }
+    canViewReports: { type: Boolean, default: false },
+    canCompleteBookings: { type: Boolean, default: false }
   },
   status: {
     type: String,
     enum: ['active', 'blocked', 'inactive', 'pending-verification'],
-    default: 'pending-verification'
+    default: 'active' // Active by default since owners add staff directly
+  },
+  
+  // Password management
+  requirePasswordChange: {
+    type: Boolean,
+    default: false
+  },
+  temporaryPassword: {
+    type: Boolean,
+    default: false
   },
   
   // Two-Factor Authentication
@@ -95,7 +110,6 @@ const userSchema = new mongoose.Schema({
 });
 
 // Compound index for tenant isolation
-userSchema.index({ tenantId: 1, email: 1 }, { unique: true });
 userSchema.index({ tenantId: 1, role: 1 });
 
 // Auto-set permissions based on role
@@ -110,13 +124,15 @@ userSchema.pre('save', async function(next) {
     if (this.role === 'owner') {
       this.permissions = {
         canViewCommunications: true,
+        canMonitorCommunications: true,
         canViewMarketing: true,
         canDeleteBookings: true,
         canDeleteClients: true,
         canManageStaff: true,
         canManageServices: true,
         canManageInventory: true,
-        canViewReports: true
+        canViewReports: true,
+        canCompleteBookings: true
       };
     } else if (this.role === 'manager' || this.role === 'stylist') {
       // Don't override existing permissions for managers/stylists
@@ -124,13 +140,15 @@ userSchema.pre('save', async function(next) {
       if (!this.permissions || Object.keys(this.permissions).length === 0) {
         this.permissions = {
           canViewCommunications: false,
+          canMonitorCommunications: false,
           canViewMarketing: false,
           canDeleteBookings: false,
           canDeleteClients: false,
           canManageStaff: false,
           canManageServices: false,
           canManageInventory: false,
-          canViewReports: false
+          canViewReports: false,
+          canCompleteBookings: false
         };
       }
     }

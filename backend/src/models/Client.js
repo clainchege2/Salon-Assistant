@@ -18,12 +18,16 @@ const clientSchema = new mongoose.Schema({
   },
   email: {
     type: String,
+    unique: true,
+    sparse: true,
     lowercase: true,
     trim: true
   },
   phone: {
     type: String,
-    required: true
+    required: true,
+    unique: true,
+    trim: true
   },
   password: {
     type: String,
@@ -250,7 +254,6 @@ const clientSchema = new mongoose.Schema({
   timestamps: true
 });
 
-clientSchema.index({ tenantId: 1, phone: 1 }, { unique: true });
 clientSchema.index({ tenantId: 1, category: 1 });
 clientSchema.index({ tenantId: 1, lastVisit: 1 });
 

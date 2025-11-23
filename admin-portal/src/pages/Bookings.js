@@ -10,48 +10,26 @@ export default function Bookings() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState('priority'); // 'priority', 'date-asc', 'date-desc', 'client', 'price'
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'cards'
   const [viewModal, setViewModal] = useState({ show: false, booking: null });
   const [confirmModal, setConfirmModal] = useState({ show: false, booking: null });
   const [cancelModal, setCancelModal] = useState({ show: false, booking: null, reason: '' });
-  const [successMessage, setSuccessMessage] = useState('');
-  const [error, setError] = useState('');
-  const [openDropdown, setOpenDropdown] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchBookings();
     
-    // Check if there's a booking to highlight from URL params
-    const params = new URLSearchParams(window.location.search);
-    const highlightId = params.get('highlight');
-    if (highlightId) {
-      // Wait for bookings to load, then scroll to and highlight the booking
-      setTimeout(() => {
-        const element = document.getElementById(`booking-${highlightId}`);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          element.classList.add('highlight-booking');
-          setTimeout(() => element.classList.remove('highlight-booking'), 3000);
-        }
-      }, 500);
-    }
+    // Auto-refresh every 30 seconds for real-time updates
+    const refreshInterval = setInterval(() => {
+      fetchBookings();
+    }, 30000);
+
+    return () => clearInterval(refreshInterval);
   }, []);
 
   useEffect(() => {
-    filterAndSortBookings();
-  }, [filter, searchTerm, sortBy, bookings]);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (!event.target.closest('.status-dropdown')) {
-        setOpenDropdown(null);
-      }
-    };
-    document.addEventListener('click', handleClickOutside);
-    return () => document.removeEventListener('click', handleClickOutside);
-  }, []);
+    filterBookings();
+  }, [filter, searchTerm, bookings]);
 
   const fetchBookings = async () => {
     try {
@@ -67,7 +45,7 @@ export default function Bookings() {
     }
   };
 
-  const filterAndSortBookings = () => {
+  const filterBookings = () => {
     let filtered = bookings;
 
     // Filter by status
@@ -83,57 +61,7 @@ export default function Bookings() {
       });
     }
 
-    // Sort bookings
-    const sorted = [...filtered].sort((a, b) => {
-      const now = new Date();
-      
-      switch (sortBy) {
-        case 'priority':
-          // Priority order: pending > confirmed > in-progress > completed > cancelled > no-show
-          const priorityOrder = {
-            'pending': 1,
-            'confirmed': 2,
-            'in-progress': 3,
-            'completed': 4,
-            'cancelled': 5,
-            'no-show': 6
-          };
-          const priorityDiff = (priorityOrder[a.status] || 99) - (priorityOrder[b.status] || 99);
-          if (priorityDiff !== 0) return priorityDiff;
-          // If same priority, sort by date (upcoming first)
-          return new Date(a.scheduledDate) - new Date(b.scheduledDate);
-
-        case 'date-asc':
-          // Upcoming first: Filter out completed/past, then sort
-          const aDate = new Date(a.scheduledDate);
-          const bDate = new Date(b.scheduledDate);
-          const aIsPast = aDate < now || a.status === 'completed' || a.status === 'cancelled';
-          const bIsPast = bDate < now || b.status === 'completed' || b.status === 'cancelled';
-          
-          // Upcoming bookings come first
-          if (!aIsPast && bIsPast) return -1;
-          if (aIsPast && !bIsPast) return 1;
-          
-          // Within same category (both upcoming or both past), sort by date
-          return aDate - bDate;
-
-        case 'date-desc':
-          return new Date(b.scheduledDate) - new Date(a.scheduledDate);
-
-        case 'client':
-          const nameA = `${a.clientId?.firstName} ${a.clientId?.lastName}`.toLowerCase();
-          const nameB = `${b.clientId?.firstName} ${b.clientId?.lastName}`.toLowerCase();
-          return nameA.localeCompare(nameB);
-
-        case 'price':
-          return (b.totalPrice || 0) - (a.totalPrice || 0);
-
-        default:
-          return 0;
-      }
-    });
-
-    setFilteredBookings(sorted);
+    setFilteredBookings(filtered);
   };
 
   const getStatusColor = (status) => {
@@ -160,30 +88,12 @@ export default function Bookings() {
         { status: 'confirmed' },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      
-      // Auto-resolve related communication if pending
-      const pendingCommId = localStorage.getItem('pendingResolveCommId');
-      if (pendingCommId) {
-        try {
-          await axios.put(
-            `http://localhost:5000/api/v1/communications/${pendingCommId}/resolve`,
-            {},
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          localStorage.removeItem('pendingResolveCommId');
-        } catch (err) {
-          console.error('Failed to auto-resolve communication:', err);
-        }
-      }
-      
       fetchBookings();
       setConfirmModal({ show: false, booking: null });
-      setSuccessMessage('✅ Booking confirmed successfully!');
-      setTimeout(() => setSuccessMessage(''), 3000);
+      alert('✅ Booking confirmed successfully!');
     } catch (error) {
       console.error('Error confirming booking:', error);
-      setError('❌ Failed to confirm booking');
-      setTimeout(() => setError(''), 3000);
+      alert('❌ Failed to confirm booking');
     }
   };
 
@@ -200,32 +110,10 @@ export default function Bookings() {
       );
       fetchBookings();
       setCancelModal({ show: false, booking: null, reason: '' });
-      setSuccessMessage('✅ Booking cancelled successfully!');
-      setTimeout(() => setSuccessMessage(''), 3000);
+      alert('✅ Booking cancelled successfully!');
     } catch (error) {
       console.error('Error cancelling booking:', error);
-      setError('❌ Failed to cancel booking');
-      setTimeout(() => setError(''), 3000);
-    }
-  };
-
-  const handleUpdateBookingStatus = async (bookingId, status) => {
-    try {
-      const token = localStorage.getItem('adminToken');
-      await axios.put(
-        `http://localhost:5000/api/v1/bookings/${bookingId}`,
-        { status },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      fetchBookings();
-      setViewModal({ show: false, booking: null });
-      const statusText = status === 'completed' ? 'completed' : 'marked as no-show';
-      setSuccessMessage(`✅ Booking ${statusText} successfully!`);
-      setTimeout(() => setSuccessMessage(''), 3000);
-    } catch (error) {
-      console.error('Error updating booking status:', error);
-      setError('❌ Failed to update booking status');
-      setTimeout(() => setError(''), 3000);
+      alert('❌ Failed to cancel booking');
     }
   };
 
@@ -239,7 +127,7 @@ export default function Bookings() {
         </button>
         <div className="page-title-wrapper">
           <div className="title-with-icon">
-            <span className="title-icon">🗓️</span>
+            <span className="title-icon">📅</span>
             <div className="title-content">
               <h1>Bookings</h1>
               <p className="page-tagline">Manage appointments and schedules</p>
@@ -251,13 +139,6 @@ export default function Bookings() {
         </button>
       </div>
 
-      {successMessage && (
-        <div className="success-notification">{successMessage}</div>
-      )}
-      {error && (
-        <div className="error-notification">{error}</div>
-      )}
-
       <div className="bookings-controls">
         <div className="controls-row">
           <input
@@ -267,21 +148,6 @@ export default function Bookings() {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="search-input"
           />
-          
-          <div className="sort-dropdown">
-            <label>Sort by:</label>
-            <select 
-              value={sortBy} 
-              onChange={(e) => setSortBy(e.target.value)}
-              className="sort-select"
-            >
-              <option value="priority">⚡ Priority (Action Needed)</option>
-              <option value="date-asc">📅 Date (Upcoming First)</option>
-              <option value="date-desc">📅 Date (Recent First)</option>
-              <option value="client">👤 Client Name (A-Z)</option>
-              <option value="price">💰 Price (High to Low)</option>
-            </select>
-          </div>
           
           <div className="view-toggle">
             <button 
@@ -352,7 +218,7 @@ export default function Bookings() {
             </thead>
             <tbody>
               {filteredBookings.map(booking => (
-                <tr key={booking._id} id={`booking-${booking._id}`}>
+                <tr key={booking._id}>
                   <td>
                     <div className="client-cell">
                       <strong>{booking.clientId?.firstName} {booking.clientId?.lastName}</strong>
@@ -366,14 +232,7 @@ export default function Bookings() {
                     </div>
                   </td>
                   <td>{booking.services?.map(s => s.serviceName).join(', ')}</td>
-                  <td>
-                    {booking.assignedTo 
-                      ? `${booking.assignedTo.firstName} ${booking.assignedTo.lastName}`
-                      : booking.stylistId 
-                        ? `${booking.stylistId.firstName} ${booking.stylistId.lastName}`
-                        : '-'
-                    }
-                  </td>
+                  <td>{booking.assignedTo?.firstName || '-'}</td>
                   <td className="price-cell">{formatCurrency(booking.totalPrice)}</td>
                   <td>
                     <span 
@@ -391,56 +250,9 @@ export default function Bookings() {
                         </button>
                       )}
                       {booking.status !== 'completed' && booking.status !== 'cancelled' && (
-                        <div className="status-dropdown">
-                          <button 
-                            className="btn-action status-toggle" 
-                            onClick={(e) => {
-                              setOpenDropdown(openDropdown === booking._id ? null : booking._id);
-                              e.stopPropagation();
-                            }}
-                          >
-                            Update Status ▾
-                          </button>
-                          {openDropdown === booking._id && (
-                            <div 
-                              className="dropdown-menu"
-                              style={{
-                                position: 'absolute',
-                                top: '100%',
-                                left: '0',
-                                marginTop: '4px'
-                              }}
-                            >
-                              <button 
-                                className="dropdown-item complete"
-                                onClick={() => {
-                                  handleUpdateBookingStatus(booking._id, 'completed');
-                                  setOpenDropdown(null);
-                                }}
-                              >
-                                ✓ Mark Completed
-                              </button>
-                              <button 
-                                className="dropdown-item no-show"
-                                onClick={() => {
-                                  handleUpdateBookingStatus(booking._id, 'no-show');
-                                  setOpenDropdown(null);
-                                }}
-                              >
-                                ⊘ Mark No-Show
-                              </button>
-                              <button 
-                                className="dropdown-item cancel"
-                                onClick={() => {
-                                  setCancelModal({ show: true, booking, reason: '' });
-                                  setOpenDropdown(null);
-                                }}
-                              >
-                                ✕ Cancel Booking
-                              </button>
-                            </div>
-                          )}
-                        </div>
+                        <button className="btn-action cancel" title="Cancel booking" onClick={() => setCancelModal({ show: true, booking, reason: '' })}>
+                          ✕ Cancel
+                        </button>
                       )}
                       <button className="btn-action view" title="View details" onClick={() => handleViewBooking(booking)}>
                         View
@@ -479,20 +291,13 @@ export default function Bookings() {
                   <span>{formatTime(booking.scheduledDate)}</span>
                 </div>
                 <div className="detail-row">
-                  <span className="icon">💇</span>
+                  <span className="icon">✂️</span>
                   <span>{booking.services?.map(s => s.serviceName).join(', ')}</span>
                 </div>
-                {(booking.assignedTo || booking.stylistId) && (
+                {booking.assignedTo && (
                   <div className="detail-row">
                     <span className="icon">👤</span>
-                    <span>
-                      {booking.assignedTo 
-                        ? `${booking.assignedTo.firstName} ${booking.assignedTo.lastName}`
-                        : booking.stylistId 
-                          ? `${booking.stylistId.firstName} ${booking.stylistId.lastName}`
-                          : 'Unassigned'
-                      }
-                    </span>
+                    <span>{booking.assignedTo?.firstName} {booking.assignedTo?.lastName}</span>
                   </div>
                 )}
                 <div className="detail-row">
@@ -558,17 +363,10 @@ export default function Bookings() {
                 ))}
                 <p className="total-price"><strong>Total:</strong> {formatCurrency(viewModal.booking.totalPrice)}</p>
               </div>
-              {(viewModal.booking.assignedTo || viewModal.booking.stylistId) && (
+              {viewModal.booking.assignedTo && (
                 <div className="detail-section">
                   <h3>Assigned Staff</h3>
-                  <p>
-                    {viewModal.booking.assignedTo 
-                      ? `${viewModal.booking.assignedTo.firstName} ${viewModal.booking.assignedTo.lastName}`
-                      : viewModal.booking.stylistId 
-                        ? `${viewModal.booking.stylistId.firstName} ${viewModal.booking.stylistId.lastName}`
-                        : 'Unassigned'
-                    }
-                  </p>
+                  <p>{viewModal.booking.assignedTo.firstName} {viewModal.booking.assignedTo.lastName}</p>
                 </div>
               )}
               {viewModal.booking.customerInstructions && (
@@ -577,38 +375,8 @@ export default function Bookings() {
                   <p>{viewModal.booking.customerInstructions}</p>
                 </div>
               )}
-              {viewModal.booking.feedback && (
-                <div className="detail-section">
-                  <h3>⭐ Client Feedback</h3>
-                  <div className="feedback-display">
-                    <p><strong>Rating:</strong> {'⭐'.repeat(viewModal.booking.feedback.rating)} ({viewModal.booking.feedback.rating}/5)</p>
-                    {viewModal.booking.feedback.comment && (
-                      <p><strong>Comment:</strong> {viewModal.booking.feedback.comment}</p>
-                    )}
-                    <p className="feedback-date">
-                      <small>Submitted: {new Date(viewModal.booking.feedback.submittedAt).toLocaleDateString()}</small>
-                    </p>
-                  </div>
-                </div>
-              )}
             </div>
             <div className="modal-footer">
-              {viewModal.booking.status !== 'completed' && viewModal.booking.status !== 'cancelled' && (
-                <button 
-                  className="btn-success" 
-                  onClick={() => handleUpdateBookingStatus(viewModal.booking._id, 'completed')}
-                >
-                  ✓ Mark Completed
-                </button>
-              )}
-              {viewModal.booking.status !== 'no-show' && viewModal.booking.status !== 'cancelled' && (
-                <button 
-                  className="btn-warning" 
-                  onClick={() => handleUpdateBookingStatus(viewModal.booking._id, 'no-show')}
-                >
-                  ⊘ Mark No-Show
-                </button>
-              )}
               <button className="btn-secondary" onClick={() => setViewModal({ show: false, booking: null })}>Close</button>
             </div>
           </div>

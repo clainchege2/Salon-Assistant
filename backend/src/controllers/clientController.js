@@ -68,6 +68,14 @@ exports.createClient = async (req, res) => {
 
 exports.getClients = async (req, res) => {
   try {
+    // Staff members cannot access full client list
+    if (req.user.role === 'stylist') {
+      return res.status(403).json({
+        success: false,
+        message: 'Staff members do not have access to client directory. Client information is only visible in your assigned bookings.'
+      });
+    }
+    
     const { category, search } = req.query;
     
     const filter = { tenantId: req.tenantId };
@@ -101,6 +109,14 @@ exports.getClients = async (req, res) => {
 
 exports.getClient = async (req, res) => {
   try {
+    // Staff members cannot access individual client details
+    if (req.user.role === 'stylist') {
+      return res.status(403).json({
+        success: false,
+        message: 'Staff members do not have access to client details. Client information is only visible in your assigned bookings.'
+      });
+    }
+    
     const client = await Client.findOne({
       _id: req.params.id,
       tenantId: req.tenantId

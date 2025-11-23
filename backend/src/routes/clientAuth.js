@@ -5,7 +5,9 @@ const {
   getMe,
   updateProfile,
   changePassword,
-  getSalons
+  getSalons,
+  verify2FA,
+  resend2FA
 } = require('../controllers/clientAuthController');
 const { protectClient } = require('../middleware/clientAuth');
 const { readLimiter, authLimiter } = require('../middleware/security');
@@ -17,6 +19,8 @@ const router = express.Router();
 router.get('/salons', readLimiter, getSalons);
 router.post('/register', authLimiter, auditLog('ClientAuth'), register);
 router.post('/login', authLimiter, auditLog('ClientAuth'), login);
+router.post('/verify', authLimiter, auditLog('ClientAuth'), verify2FA);
+router.post('/resend', authLimiter, auditLog('ClientAuth'), resend2FA);
 
 // Protected routes
 router.get('/me', protectClient, getMe);

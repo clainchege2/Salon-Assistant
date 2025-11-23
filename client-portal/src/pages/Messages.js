@@ -32,7 +32,7 @@ export default function Messages() {
             await Promise.all(
               unreadMessages.map(msg =>
                 axios.put(
-                  `${process.env.REACT_APP_API_URL}/api/v1/client/messages/${msg._id}/read`,
+                  `${process.env.REACT_APP_API_URL}/api/v1/client-bookings/messages/${msg._id}/read`,
                   {},
                   { headers: { Authorization: `Bearer ${token}` } }
                 ).catch(err => console.error('Error marking message as read:', err))
@@ -58,7 +58,7 @@ export default function Messages() {
     try {
       const token = localStorage.getItem('clientToken');
       const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/v1/client/messages`,
+        `${process.env.REACT_APP_API_URL}/api/v1/client-bookings/messages`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const messagesData = response.data.data || [];
@@ -75,7 +75,7 @@ export default function Messages() {
           await Promise.all(
             unreadMessages.map(msg =>
               axios.put(
-                `${process.env.REACT_APP_API_URL}/api/v1/client/messages/${msg._id}/read`,
+                `${process.env.REACT_APP_API_URL}/api/v1/client-bookings/messages/${msg._id}/read`,
                 {},
                 { headers: { Authorization: `Bearer ${token}` } }
               ).catch(err => console.error('Error marking message as read:', err))
@@ -96,7 +96,7 @@ export default function Messages() {
     try {
       const token = localStorage.getItem('clientToken');
       const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/v1/client/campaigns`,
+        `${process.env.REACT_APP_API_URL}/api/v1/client-bookings/campaigns`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const campaignsData = response.data.data || [];

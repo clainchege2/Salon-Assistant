@@ -12,7 +12,12 @@ const {
   getFeedback,
   createFeedback,
   respondToFeedback,
-  updateFeedbackStatus
+  updateFeedbackStatus,
+  getStaffClientCommunications,
+  blockCommunication,
+  unblockCommunication,
+  flagCommunication,
+  unflagCommunication
 } = require('../controllers/communicationController');
 const { protect, checkPermission, checkTierAndPermission } = require('../middleware/auth');
 const { enforceTenantIsolation } = require('../middleware/tenantIsolation');
@@ -46,6 +51,14 @@ router.route('/feedback')
 
 router.put('/feedback/:id/respond', commsCheck, respondToFeedback);
 router.put('/feedback/:id/status', commsCheck, updateFeedbackStatus);
+
+// Staff-Client Communication Monitoring
+const monitorCheck = checkTierAndPermission('pro', 'canMonitorCommunications');
+router.get('/staff-client', commsCheck, getStaffClientCommunications);
+router.post('/block', monitorCheck, blockCommunication);
+router.post('/unblock', monitorCheck, unblockCommunication);
+router.put('/:id/flag', monitorCheck, flagCommunication);
+router.put('/:id/unflag', monitorCheck, unflagCommunication);
 
 // Birthday alerts
 router.get('/birthdays', commsCheck, async (req, res) => {

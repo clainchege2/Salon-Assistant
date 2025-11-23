@@ -130,6 +130,27 @@ exports.register = async (req, res) => {
     });
   } catch (error) {
     logger.error(`Registration error: ${error.message}`);
+    
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      let message = 'This information is already registered';
+      
+      if (field === 'contactEmail' || field === 'email') {
+        message = 'This email address is already registered';
+      } else if (field === 'contactPhone' || field === 'phone') {
+        message = 'This phone number is already registered';
+      } else if (field === 'slug') {
+        message = 'This business name is already taken';
+      }
+      
+      return res.status(400).json({
+        success: false,
+        message,
+        field
+      });
+    }
+    
     res.status(400).json({
       success: false,
       message: error.message
@@ -294,8 +315,8 @@ exports.login = async (req, res) => {
       });
     }
 
-    // Check if 2FA is enabled - always enforce in production
-    const skipTwoFactor = false; // Never skip 2FA for security
+    // Check if 2FA is enabled - skip in development for convenience
+    const skipTwoFactor = process.env.NODE_ENV === 'development' || process.env.SKIP_2FA === 'true';
     
     if (user.twoFactorEnabled && !skipTwoFactor) {
       // If 2FA code provided, verify it
@@ -376,6 +397,7 @@ exports.login = async (req, res) => {
       success: true,
       token,
       refreshToken,
+      requirePasswordChange: user.requirePasswordChange || false,
       user: {
         id: user._id,
         email: user.email,
@@ -389,7 +411,8 @@ exports.login = async (req, res) => {
         businessName: tenant.businessName,
         subscriptionTier: tenant.subscriptionTier,
         twoFactorEnabled: user.twoFactorEnabled,
-        twoFactorMethod: user.twoFactorMethod
+        twoFactorMethod: user.twoFactorMethod,
+        requirePasswordChange: user.requirePasswordChange || false
       },
       tenant: {
         id: tenant._id,
@@ -509,6 +532,67 @@ exports.logout = async (req, res) => {
     });
   } catch (error) {
     logger.error(`Logout error: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+// Change password (for first-time login or password reset)
+exports.changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide current password and new password'
+      });
+    }
+
+    // Validate new password strength
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 8 characters long'
+      });
+    }
+
+    // Get user with password
+    const user = await User.findById(req.user._id).select('+password');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Verify current password
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: 'Current password is incorrect'
+      });
+    }
+
+    // Update password and clear flags
+    user.password = newPassword;
+    user.requirePasswordChange = false;
+    user.temporaryPassword = false;
+    await user.save();
+
+    logger.info(`Password changed for user: ${user.email}`);
+
+    res.json({
+      success: true,
+      message: 'Password changed successfully'
+    });
+  } catch (error) {
+    logger.error(`Change password error: ${error.message}`);
     res.status(500).json({
       success: false,
       message: 'Server error'

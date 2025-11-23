@@ -76,9 +76,8 @@ const auditLogSchema = new mongoose.Schema({
   errorMessage: String,
   timestamp: {
     type: Date,
-    default: Date.now,
-    index: true,
-    expires: 7776000 // Auto-delete after 90 days (TTL index)
+    default: Date.now
+    // Index defined separately below to avoid duplicate
   }
 }, {
   timestamps: false // We use timestamp field instead

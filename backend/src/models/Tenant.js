@@ -30,11 +30,16 @@ const tenantSchema = new mongoose.Schema({
   },
   contactEmail: {
     type: String,
-    required: true
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true
   },
   contactPhone: {
     type: String,
-    required: true
+    required: true,
+    unique: true,
+    trim: true
   },
   address: {
     street: String,

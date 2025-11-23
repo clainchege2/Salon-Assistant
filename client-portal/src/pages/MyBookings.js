@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Toast from '../components/Toast';
 import './MyBookings.css';
 
 export default function MyBookings() {
@@ -9,7 +10,7 @@ export default function MyBookings() {
   const [cancelModal, setCancelModal] = useState({ show: false, booking: null, fee: 0 });
   const [successMessage, setSuccessMessage] = useState('');
   const [lastCancelledBooking, setLastCancelledBooking] = useState(null);
-  const [error, setError] = useState('');
+  const [toast, setToast] = useState(null);
   const [outsideClickCount, setOutsideClickCount] = useState(0);
   const navigate = useNavigate();
 
@@ -54,7 +55,7 @@ export default function MyBookings() {
     try {
       const token = localStorage.getItem('clientToken');
       const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/v1/client/bookings`,
+        `${process.env.REACT_APP_API_URL}/api/v1/client-bookings`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
@@ -112,7 +113,7 @@ export default function MyBookings() {
       const fee = cancelModal.fee;
       
       await axios.put(
-        `${process.env.REACT_APP_API_URL}/api/v1/client/bookings/${bookingId}/cancel`,
+        `${process.env.REACT_APP_API_URL}/api/v1/client-bookings/${bookingId}/cancel`,
         { cancellationFee: fee },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -138,8 +139,7 @@ export default function MyBookings() {
       }, 10000);
     } catch (error) {
       console.error('Error cancelling booking:', error);
-      setError('❌ Failed to cancel booking. Please try again.');
-      setTimeout(() => setError(''), 3000);
+      setToast({ message: 'Failed to cancel booking. Please try again.', type: 'error' });
     }
   };
 
@@ -149,7 +149,7 @@ export default function MyBookings() {
     try {
       const token = localStorage.getItem('clientToken');
       await axios.put(
-        `${process.env.REACT_APP_API_URL}/api/v1/client/bookings/${lastCancelledBooking.id}/reactivate`,
+        `${process.env.REACT_APP_API_URL}/api/v1/client-bookings/${lastCancelledBooking.id}/reactivate`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -157,7 +157,7 @@ export default function MyBookings() {
       fetchBookings();
       setLastCancelledBooking(null);
       setSuccessMessage('');
-      setError('');
+      setToast(null);
       setOutsideClickCount(0);
       
       // Show success message
@@ -168,8 +168,7 @@ export default function MyBookings() {
       }, 5000);
     } catch (error) {
       console.error('Error restoring booking:', error);
-      setError('❌ Failed to restore booking. Please contact support.');
-      setTimeout(() => setError(''), 5000);
+      setToast({ message: 'Failed to restore booking. Please contact support.', type: 'error' });
     }
   };
 
@@ -186,7 +185,7 @@ export default function MyBookings() {
         <h1>My Bookings</h1>
       </div>
 
-      {(successMessage || error) && <div className="alert-backdrop"></div>}
+      {successMessage && <div className="alert-backdrop"></div>}
       
       {successMessage && (
         <div className="success-message" onClick={(e) => e.stopPropagation()}>
@@ -201,7 +200,13 @@ export default function MyBookings() {
           )}
         </div>
       )}
-      {error && <div className="error-message" onClick={(e) => e.stopPropagation()}>{error}</div>}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
 
       <div className="bookings-container">
         {bookings.length === 0 ? (

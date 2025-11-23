@@ -636,3 +636,208 @@ exports.updateFeedbackStatus = async (req, res) => {
     });
   }
 };
+
+
+// Get staff-client communications (for monitoring)
+exports.getStaffClientCommunications = async (req, res) => {
+  try {
+    const { staffId, clientId, flagged } = req.query;
+    
+    const filter = { tenantId: req.tenantId };
+    
+    // If user is a stylist without monitor permission, only show their own communications
+    if (req.user.role === 'stylist' && !req.user.permissions?.canMonitorCommunications) {
+      filter.staffId = req.user._id;
+    } else {
+      // Owners/managers with permission can filter by staff
+      if (staffId) filter.staffId = staffId;
+    }
+    
+    if (clientId) filter.clientId = clientId;
+    if (flagged === 'true') filter.flagged = true;
+    
+    const communications = await Communication.find(filter)
+      .populate('clientId', 'firstName lastName phone email')
+      .populate('staffId', 'firstName lastName role')
+      .populate('sentBy', 'firstName lastName')
+      .populate('blockedBy', 'firstName lastName')
+      .populate('flaggedBy', 'firstName lastName')
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      count: communications.length,
+      data: communications
+    });
+  } catch (error) {
+    logger.error(`Get staff-client communications error: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// Block communication between staff and client
+exports.blockCommunication = async (req, res) => {
+  try {
+    const { staffId, clientId, reason } = req.body;
+    
+    if (!staffId || !clientId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Staff ID and Client ID are required'
+      });
+    }
+    
+    // Mark all communications between this staff and client as blocked
+    await Communication.updateMany(
+      {
+        tenantId: req.tenantId,
+        staffId,
+        clientId
+      },
+      {
+        $set: {
+          isBlocked: true,
+          blockedBy: req.user._id,
+          blockedAt: new Date(),
+          blockReason: reason || 'Communication blocked by management'
+        }
+      }
+    );
+    
+    logger.info(`Communications blocked between staff ${staffId} and client ${clientId} by ${req.user._id}`);
+    
+    res.json({
+      success: true,
+      message: 'Communications blocked successfully'
+    });
+  } catch (error) {
+    logger.error(`Block communication error: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// Unblock communication
+exports.unblockCommunication = async (req, res) => {
+  try {
+    const { staffId, clientId } = req.body;
+    
+    if (!staffId || !clientId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Staff ID and Client ID are required'
+      });
+    }
+    
+    await Communication.updateMany(
+      {
+        tenantId: req.tenantId,
+        staffId,
+        clientId
+      },
+      {
+        $set: {
+          isBlocked: false,
+          blockedBy: null,
+          blockedAt: null,
+          blockReason: null
+        }
+      }
+    );
+    
+    logger.info(`Communications unblocked between staff ${staffId} and client ${clientId} by ${req.user._id}`);
+    
+    res.json({
+      success: true,
+      message: 'Communications unblocked successfully'
+    });
+  } catch (error) {
+    logger.error(`Unblock communication error: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// Flag communication for review
+exports.flagCommunication = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    
+    const communication = await Communication.findOne({
+      _id: id,
+      tenantId: req.tenantId
+    });
+    
+    if (!communication) {
+      return res.status(404).json({
+        success: false,
+        message: 'Communication not found'
+      });
+    }
+    
+    communication.flagged = true;
+    communication.flaggedBy = req.user._id;
+    communication.flaggedAt = new Date();
+    communication.flagReason = reason;
+    await communication.save();
+    
+    logger.info(`Communication ${id} flagged by ${req.user._id}`);
+    
+    res.json({
+      success: true,
+      data: communication
+    });
+  } catch (error) {
+    logger.error(`Flag communication error: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+// Unflag communication
+exports.unflagCommunication = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const communication = await Communication.findOne({
+      _id: id,
+      tenantId: req.tenantId
+    });
+    
+    if (!communication) {
+      return res.status(404).json({
+        success: false,
+        message: 'Communication not found'
+      });
+    }
+    
+    communication.flagged = false;
+    communication.flaggedBy = null;
+    communication.flaggedAt = null;
+    communication.flagReason = null;
+    await communication.save();
+    
+    logger.info(`Communication ${id} unflagged by ${req.user._id}`);
+    
+    res.json({
+      success: true,
+      data: communication
+    });
+  } catch (error) {
+    logger.error(`Unflag communication error: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};

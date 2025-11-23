@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Toast from '../components/Toast';
 import './BookAppointment.css';
 
 export default function BookAppointment() {
@@ -10,20 +11,26 @@ export default function BookAppointment() {
   const [selectedStaff, setSelectedStaff] = useState('');
   const [availableSlots, setAvailableSlots] = useState([]);
   const [salonName, setSalonName] = useState('');
+  const [salonTier, setSalonTier] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingSlots, setLoadingSlots] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [toast, setToast] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchServices();
     fetchSalonInfo();
-    fetchStaff();
   }, []);
+
+  // Fetch staff only after we know the salon tier
+  useEffect(() => {
+    if (salonTier && salonTier !== 'free') {
+      fetchStaff();
+    }
+  }, [salonTier]);
 
   useEffect(() => {
     if (date) {
@@ -32,17 +39,36 @@ export default function BookAppointment() {
   }, [date, selectedStaff]);
 
   const fetchSalonInfo = async () => {
+    const token = localStorage.getItem('clientToken');
+    const clientData = JSON.parse(localStorage.getItem('clientData'));
+    
     try {
-      const token = localStorage.getItem('clientToken');
-      const clientData = JSON.parse(localStorage.getItem('clientData'));
+      // Get salon details including tier
       const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/v1/client-auth/salons`,
+        `${process.env.REACT_APP_API_URL}/api/v1/client-bookings/salon-info`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      const salon = response.data.data.find(s => s._id === clientData.tenantId);
-      if (salon) setSalonName(salon.businessName);
+      
+      if (response.data.data) {
+        setSalonName(response.data.data.businessName);
+        setSalonTier(response.data.data.subscriptionTier || 'free');
+      }
     } catch (err) {
       console.error('Error fetching salon:', err);
+      // Fallback: try to get from salons list
+      try {
+        const response = await axios.get(
+          `${process.env.REACT_APP_API_URL}/api/v1/client-auth/salons`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const salon = response.data.data.find(s => s._id === clientData.tenantId);
+        if (salon) {
+          setSalonName(salon.businessName);
+          setSalonTier('free'); // Default to free if tier not available
+        }
+      } catch (fallbackErr) {
+        console.error('Fallback error:', fallbackErr);
+      }
     }
   };
 
@@ -52,13 +78,13 @@ export default function BookAppointment() {
       const token = localStorage.getItem('clientToken');
       
       if (!token) {
-        setError('Please login to book an appointment.');
-        navigate('/login');
+        setToast({ message: 'Please login to book an appointment.', type: 'warning' });
+        setTimeout(() => navigate('/login'), 1500);
         return;
       }
       
       const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/v1/client/services`,
+        `${process.env.REACT_APP_API_URL}/api/v1/client-bookings/services`,
         { 
           headers: { Authorization: `Bearer ${token}` }
         }
@@ -67,11 +93,11 @@ export default function BookAppointment() {
       setServices(response.data.data || []);
       
       if (!response.data.data || response.data.data.length === 0) {
-        setError('No services available. Please contact the salon.');
+        setToast({ message: 'No services available at this salon.', type: 'info' });
       }
     } catch (error) {
       console.error('Error fetching services:', error);
-      setError(error.response?.data?.message || 'Failed to load services. Please try again.');
+      setToast({ message: error.response?.data?.message || 'Failed to load services. Please try again.', type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -82,7 +108,7 @@ export default function BookAppointment() {
       const token = localStorage.getItem('clientToken');
       console.log('Fetching staff...');
       const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/v1/client/staff`,
+        `${process.env.REACT_APP_API_URL}/api/v1/client-bookings/staff`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       console.log('Staff response:', response.data);
@@ -105,10 +131,16 @@ export default function BookAppointment() {
       const params = new URLSearchParams({ date });
       if (selectedStaff) params.append('staffId', selectedStaff);
       
+      console.log('Fetching availability for date:', date, 'staffId:', selectedStaff);
+      
       const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/v1/client/availability?${params}`,
+        `${process.env.REACT_APP_API_URL}/api/v1/client-bookings/availability?${params}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      
+      console.log('Availability response:', response.data);
+      console.log('Slots:', response.data.data);
+      console.log('Available slots count:', response.data.data?.filter(s => s.available).length);
       
       setAvailableSlots(response.data.data || []);
     } catch (error) {
@@ -128,8 +160,7 @@ export default function BookAppointment() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
+    setToast(null);
 
     setLoading(true);
 
@@ -139,7 +170,7 @@ export default function BookAppointment() {
       const scheduledDate = new Date(`${date}T${time}`);
       
       await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/v1/client/bookings`,
+        `${process.env.REACT_APP_API_URL}/api/v1/client-bookings`,
         {
           scheduledDate,
           services: selectedServices.map(s => ({
@@ -154,7 +185,7 @@ export default function BookAppointment() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setSuccess('✅ Booking created successfully!');
+      setToast({ message: 'Booking created successfully!', type: 'success' });
       
       // Refresh availability to show the newly booked slot
       if (date) {
@@ -167,11 +198,11 @@ export default function BookAppointment() {
       
       // Handle specific error codes
       if (err.response?.status === 409) {
-        setError('⚠️ This time slot was just booked by someone else. Please refresh and select a different time.');
+        setToast({ message: 'This time slot was just booked. Please select a different time.', type: 'warning' });
         // Refresh availability
         await fetchAvailability();
       } else {
-        setError(err.response?.data?.message || 'Failed to create booking. Please try again.');
+        setToast({ message: err.response?.data?.message || 'Failed to create booking. Please try again.', type: 'error' });
       }
     } finally {
       setLoading(false);
@@ -195,16 +226,16 @@ export default function BookAppointment() {
         </div>
       )}
 
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
       <div className="book-container">
         <div className="card">
-          {error && <div className="error-message">{error}</div>}
-          {success && (
-            <>
-              <div className="success-backdrop"></div>
-              <div className="success-message">{success}</div>
-            </>
-          )}
-
           <form onSubmit={handleSubmit}>
             <div className="form-section">
               <h2>Select Services</h2>
@@ -232,34 +263,37 @@ export default function BookAppointment() {
               )}
             </div>
 
-            <div className="form-section">
-              <h2>Select Stylist (Optional)</h2>
-              <div className="form-group">
-                <label>Preferred Stylist</label>
-                <select
-                  value={selectedStaff}
-                  onChange={(e) => setSelectedStaff(e.target.value)}
-                >
-                  <option value="">Any Available Stylist</option>
-                  {staff.length === 0 && (
-                    <option value="" disabled>Loading staff...</option>
-                  )}
-                  {staff.map(member => (
-                    <option key={member._id} value={member._id}>
-                      {member.firstName} {member.lastName}
-                    </option>
-                  ))}
-                </select>
-                <small style={{ color: '#86868b', fontSize: '13px', marginTop: '4px', display: 'block' }}>
-                  {staff.length === 0 
-                    ? 'Loading staff members...' 
-                    : selectedStaff 
-                      ? '✓ Availability will be filtered for this stylist' 
-                      : 'Leave blank to see all available stylists'
-                  }
-                </small>
+            {/* Only show stylist selection for Pro and Premium tiers */}
+            {salonTier !== 'free' && (
+              <div className="form-section">
+                <h2>Select Stylist (Optional)</h2>
+                <div className="form-group">
+                  <label>Preferred Stylist</label>
+                  <select
+                    value={selectedStaff}
+                    onChange={(e) => setSelectedStaff(e.target.value)}
+                  >
+                    <option value="">Any Available Stylist</option>
+                    {staff.length === 0 && (
+                      <option value="" disabled>Loading staff...</option>
+                    )}
+                    {staff.map(member => (
+                      <option key={member._id} value={member._id}>
+                        {member.firstName} {member.lastName}
+                      </option>
+                    ))}
+                  </select>
+                  <small style={{ color: '#86868b', fontSize: '13px', marginTop: '4px', display: 'block' }}>
+                    {staff.length === 0 
+                      ? 'Loading staff members...' 
+                      : selectedStaff 
+                        ? '✓ Availability will be filtered for this stylist' 
+                        : 'Leave blank to see all available stylists'
+                    }
+                  </small>
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="form-section">
               <h2>Select Date & Time</h2>
@@ -279,10 +313,10 @@ export default function BookAppointment() {
                   <label>Available Time Slots *</label>
                   {loadingSlots ? (
                     <div className="loading-slots">Loading available times...</div>
-                  ) : availableSlots.length === 0 ? (
+                  ) : availableSlots.length === 0 || !availableSlots.some(slot => slot.available) ? (
                     <div className="empty-state">
                       <p>No available slots for this date</p>
-                      <small>Please select a different date</small>
+                      <small>Please select a different date{selectedStaff ? ' or choose a different stylist' : ''}</small>
                     </div>
                   ) : (
                     <div className="time-slots-grid">

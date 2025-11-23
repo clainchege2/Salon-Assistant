@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Toast from '../components/Toast';
 import './Profile.css';
 
 export default function Profile() {
@@ -15,8 +16,7 @@ export default function Profile() {
     gender: ''
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [toast, setToast] = useState(null);
   
   // 2FA States
   const [show2FAModal, setShow2FAModal] = useState(false);
@@ -94,8 +94,7 @@ export default function Profile() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
+    setToast(null);
     setLoading(true);
 
     try {
@@ -110,10 +109,9 @@ export default function Profile() {
       localStorage.setItem('clientData', JSON.stringify(response.data.data));
       setClient(response.data.data);
       setIsEditing(false);
-      setSuccess('Profile updated successfully!');
-      setTimeout(() => setSuccess(''), 3000);
+      setToast({ message: 'Profile updated successfully!', type: 'success' });
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update profile');
+      setToast({ message: err.response?.data?.message || 'Failed to update profile', type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -129,7 +127,7 @@ export default function Profile() {
       gender: clientData.gender || ''
     });
     setIsEditing(false);
-    setError('');
+    setToast(null);
   };
 
   // 2FA Functions
@@ -158,7 +156,7 @@ export default function Profile() {
 
   const sendVerificationCode = async () => {
     setTwoFALoading(true);
-    setError('');
+    setToast(null);
     
     try {
       const token = localStorage.getItem('clientToken');
@@ -171,10 +169,9 @@ export default function Profile() {
       );
       
       setCodeSent(true);
-      setSuccess(`Verification code sent to your ${twoFAMethod === 'sms' ? 'phone' : 'email'}!`);
-      setTimeout(() => setSuccess(''), 3000);
+      setToast({ message: `Verification code sent to your ${twoFAMethod === 'sms' ? 'phone' : 'email'}!`, type: 'success' });
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to send verification code');
+      setToast({ message: err.response?.data?.message || 'Failed to send verification code', type: 'error' });
     } finally {
       setTwoFALoading(false);
     }
@@ -182,12 +179,12 @@ export default function Profile() {
 
   const verify2FACode = async () => {
     if (!verificationCode || verificationCode.length !== 6) {
-      setError('Please enter a valid 6-digit code');
+      setToast({ message: 'Please enter a valid 6-digit code', type: 'error' });
       return;
     }
 
     setTwoFALoading(true);
-    setError('');
+    setToast(null);
     
     try {
       const token = localStorage.getItem('clientToken');
@@ -212,16 +209,16 @@ export default function Profile() {
       setClient(response.data.data);
       
       setShow2FAModal(false);
-      setSuccess(
-        twoFAAction === 'enable' 
+      setToast({ 
+        message: twoFAAction === 'enable' 
           ? '2FA enabled successfully!' 
           : twoFAAction === 'disable'
           ? '2FA disabled successfully!'
-          : '2FA method changed successfully!'
-      );
-      setTimeout(() => setSuccess(''), 3000);
+          : '2FA method changed successfully!',
+        type: 'success'
+      });
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid verification code');
+      setToast({ message: err.response?.data?.message || 'Invalid verification code', type: 'error' });
     } finally {
       setTwoFALoading(false);
     }
@@ -231,7 +228,7 @@ export default function Profile() {
     setShow2FAModal(false);
     setCodeSent(false);
     setVerificationCode('');
-    setError('');
+    setToast(null);
   };
 
   if (!client) {
@@ -247,11 +244,16 @@ export default function Profile() {
         <h1>My Profile</h1>
       </div>
 
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+
       <div className="dashboard-container">
         <div className="card">
-          {error && <div className="error-message">{error}</div>}
-          {success && <div className="success-message">{success}</div>}
-
           {!isEditing ? (
             <>
               <div className="profile-info">
@@ -444,9 +446,6 @@ export default function Profile() {
             </div>
 
             <div className="modal-body">
-              {error && <div className="error-message">{error}</div>}
-              {success && <div className="success-message">{success}</div>}
-
               {!codeSent ? (
                 <>
                   <p className="modal-description">

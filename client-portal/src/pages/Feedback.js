@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Toast from '../components/Toast';
 import './Feedback.css';
 
 export default function Feedback() {
@@ -9,8 +10,7 @@ export default function Feedback() {
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [toast, setToast] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,7 +21,7 @@ export default function Feedback() {
     try {
       const token = localStorage.getItem('clientToken');
       const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/v1/client/bookings`,
+        `${process.env.REACT_APP_API_URL}/api/v1/client-bookings`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -41,21 +41,19 @@ export default function Feedback() {
       console.log('Eligible bookings for feedback:', uniqueBookings.length);
     } catch (err) {
       console.error('Error fetching bookings:', err);
-      setError('Failed to load bookings');
+      setToast({ message: 'Failed to load bookings', type: 'error' });
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
     setLoading(true);
 
     try {
       const token = localStorage.getItem('clientToken');
       
       await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/v1/client/feedback`,
+        `${process.env.REACT_APP_API_URL}/api/v1/client-bookings/feedback`,
         {
           bookingId: selectedBooking,
           rating,
@@ -64,7 +62,7 @@ export default function Feedback() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setSuccess('✅ Thank you for your feedback!');
+      setToast({ message: 'Thank you for your feedback!', type: 'success' });
       setSelectedBooking(null);
       setRating(5);
       setComment('');
@@ -73,7 +71,7 @@ export default function Feedback() {
       fetchCompletedBookings();
     } catch (err) {
       console.error('Feedback error:', err.response?.data);
-      setError(err.response?.data?.message || 'Failed to submit feedback');
+      setToast({ message: err.response?.data?.message || 'Failed to submit feedback', type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -93,8 +91,13 @@ export default function Feedback() {
           <h2>How was your experience?</h2>
           <p className="subtitle">Your feedback helps us improve our services</p>
 
-          {error && <div className="error-message">{error}</div>}
-          {success && <div className="success-message">{success}</div>}
+          {toast && (
+            <Toast
+              message={toast.message}
+              type={toast.type}
+              onClose={() => setToast(null)}
+            />
+          )}
 
           <form onSubmit={handleSubmit}>
             <div className="form-group">
@@ -156,7 +159,7 @@ export default function Feedback() {
           </form>
         </div>
 
-        {bookings.length === 0 && !error && (
+        {bookings.length === 0 && (
           <div className="empty-state">
             <p>No appointments available for feedback</p>
             <small>You can leave feedback after your appointment is confirmed or completed</small>

@@ -51,7 +51,7 @@ export default function Dashboard() {
       setSalon(clientSalon);
 
       const response = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/v1/client/bookings`,
+        `${process.env.REACT_APP_API_URL}/api/v1/client-bookings`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -66,7 +66,7 @@ export default function Dashboard() {
 
       // Fetch unread messages count
       const messagesResponse = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/v1/client/messages`,
+        `${process.env.REACT_APP_API_URL}/api/v1/client-bookings/messages`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const unreadCount = messagesResponse.data.data.filter(m => !m.readAt).length;
@@ -74,7 +74,7 @@ export default function Dashboard() {
 
       // Fetch new campaigns count (only unviewed)
       const campaignsResponse = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/v1/client/campaigns`,
+        `${process.env.REACT_APP_API_URL}/api/v1/client-bookings/campaigns`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const viewedCampaigns = JSON.parse(localStorage.getItem('viewedCampaigns') || '[]');
@@ -95,7 +95,7 @@ export default function Dashboard() {
       
       // Fetch unread messages
       const messagesResponse = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/v1/client/messages`,
+        `${process.env.REACT_APP_API_URL}/api/v1/client-bookings/messages`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const unreadCount = messagesResponse.data.data.filter(m => !m.readAt).length;
@@ -103,7 +103,7 @@ export default function Dashboard() {
 
       // Fetch new campaigns (only unviewed)
       const campaignsResponse = await axios.get(
-        `${process.env.REACT_APP_API_URL}/api/v1/client/campaigns`,
+        `${process.env.REACT_APP_API_URL}/api/v1/client-bookings/campaigns`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const viewedCampaigns = JSON.parse(localStorage.getItem('viewedCampaigns') || '[]');

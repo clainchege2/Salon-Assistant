@@ -1,5 +1,5 @@
 const express = require('express');
-const { register, login, refreshToken, getMe, fixMyPermissions, logout } = require('../controllers/authController');
+const { register, login, refreshToken, getMe, fixMyPermissions, logout, changePassword } = require('../controllers/authController');
 const { authLimiter } = require('../middleware/security');
 const { protect } = require('../middleware/auth');
 const { auditLog } = require('../middleware/auditLogger');
@@ -12,6 +12,7 @@ router.post('/login', authLimiter, auditLog('Auth'), login);
 router.post('/logout', protect, auditLog('Auth'), logout);
 router.post('/refresh', auditLog('Auth'), refreshToken);
 router.get('/me', protect, getMe);
+router.post('/change-password', protect, auditLog('Auth', { sensitive: true }), changePassword);
 router.post('/fix-permissions', protect, auditLog('Auth', { sensitive: true }), fixMyPermissions);
 
 module.exports = router;

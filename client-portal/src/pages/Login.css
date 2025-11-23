@@ -126,15 +126,6 @@
   text-decoration: underline;
 }
 
-.error-message {
-  background: #fee;
-  color: #c33;
-  padding: 12px;
-  border-radius: 6px;
-  margin-bottom: 20px;
-  font-size: 14px;
-}
-
 .loading {
   text-align: center;
   padding: 20px;

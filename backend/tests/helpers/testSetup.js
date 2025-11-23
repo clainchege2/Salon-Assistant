@@ -27,10 +27,8 @@ class TestSetup {
   async connectDB() {
     const mongoURI = process.env.MONGO_URI_TEST || 'mongodb://localhost:27017/salon-test';
     
-    await mongoose.connect(mongoURI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    });
+    // Remove deprecated options - they're no longer needed in Mongoose 6+
+    await mongoose.connect(mongoURI);
   }
 
   /**

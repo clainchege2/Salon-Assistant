@@ -218,6 +218,212 @@ exports.getStaff = async (req, res) => {
   }
 };
 
+exports.createStaff = async (req, res) => {
+  try {
+    const { firstName, lastName, email, phone, role, permissions } = req.body;
+
+    // Validate required fields
+    if (!firstName || !lastName || !email || !role) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide firstName, lastName, email, and role'
+      });
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ 
+      email, 
+      tenantId: req.tenantId 
+    });
+
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'A staff member with this email already exists'
+      });
+    }
+
+    // Generate secure temporary password (12 characters, alphanumeric)
+    const crypto = require('crypto');
+    const tempPassword = crypto.randomBytes(6).toString('hex'); // 12 character hex string
+
+    // Get tenant info for email
+    const tenant = await Tenant.findById(req.tenantId);
+
+    // Create staff member
+    const staff = await User.create({
+      tenantId: req.tenantId,
+      email,
+      phone: phone || `+254${Date.now().toString().slice(-9)}`, // Generate dummy phone if not provided
+      password: tempPassword,
+      firstName,
+      lastName,
+      role,
+      status: 'active',
+      requirePasswordChange: true,
+      temporaryPassword: true,
+      twoFactorEnabled: true,
+      twoFactorMethod: 'email',
+      emailVerified: true, // Pre-verified since owner is adding them
+      permissions: permissions || {},
+      createdBy: req.user._id
+    });
+
+    // Send welcome email with credentials
+    const emailService = require('../services/emailService');
+    const emailSent = await emailService.sendStaffWelcomeEmail({
+      to: email,
+      firstName,
+      salonName: tenant.businessName,
+      tenantSlug: tenant.slug,
+      email,
+      tempPassword
+    });
+
+    logger.info(`Staff member created: ${firstName} ${lastName} (${email}) - Email sent: ${emailSent}`);
+
+    res.status(201).json({
+      success: true,
+      message: emailSent 
+        ? 'Staff member created successfully. Welcome email sent with login credentials.'
+        : 'Staff member created successfully. Please share credentials manually (email failed).',
+      emailSent,
+      data: {
+        _id: staff._id,
+        firstName: staff.firstName,
+        lastName: staff.lastName,
+        email: staff.email,
+        phone: staff.phone,
+        role: staff.role,
+        status: staff.status,
+        permissions: staff.permissions
+      },
+      // Only include temp password if email failed
+      ...(emailSent ? {} : { tempPassword })
+    });
+  } catch (error) {
+    logger.error(`Create staff error: ${error.message}`);
+    
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      return res.status(400).json({
+        success: false,
+        message: field === 'email' ? 'Email already in use' : 'Phone number already in use'
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+exports.resendWelcomeEmail = async (req, res) => {
+  try {
+    const staffId = req.params.id;
+
+    // Find the staff member
+    const staff = await User.findOne({
+      _id: staffId,
+      tenantId: req.tenantId
+    });
+
+    if (!staff) {
+      return res.status(404).json({
+        success: false,
+        message: 'Staff member not found'
+      });
+    }
+
+    // Generate new temporary password
+    const crypto = require('crypto');
+    const tempPassword = crypto.randomBytes(6).toString('hex');
+
+    // Update staff with new temp password
+    staff.password = tempPassword;
+    staff.requirePasswordChange = true;
+    staff.temporaryPassword = true;
+    await staff.save();
+
+    // Get tenant info
+    const tenant = await Tenant.findById(req.tenantId);
+
+    // Send welcome email
+    const emailService = require('../services/emailService');
+    const emailSent = await emailService.sendStaffWelcomeEmail({
+      to: staff.email,
+      firstName: staff.firstName,
+      salonName: tenant.businessName,
+      tenantSlug: tenant.slug,
+      email: staff.email,
+      tempPassword
+    });
+
+    logger.info(`Welcome email resent to: ${staff.email} - Success: ${emailSent}`);
+
+    res.json({
+      success: true,
+      message: emailSent 
+        ? 'Welcome email sent successfully with new temporary password.'
+        : 'Failed to send email. Please try again or share credentials manually.',
+      emailSent,
+      // Only include temp password if email failed
+      ...(emailSent ? {} : { tempPassword })
+    });
+  } catch (error) {
+    logger.error(`Resend welcome email error: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
+exports.deleteStaff = async (req, res) => {
+  try {
+    const staffId = req.params.id;
+
+    // Find the staff member
+    const staff = await User.findOne({
+      _id: staffId,
+      tenantId: req.tenantId
+    });
+
+    if (!staff) {
+      return res.status(404).json({
+        success: false,
+        message: 'Staff member not found'
+      });
+    }
+
+    // Prevent deleting owners
+    if (staff.role === 'owner') {
+      return res.status(403).json({
+        success: false,
+        message: 'Cannot delete owner account'
+      });
+    }
+
+    // Delete the staff member
+    await User.deleteOne({ _id: staffId, tenantId: req.tenantId });
+
+    logger.info(`Staff member deleted: ${staff.firstName} ${staff.lastName} (${staff.email})`);
+
+    res.json({
+      success: true,
+      message: 'Staff member deleted successfully'
+    });
+  } catch (error) {
+    logger.error(`Delete staff error: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Server error'
+    });
+  }
+};
+
 exports.updateStaff = async (req, res) => {
   try {
     const { firstName, lastName, email, phone, role, status } = req.body;
